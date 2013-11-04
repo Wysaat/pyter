@@ -2,13 +2,24 @@ from __future__ import division
 import operators
 import math
 
-env = dict(vars(math)) + dict(vars(operators))
+env = vars(math)
+env.update(vars(operator))
+
+keywords = ['def',
+            'class',
+            'while',]
+
+def read():
+    pass
 
 def eval():
-	pass
+    pass
+
+def show():
+    pass
 
 def main():
-	pass
+    pass
 
 if __name__ == '__main__':
-	main()
+    main()
