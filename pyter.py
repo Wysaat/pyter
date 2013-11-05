@@ -1,25 +1,50 @@
 from __future__ import division
-import operators
+import operator
 import math
+import copy
 
 env = vars(math)
 env.update(vars(operator))
 
 keywords = ['def',
             'class',
-            'while',]
+            'while',
+            'import',]
 
-def read():
-    pass
+operators = ['+', '-', '*', '/', '**',
+             '=', '>', '<', '==', '!=',
+            '(', ')', '[', ']', '{', '}',
+            ',', '"', "'", "'''",
+            '~', '|', '&',
+            '#,', '\\',]
+str_ops = ['"', "'", "'''"]
 
-def eval():
-    pass
+def read(ind):
+    print ind,
+    text = raw_input()
+    for op in operators:
+        text = text.replace(op, ' ' + op + ' ')
+    items = text.split()
 
-def show():
-    pass
+    if items == ['exit', '(', ')']:
+        exit()
+    for item in items: print item
+
+def strops(text):
+    counter = 0
+    for i in range(len(text)):
+        if text[i] in str_ops:
+            couter += 1
+            if counter == 1:
+                start = i
+            elif counter == 2:
+                end = i
+                break
+    str_item = ''.join
 
 def main():
-    pass
+    while True:
+        read('>>>')
 
 if __name__ == '__main__':
     main()
