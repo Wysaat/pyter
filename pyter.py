@@ -28,18 +28,24 @@ def read(ind):
 
     if items == ['exit', '(', ')']:
         exit()
-    for item in items: print item
+    print items
 
 def strops(text):
+    def conn(start, end):
+        string = text[start:end+1]
     counter = 0
     for i in range(len(text)):
         if text[i] in str_ops:
+            the_op = text[i]
             couter += 1
             if counter == 1:
                 start = i
             elif counter == 2:
-                end = i
-                break
+                if text[i] == the_op:
+                    end = i
+                    break
+                else:
+                    counter -= 1
     str_item = ''.join
 
 def main():
