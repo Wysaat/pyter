@@ -30,27 +30,47 @@ def read(ind):
         exit()
     print items
 
-def strops(text):
-    def conn(start, end):
-        string = text[start:end+1]
-    counter = 0
-    for i in range(len(text)):
-        if text[i] in str_ops:
-            the_op = text[i]
-            couter += 1
-            if counter == 1:
-                start = i
-            elif counter == 2:
-                if text[i] == the_op:
-                    end = i
-                    break
-                else:
-                    counter -= 1
-    str_item = ''.join
+def cut_out_string(items):
+    for index in range(len(items)):
+        if items[index][0] == items[index][-1] and \
+            items[index][0] in str_ops:
+            continue
+        counter = 0
+        for i in range(len(items[index])):
+            if items[index][i] in str_ops:
+                the_op = items[index][i]
+                counter += 1
+                if counter == 1:
+                    start = i
+                elif counter == 2:
+                    if items[index][i] == the_op:
+                        end = i
+                        head = items[index][:start]
+                        body = items[index][start:end+1]
+                        tail = items[index][end+1:]
+                        items = items[:index] + [head] + [body] + [tail] + items[index+1:]
+                        break
+                    else:
+                        counter -= 1
+        return items
+
+def cut(items):
+    items = cut_out_string(items)
+    for index in range(len(items)):
+        if items[index][0] == items[index][-1] and \
+            items[index][0] in str_ops:
+            continue
+        for op in operators:
+            items[index] = items[index].replace(op, ' ' + op + ' ')
+        items = items[:index] + items[index].split() + items[index+1:]
+    return items
 
 def main():
     while True:
         read('>>>')
 
+def test():
+    print cut_out_string(["a = 'helloword'"])
+
 if __name__ == '__main__':
-    main()
+    test()
