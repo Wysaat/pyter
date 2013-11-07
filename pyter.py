@@ -19,12 +19,14 @@ operators = ['+', '-', '*', '/', '**',
             '#,', '\\',]
 str_ops = ['"', "'", "'''"]
 
-def read(ind):
+def read(ind='>>>', ind2='...'):
     print ind,
     text = raw_input()
-    for op in operators:
-        text = text.replace(op, ' ' + op + ' ')
-    items = text.split()
+    if text.endswith("\\"):
+        print ind2,
+        text = text[:-1]
+        text += raw_input()
+    items = cut([text])
 
     if items == ['exit', '(', ')']:
         exit()
@@ -52,10 +54,16 @@ def cut_out_string(items):
                         break
                     else:
                         counter -= 1
-        return items
+        if i == (len(items[index]) - 1) and counter == 1:
+            print "syntax_error: EOL while scanning string literal"
+            main()
+    return [item for item in items if item != '']
 
 def cut(items):
-    items = cut_out_string(items)
+    last_items = []
+    while items != last_items:
+        last_items = items
+        items = cut_out_string(items)
     for index in range(len(items)):
         if items[index][0] == items[index][-1] and \
             items[index][0] in str_ops:
@@ -67,10 +75,13 @@ def cut(items):
 
 def main():
     while True:
-        read('>>>')
+        read()
 
 def test():
-    print cut_out_string(["a = 'helloword'"])
+    assert cut(['a = "hello, world!" + "again!"']) == ['a', '=', '"hello, world!"', '+', '"again!"']
+    print cut(['a = "hello\"" + "world!"'])#  = ['"hello\""']
+    print cut(["var = 'hello, \\"])
+    print "All tests passed..."
 
 if __name__ == '__main__':
-    test()
+    main()
