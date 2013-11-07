@@ -22,15 +22,29 @@ str_ops = ['"', "'", "'''"]
 def read(ind='>>>', ind2='...'):
     print ind,
     text = raw_input()
-    if text.endswith("\\"):
+    items = cut([text])
+    while text.endswith("\\"):
         print ind2,
         text = text[:-1]
         text += raw_input()
+    # if text.endswith(":"):
     items = cut([text])
+    while "[" in items and "]" not in items:
+        print ind2,
+    # if items == ['exit', '(', ')']:
+    
+    #     exit()
+    # print items
 
-    if items == ['exit', '(', ')']:
-        exit()
-    print items
+def scan():
+    print ind,
+    text = raw_input()
+    items = cut(text)
+    for i in range(len(items)):
+        if items[i] == '\\':
+            if i ! = len(items) - 1:
+                error("syntax_error: unexpected character after line continuation character")
+            else:
 
 def cut_out_string(items):
     for index in range(len(items)):
