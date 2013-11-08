@@ -9,15 +9,26 @@ env.update(vars(operator))
 keywords = ['def',
             'class',
             'while',
-            'import',]
+            'for',
+            'in',
+            'range',
+            'import',
+            'from',]
 
-operators = ['+', '-', '*', '/', '**',
-             '=', '>', '<', '==', '!=',
-            '(', ')', '[', ']', '{', '}',
-            ',', '"', "'", "'''",
-            '~', '|', '&',
-            '#,', '\\',]
-str_ops = ['"', "'", "'''"]
+op_binary_1 = ['==', '**', '==', '!=', '>=', '<=', '+=', '-=', '*=', '/=', '**=',]
+
+op_binary_2 = ['+', '-', '*', '/',
+               '=', '>', '<',
+               '|', '&']
+
+op_unary    = ['~',]
+
+op_others   = ['(', ')', '[', ']', '{', '}',
+               ',', '"', "'", "'''", '"""',
+               '#,', '\\',]
+operators = op_binary_1 + op_binary_2 + op_unary + op_others
+
+str_ops = ['"', "'", "'''", '"""']
 
 def read(ind='>>>', ind2='...'):
     print ind,
@@ -36,15 +47,27 @@ def read(ind='>>>', ind2='...'):
     #     exit()
     # print items
 
-def scan():
-    print ind,
+'''
+    state numbering:
+    a = 3 + 2
+    a = 3 + 2 * 6
+    a = (3 + 2) * 6
+'''
+def scan(state=0, ind=">>>"):
+    print ind
     text = raw_input()
     items = cut(text)
     for i in range(len(items)):
         if items[i] == '\\':
-            if i ! = len(items) - 1:
+            if i != len(items) - 1:
                 error("syntax_error: unexpected character after line continuation character")
             else:
+                scan(state, "...")
+        elif state == 0:
+            if items[i] not in keywords + operators:
+                state = 1
+        elif state == 1:
+            pass
 
 def cut_out_string(items):
     for index in range(len(items)):
@@ -82,7 +105,17 @@ def cut(items):
         if items[index][0] == items[index][-1] and \
             items[index][0] in str_ops:
             continue
-        for op in operators:
+        for op in op_binary_1:
+            items[index] = items[index].replace(op, ' ' + op + ' ')
+        items = items[:index] + items[index].split() + items[index+1:]
+        print items
+    for index in range(len(items)):
+        if items[index][0] == items[index][-1] and \
+            items[index][0] in str_ops:
+            continue
+        if items[index] in op_binary_1:
+            continue
+        for op in op_binary_2 + op_unary + op_others:
             items[index] = items[index].replace(op, ' ' + op + ' ')
         items = items[:index] + items[index].split() + items[index+1:]
     return items
@@ -93,9 +126,11 @@ def main():
 
 def test():
     assert cut(['a = "hello, world!" + "again!"']) == ['a', '=', '"hello, world!"', '+', '"again!"']
-    print cut(['a = "hello\"" + "world!"'])#  = ['"hello\""']
-    print cut(["var = 'hello, \\"])
+    print cut(['a = 3 ** 2 * 4'])
+    print cut(['a = 3 *** 2'])
     print "All tests passed..."
 
 if __name__ == '__main__':
-    main()
+    while True:
+        string = raw_input()
+        print cut([string])
