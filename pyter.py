@@ -21,6 +21,8 @@ op_binary_2 = ['+', '-', '*', '/',
                '=', '>', '<',
                '|', '&']
 
+op_binary = op_binary_1 + op_binary_2
+
 op_unary    = ['~',]
 
 op_others   = ['(', ')', '[', ']', '{', '}',
@@ -54,9 +56,9 @@ def read(ind='>>>', ind2='...'):
     a = (3 + 2) * 6
 '''
 def scan(state=0, ind=">>>"):
-    print ind
+    print ind,
     text = raw_input()
-    items = cut(text)
+    items = cut([text])
     for i in range(len(items)):
         if items[i] == '\\':
             if i != len(items) - 1:
@@ -65,9 +67,15 @@ def scan(state=0, ind=">>>"):
                 scan(state, "...")
         elif state == 0:
             if items[i] not in keywords + operators:
-                state = 1
+                state = 1 # a
         elif state == 1:
-            pass
+            if items[i] in op_binary:
+                state = 2 # a *
+        elif state == 2:
+            if items[i] not in keywords + operators: # a * b
+                state = 1
+    print state
+    print items
 
 def cut_out_string(items):
     for index in range(len(items)):
@@ -101,15 +109,21 @@ def cut(items):
     while items != last_items:
         last_items = items
         items = cut_out_string(items)
+    state = 0
     for index in range(len(items)):
+        index += state
         if items[index][0] == items[index][-1] and \
             items[index][0] in str_ops:
             continue
         for op in op_binary_1:
             items[index] = items[index].replace(op, ' ' + op + ' ')
-        items = items[:index] + items[index].split() + items[index+1:]
-        print items
+        splited = items[index].split()
+        index_add = len(splited) - 1
+        items = items[:index] + splited + items[index+1:]
+        state += index_add
+    state = 0
     for index in range(len(items)):
+        index += state
         if items[index][0] == items[index][-1] and \
             items[index][0] in str_ops:
             continue
@@ -117,7 +131,10 @@ def cut(items):
             continue
         for op in op_binary_2 + op_unary + op_others:
             items[index] = items[index].replace(op, ' ' + op + ' ')
+        splited = items[index].split()
+        index_add = len(splited) - 1
         items = items[:index] + items[index].split() + items[index+1:]
+        state += index_add
     return items
 
 def main():
@@ -132,5 +149,4 @@ def test():
 
 if __name__ == '__main__':
     while True:
-        string = raw_input()
-        print cut([string])
+        scan()
