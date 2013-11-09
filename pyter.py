@@ -6,29 +6,30 @@ import copy
 env = vars(math)
 env.update(vars(operator))
 
-keywords = ['def',
-            'class',
+keywords = ['def', 'class',
             'while',
             'for',
             'in',
             'range',
-            'import',
-            'from',]
+            'if', 'else', 'elif',
+            'import', 'from', 'as',]
 
-op_binary_1 = ['==', '**', '==', '!=', '>=', '<=', '+=', '-=', '*=', '/=', '**=',]
+op_binary_3 = ['**=',]
 
-op_binary_2 = ['+', '-', '*', '/',
+op_binary_2 = ['**', '==', '!=', '>=', '<=', '+=', '-=', '*=', '/=',]
+
+op_binary_1 = ['+', '-', '*', '/',
                '=', '>', '<',
                '|', '&']
 
-op_binary = op_binary_1 + op_binary_2
+op_binary = op_binary_3 + op_binary_2 + op_binary_1
 
 op_unary    = ['~',]
 
 op_others   = ['(', ')', '[', ']', '{', '}',
                ',', '"', "'", "'''", '"""',
                '#,', '\\',]
-operators = op_binary_1 + op_binary_2 + op_unary + op_others
+operators = op_binary + op_unary + op_others
 
 str_ops = ['"', "'", "'''", '"""']
 
@@ -77,10 +78,9 @@ def scan(state=0, ind=">>>"):
     print state
     print items
 
-def cut_out_string(items):
+def cut_out_string(items, line=0):
     for index in range(len(items)):
-        if items[index][0] == items[index][-1] and \
-            items[index][0] in str_ops:
+        if items[index][0] in str_ops:
             continue
         counter = 0
         for i in range(len(items[index])):
@@ -99,9 +99,15 @@ def cut_out_string(items):
                         break
                     else:
                         counter -= 1
-        if i == (len(items[index]) - 1) and counter == 1:
+        if counter == 1 and items[index][-1] != '\\':
             print "syntax_error: EOL while scanning string literal"
-            main()
+            scan()
+        elif counter == 1 and items[index][-1] == '\\':
+            head = items[index][:start]
+            rest = items[index][start:]
+            items = items[:index] + [head] + [rest] + items[index+1:]
+
+    print items
     return [item for item in items if item != '']
 
 def cut(items):
@@ -112,10 +118,9 @@ def cut(items):
     state = 0
     for index in range(len(items)):
         index += state
-        if items[index][0] == items[index][-1] and \
-            items[index][0] in str_ops:
+        if items[index][0] in str_ops:
             continue
-        for op in op_binary_1:
+        for op in op_binary_3:
             items[index] = items[index].replace(op, ' ' + op + ' ')
         splited = items[index].split()
         index_add = len(splited) - 1
@@ -124,12 +129,24 @@ def cut(items):
     state = 0
     for index in range(len(items)):
         index += state
-        if items[index][0] == items[index][-1] and \
-            items[index][0] in str_ops:
+        if items[index][0] in str_ops:
             continue
-        if items[index] in op_binary_1:
+        if items[index] in op_binary_3:
             continue
-        for op in op_binary_2 + op_unary + op_others:
+        for op in op_binary_2:
+            items[index] = items[index].replace(op, ' ' + op + ' ')
+        splited = items[index].split()
+        index_add = len(splited) - 1
+        items = items[:index] + splited + items[index+1:]
+        state += index_add
+    state = 0
+    for index in range(len(items)):
+        index += state
+        if items[index][0] in str_ops:
+            continue
+        if items[index] in op_binary_3 + op_binary_2:
+            continue
+        for op in op_binary_1 + op_unary + op_others:
             items[index] = items[index].replace(op, ' ' + op + ' ')
         splited = items[index].split()
         index_add = len(splited) - 1
