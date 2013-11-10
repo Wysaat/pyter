@@ -78,37 +78,80 @@ def scan(state=0, ind=">>>"):
     print state
     print items
 
-def cut_out_string(items, line=0):
-    for index in range(len(items)):
-        if items[index][0] in str_ops:
-            continue
-        counter = 0
-        for i in range(len(items[index])):
-            if items[index][i] in str_ops:
-                the_op = items[index][i]
-                counter += 1
-                if counter == 1:
-                    start = i
-                elif counter == 2:
-                    if items[index][i] == the_op:
-                        end = i
-                        head = items[index][:start]
-                        body = items[index][start:end+1]
-                        tail = items[index][end+1:]
-                        items = items[:index] + [head] + [body] + [tail] + items[index+1:]
-                        break
-                    else:
-                        counter -= 1
-        if counter == 1 and items[index][-1] != '\\':
-            print "syntax_error: EOL while scanning string literal"
-            scan()
-        elif counter == 1 and items[index][-1] == '\\':
-            head = items[index][:start]
-            rest = items[index][start:]
-            items = items[:index] + [head] + [rest] + items[index+1:]
+# def cut_out_string(items, line=0):
+#     for index in range(len(items)):
+#         if items[index][0] in str_ops and \
+#             items[index][0] == items[index][-1]:
+#             continue
+#         counter = 0
+#         for i in range(len(items[index])):
+#             if items[index][i] in str_ops:
+#                 the_op = items[index][i]
+#                 counter += 1
+#                 if counter == 1:
+#                     start = i
+#                 elif counter == 2:
+#                     if items[index][i] == the_op:
+#                         end = i
+#                         head = items[index][:start]
+#                         body = items[index][start:end+1]
+#                         tail = items[index][end+1:]
+#                         items = items[:index] + [head] + [body] + [tail] + items[index+1:]
+#                         break
+#                     else:
+#                         counter -= 1
+#         if counter == 1 and items[index][-1] != '\\':
+#             print "syntax_error: EOL while scanning string literal"
+#             scan()
+#         elif counter == 1 and items[index][-1] == '\\':
+#             head = items[index][:start]
+#             rest = items[index][start:]
+#             items = items[:index] + [head] + [rest] + items[index+1:]
 
-    print items
-    return [item for item in items if item != '']
+#     print 'in cut_out_string:', items
+#     return [item for item in items if item != '']
+
+def cut_out_string(string):
+    str_ops = ['"', "'"]
+    items = []
+    def find(string, str_ops):
+        inds = []
+        for op in str_ops:
+            ind = string.find(op)
+            if ind >= 0:
+                inds.append(ind)
+        if len(inds) > 0:
+            return min(inds)
+        else:
+            return -1
+    while True:
+        start = find(string, str_ops)
+        if start < 0:
+            return items + [string]
+        op = string[start]
+        if len(string[:start]) > 0:
+            items.append(string[:start])
+        string = string[start:]
+        # not the real "end": end of string[1:]
+        end = string[1:].find(op)
+        while end < 0:
+            if string.endswith('\\'):
+                print "...",
+                string = string.rstrip('\\')
+                string += raw_input()
+                end = string[1:].find(op)
+            else:
+                error("syntax_error: EOL while scanning string literal")
+        # get the real "end"
+        end += 1
+        items.append(string[:end+1])
+        string = string[end+1:]
+        if string == '':
+            return items
+
+def error(string):
+    print string
+    exit()
 
 def cut(items):
     last_items = []
@@ -159,11 +202,11 @@ def main():
         read()
 
 def test():
-    assert cut(['a = "hello, world!" + "again!"']) == ['a', '=', '"hello, world!"', '+', '"again!"']
-    print cut(['a = 3 ** 2 * 4'])
-    print cut(['a = 3 *** 2'])
-    print "All tests passed..."
+    while True:
+        print ">>>",
+        string = raw_input()
+        items = cut_out_string(string)
+        print items
 
 if __name__ == '__main__':
-    while True:
-        scan()
+    test()
