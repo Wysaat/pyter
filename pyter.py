@@ -114,16 +114,36 @@ def scan(state=0, ind=">>>"):
 def cut_out_string(string):
     str_ops = ['"', "'"]
     items = []
+    # do not find the escaped
+    # def find(string, str_ops):
+    #     inds = []
+    #     for op in str_ops:
+    #         ind = string.find(op)
+    #         if ind == 0:
+    #             inds.append(ind)
+    #         elif ind > 0 and string[ind-1] != '\\':
+    #             inds.append(ind)
+    #     if len(inds) > 0:
+    #         return min(inds)
+    #     else:
+    #         return -1
+
     def find(string, str_ops):
         inds = []
-        for op in str_ops:
-            ind = string.find(op)
-            if ind >= 0:
-                inds.append(ind)
+        if "'''" in str_ops and "'''" in string:
+            return string.find("'''")
+        elif '"""' in str_ops in string:
+            return string.find('"""')
+        if string[0] in str_ops:
+            inds.append(0)
+        for i in range(1, len(string)):
+            if string[i] in str_ops and string[i-1] != '\\':
+                inds.append(i)
         if len(inds) > 0:
             return min(inds)
         else:
             return -1
+
     while True:
         start = find(string, str_ops)
         if start < 0:
@@ -133,7 +153,7 @@ def cut_out_string(string):
             items.append(string[:start])
         string = string[start:]
         # not the real "end": end of string[1:]
-        end = string[1:].find(op)
+        print end
         while end < 0:
             if string.endswith('\\'):
                 print "...",
