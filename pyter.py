@@ -78,94 +78,52 @@ def scan(state=0, ind=">>>"):
     print state
     print items
 
-# def cut_out_string(items, line=0):
-#     for index in range(len(items)):
-#         if items[index][0] in str_ops and \
-#             items[index][0] == items[index][-1]:
-#             continue
-#         counter = 0
-#         for i in range(len(items[index])):
-#             if items[index][i] in str_ops:
-#                 the_op = items[index][i]
-#                 counter += 1
-#                 if counter == 1:
-#                     start = i
-#                 elif counter == 2:
-#                     if items[index][i] == the_op:
-#                         end = i
-#                         head = items[index][:start]
-#                         body = items[index][start:end+1]
-#                         tail = items[index][end+1:]
-#                         items = items[:index] + [head] + [body] + [tail] + items[index+1:]
-#                         break
-#                     else:
-#                         counter -= 1
-#         if counter == 1 and items[index][-1] != '\\':
-#             print "syntax_error: EOL while scanning string literal"
-#             scan()
-#         elif counter == 1 and items[index][-1] == '\\':
-#             head = items[index][:start]
-#             rest = items[index][start:]
-#             items = items[:index] + [head] + [rest] + items[index+1:]
-
-#     print 'in cut_out_string:', items
-#     return [item for item in items if item != '']
-
 def cut_out_string(string):
-    str_ops = ['"', "'"]
     items = []
-    # do not find the escaped
-    # def find(string, str_ops):
-    #     inds = []
-    #     for op in str_ops:
-    #         ind = string.find(op)
-    #         if ind == 0:
-    #             inds.append(ind)
-    #         elif ind > 0 and string[ind-1] != '\\':
-    #             inds.append(ind)
-    #     if len(inds) > 0:
-    #         return min(inds)
-    #     else:
-    #         return -1
 
-    def find(string, str_ops):
-        inds = []
-        if "'''" in str_ops and "'''" in string:
-            return string.find("'''")
-        elif '"""' in str_ops in string:
-            return string.find('"""')
-        if string[0] in str_ops:
-            inds.append(0)
-        for i in range(1, len(string)):
-            if string[i] in str_ops and string[i-1] != '\\':
-                inds.append(i)
-        if len(inds) > 0:
-            return min(inds)
-        else:
-            return -1
+    def find_start(string):
+        for i in range(len(string)):
+            if string[i] in str_ops:
+                if string[i:i+3] in str_ops:
+                    return i, string[i:i+3]
+                else:
+                    return i, string[i]
+        return -1, ''
+
+    def find_end(string, op):
+        for i in range(len(string)-1):
+            if string[i] == '\\':
+                tor = string[i:i+2]
+                string = string.replace(tor, 'XX')
+        if op in string:
+            return string.find(op)
+        return -1
 
     while True:
-        start = find(string, str_ops)
+        start, op = find_start(string)
         if start < 0:
             return items + [string]
-        op = string[start]
         if len(string[:start]) > 0:
             items.append(string[:start])
         string = string[start:]
+        end = find_end(string[len(op):], op)
         # not the real "end": end of string[1:]
-        print end
         while end < 0:
-            if string.endswith('\\'):
+            if op in ['"""', "'''"]:
+                print "...",
+                string += '\n' + raw_input()
+                end = find_end(string[len(op):], op)
+            elif string.endswith('\\'):
                 print "...",
                 string = string.rstrip('\\')
                 string += raw_input()
-                end = string[1:].find(op)
+                end = find_end(string[len(op):], op)
             else:
                 error("syntax_error: EOL while scanning string literal")
         # get the real "end"
-        end += 1
-        items.append(string[:end+1])
-        string = string[end+1:]
+        end += len(op)
+        items.append(string[:end+len(op)])
+        string = string[end+len(op):]
         if string == '':
             return items
 
@@ -173,11 +131,9 @@ def error(string):
     print string
     exit()
 
-def cut(items):
-    last_items = []
-    while items != last_items:
-        last_items = items
-        items = cut_out_string(items)
+def cut(string):
+    items = cut_out_string(string)
+
     state = 0
     for index in range(len(items)):
         index += state
@@ -216,6 +172,25 @@ def cut(items):
         items = items[:index] + items[index].split() + items[index+1:]
         state += index_add
     return items
+
+def cut(string):
+    items = cut_out_string(string)
+    new_items = []
+    for item in items:
+        if item[0] in ['"', "'"]:
+            new_items.append(item)
+        else:
+            for op in op_binary_3:
+                item = item.replace(op, ' '+op+' ')
+                op_binary_3_parts = item.split()
+                for part in op_binary_3_parts:
+                    if part in op_binary_3:
+                        op_binary_2_parts.append(part)
+                    else:
+                        for op in op_binary_2:
+                            part = part.replace(op, ' '+op+' ')
+                            op_binary_2_parts.append()
+
 
 def main():
     while True:
