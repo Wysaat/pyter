@@ -191,6 +191,27 @@ def cut(string):
                             part = part.replace(op, ' '+op+' ')
                             op_binary_2_parts.append()
 
+def cut(old_items):
+    # old_items = cut_out_string(string)
+    op_binary_list = [op_binary_1, op_binary_2, op_binary_3]
+    escaped = []
+    for i in range(2):
+        items = []
+        ops = op_binary_list.pop()
+        for item in old_items:
+            if item[0] in str_ops or item in escaped:
+                items.append(item)
+                print items
+                print
+            else:
+                for op in ops:
+                    item = item.replace(op, ' '+op+' ')
+                    items.extend(item.split())
+                    print items
+                    print
+        old_items = items
+        escaped += ops
+    return old_items
 
 def main():
     while True:
@@ -202,6 +223,9 @@ def test():
         string = raw_input()
         items = cut_out_string(string)
         print items
+
+def test():
+    cut(['a=', '"good"', '"day"', '+3**8/5-4--6', "you"])
 
 if __name__ == '__main__':
     test()
