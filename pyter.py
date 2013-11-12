@@ -27,11 +27,11 @@ op_binary = op_binary_3 + op_binary_2 + op_binary_1
 op_unary    = ['~',]
 
 op_others   = ['(', ')', '[', ']', '{', '}',
-               ',', '"', "'", "'''", '"""',
-               '#,', '\\',]
-operators = op_binary + op_unary + op_others
+               ',', ';', ':', '#', '\\',]
 
 str_ops = ['"', "'", "'''", '"""']
+
+operators = op_binary + op_unary + op_others + str_ops
 
 def read(ind='>>>', ind2='...'):
     print ind,
@@ -59,24 +59,49 @@ def read(ind='>>>', ind2='...'):
 def scan(state=0, ind=">>>"):
     print ind,
     text = raw_input()
-    items = cut([text])
+    items = cut(text)
     for i in range(len(items)):
         if items[i] == '\\':
             if i != len(items) - 1:
                 error("syntax_error: unexpected character after line continuation character")
             else:
                 scan(state, "...")
-        elif state == 0:
+        elif state == 0: # nothing now, willing to get anything
             if items[i] not in keywords + operators:
                 state = 1 # a
+            elif items[i] in ['(', '[',]:
+                open_op = items[i]
+                state = 3 # (
         elif state == 1:
             if items[i] in op_binary:
                 state = 2 # a *
         elif state == 2:
             if items[i] not in keywords + operators: # a * b
                 state = 1
+        elif state == 3:
+            if items[i] not in keywords + operators:
+                state = 4 # (a
+        elif state == 4:
+            if items[i] in op_binary:
+                state = 5 # (a *
+            elif items[i] in [',',]:
+                state = 3
+            elif items[i] == open_op:
+                del open_op
+                state = 1
+        elif state == 5:
+            if items[i] not in keywords + operators:
+                state = 3
+            elif items[i] in ['(', '[',]:
+                state = endless_states_to_enumerate
     print state
     print items
+
+def scan_noun(items):
+    index = 0
+    while True:
+        if items[index] not in keywords + operators:
+            if items[index+1]
 
 def cut_out_string(string):
     items = []
@@ -132,83 +157,19 @@ def error(string):
     exit()
 
 def cut(string):
-    items = cut_out_string(string)
-
-    state = 0
-    for index in range(len(items)):
-        index += state
-        if items[index][0] in str_ops:
-            continue
-        for op in op_binary_3:
-            items[index] = items[index].replace(op, ' ' + op + ' ')
-        splited = items[index].split()
-        index_add = len(splited) - 1
-        items = items[:index] + splited + items[index+1:]
-        state += index_add
-    state = 0
-    for index in range(len(items)):
-        index += state
-        if items[index][0] in str_ops:
-            continue
-        if items[index] in op_binary_3:
-            continue
-        for op in op_binary_2:
-            items[index] = items[index].replace(op, ' ' + op + ' ')
-        splited = items[index].split()
-        index_add = len(splited) - 1
-        items = items[:index] + splited + items[index+1:]
-        state += index_add
-    state = 0
-    for index in range(len(items)):
-        index += state
-        if items[index][0] in str_ops:
-            continue
-        if items[index] in op_binary_3 + op_binary_2:
-            continue
-        for op in op_binary_1 + op_unary + op_others:
-            items[index] = items[index].replace(op, ' ' + op + ' ')
-        splited = items[index].split()
-        index_add = len(splited) - 1
-        items = items[:index] + items[index].split() + items[index+1:]
-        state += index_add
-    return items
-
-def cut(string):
-    items = cut_out_string(string)
-    new_items = []
-    for item in items:
-        if item[0] in ['"', "'"]:
-            new_items.append(item)
-        else:
-            for op in op_binary_3:
-                item = item.replace(op, ' '+op+' ')
-                op_binary_3_parts = item.split()
-                for part in op_binary_3_parts:
-                    if part in op_binary_3:
-                        op_binary_2_parts.append(part)
-                    else:
-                        for op in op_binary_2:
-                            part = part.replace(op, ' '+op+' ')
-                            op_binary_2_parts.append()
-
-def cut(old_items):
-    # old_items = cut_out_string(string)
-    op_binary_list = [op_binary_1, op_binary_2, op_binary_3]
+    old_items = cut_out_string(string)
+    op_list = [op_binary_1 + op_unary + op_others, op_binary_2, op_binary_3]
     escaped = []
-    for i in range(2):
+    for i in range(3):
         items = []
-        ops = op_binary_list.pop()
+        ops = op_list.pop()
         for item in old_items:
             if item[0] in str_ops or item in escaped:
                 items.append(item)
-                print items
-                print
             else:
                 for op in ops:
                     item = item.replace(op, ' '+op+' ')
-                    items.extend(item.split())
-                    print items
-                    print
+                items.extend(item.split())
         old_items = items
         escaped += ops
     return old_items
@@ -221,11 +182,10 @@ def test():
     while True:
         print ">>>",
         string = raw_input()
-        items = cut_out_string(string)
-        print items
+        print cut(string)
 
-def test():
-    cut(['a=', '"good"', '"day"', '+3**8/5-4--6', "you"])
+# def test():
+#     cut(['a=', '"good"', '"day"', '+3**8/5-4--6', "you"])
 
 if __name__ == '__main__':
     test()
