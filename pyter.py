@@ -97,6 +97,29 @@ def scan(state=0, ind=">>>"):
     print state
     print items
 
+def scan(items):
+    if items[0] not in keywords + operators:
+        items = scan_noun(items)
+        state = 'noun'
+    elif items[0] in op_unary:
+        items = scan_noun(items[1:])
+        state = 'noun'
+
+def expect(got):
+    expect = []
+    if got == 'noun':
+        expect.append('nothing')
+        expect.append('op_binary')
+    elif got == 'op_binary':
+        expect.append('noun')
+
+def scan(items, expect):
+    got = get_from(items)
+    if got in expect:
+        return expect(got)
+    else:
+        error('syntax_error: invalid syntax')
+
 def scan_noun(items):
     index = 0
     while True:
