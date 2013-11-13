@@ -33,6 +33,8 @@ str_ops = ['"', "'", "'''", '"""']
 
 operators = op_binary + op_unary + op_others + str_ops
 
+reserved = keywords + operators
+
 def read(ind='>>>', ind2='...'):
     print ind,
     text = raw_input()
@@ -110,7 +112,11 @@ def expect(got):
     if got == 'noun':
         expect.append('nothing')
         expect.append('op_binary')
+        expect.append('comma')
+        expect.append('colon')
     elif got == 'op_binary':
+        expect.append('noun')
+    elif got == 'comma':
         expect.append('noun')
 
 def scan(items, expect):
@@ -119,6 +125,50 @@ def scan(items, expect):
         return expect(got)
     else:
         error('syntax_error: invalid syntax')
+
+def get_from(items):
+    if items[0] not in keywords + operators:
+        return 'noun'
+    elif items[0] in op_unary:
+        i = 1
+        while items[i] in op_unary:
+            i += 1
+        if items[i] not in keywords + operators:
+            return 'noun'
+        elif items[i] in '(' or '[':
+            scan(items[i:], 'noun')
+
+class automata(object):
+    def __init__(self, items):
+        self.items = items
+        self.expect = []
+        self.undesired = []
+    def scan(self):
+        items = self.items
+        if self.
+    def scan(self, expect):
+        items = self.items
+        if items[0] not in keywords + operators:
+            got = 'noun'
+        elif items[0] in op_unary:
+            i = 1
+            while items[i] in op_unary:
+                i += 1
+            scan('noun')
+        elif items[0] in op_binary:
+            got = 'op_binary'
+        elif items[0] in ['(', '[',]:
+            scan('noun')
+        elif items[0] in [',']:
+            scan('noun')
+        if got in expect:
+            scan(expect(got))
+        else:
+            error('syntax_error: invalid syntax')
+
+class state_machine(object):
+    def __init__(self, items):
+        self.items = items
 
 def scan_noun(items):
     index = 0
@@ -196,6 +246,34 @@ def cut(string):
         old_items = items
         escaped += ops
     return old_items
+
+def scan(items):
+    expect = []
+    undesired = []
+    end = 1
+    def new_expect(got):
+        global expect, undesired, end
+        if got not in reserved:
+            expect = op_binary
+        elif got in op_binary:
+            end = 0
+            undesired = op_binary + op_others
+
+    index = 0
+    while True:
+        if index == len(items) - 1:
+            if end == 1:
+                execute(items)
+            else:
+                error('syntax_error: invalid syntax')
+        else:
+            got = items[index]
+            index += 1
+            if got not in expect:
+                if got not in undisired:
+                    new_expect(got)
+                else:
+                    error('syntax_error: invalid syntax')
 
 def main():
     while True:
