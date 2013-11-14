@@ -1,10 +1,10 @@
-from __future__ import division
-import operator
-import math
-import copy
-
-env = vars(math)
-env.update(vars(operator))
+# from __future__ import division
+# import operator
+# import math
+# import copy
+# 
+# env = vars(math)
+# env.update(vars(operator))
 
 keywords = ['def', 'class',
             'while',
@@ -20,161 +20,21 @@ op_binary_2 = ['**', '==', '!=', '>=', '<=', '+=', '-=', '*=', '/=',]
 
 op_binary_1 = ['+', '-', '*', '/',
                '=', '>', '<',
-               '|', '&']
+               '|', '&',
+               ',']
 
 op_binary = op_binary_3 + op_binary_2 + op_binary_1
 
 op_unary    = ['~',]
 
 op_others   = ['(', ')', '[', ']', '{', '}',
-               ',', ';', ':', '#', '\\',]
+               ';', ':', '#', '\\',]
 
 str_ops = ['"', "'", "'''", '"""']
 
 operators = op_binary + op_unary + op_others + str_ops
 
 reserved = keywords + operators
-
-def read(ind='>>>', ind2='...'):
-    print ind,
-    text = raw_input()
-    items = cut([text])
-    while text.endswith("\\"):
-        print ind2,
-        text = text[:-1]
-        text += raw_input()
-    # if text.endswith(":"):
-    items = cut([text])
-    while "[" in items and "]" not in items:
-        print ind2,
-    # if items == ['exit', '(', ')']:
-    
-    #     exit()
-    # print items
-
-'''
-    state numbering:
-    a = 3 + 2
-    a = 3 + 2 * 6
-    a = (3 + 2) * 6
-'''
-def scan(state=0, ind=">>>"):
-    print ind,
-    text = raw_input()
-    items = cut(text)
-    for i in range(len(items)):
-        if items[i] == '\\':
-            if i != len(items) - 1:
-                error("syntax_error: unexpected character after line continuation character")
-            else:
-                scan(state, "...")
-        elif state == 0: # nothing now, willing to get anything
-            if items[i] not in keywords + operators:
-                state = 1 # a
-            elif items[i] in ['(', '[',]:
-                open_op = items[i]
-                state = 3 # (
-        elif state == 1:
-            if items[i] in op_binary:
-                state = 2 # a *
-        elif state == 2:
-            if items[i] not in keywords + operators: # a * b
-                state = 1
-        elif state == 3:
-            if items[i] not in keywords + operators:
-                state = 4 # (a
-        elif state == 4:
-            if items[i] in op_binary:
-                state = 5 # (a *
-            elif items[i] in [',',]:
-                state = 3
-            elif items[i] == open_op:
-                del open_op
-                state = 1
-        elif state == 5:
-            if items[i] not in keywords + operators:
-                state = 3
-            elif items[i] in ['(', '[',]:
-                state = endless_states_to_enumerate
-    print state
-    print items
-
-def scan(items):
-    if items[0] not in keywords + operators:
-        items = scan_noun(items)
-        state = 'noun'
-    elif items[0] in op_unary:
-        items = scan_noun(items[1:])
-        state = 'noun'
-
-def expect(got):
-    expect = []
-    if got == 'noun':
-        expect.append('nothing')
-        expect.append('op_binary')
-        expect.append('comma')
-        expect.append('colon')
-    elif got == 'op_binary':
-        expect.append('noun')
-    elif got == 'comma':
-        expect.append('noun')
-
-def scan(items, expect):
-    got = get_from(items)
-    if got in expect:
-        return expect(got)
-    else:
-        error('syntax_error: invalid syntax')
-
-def get_from(items):
-    if items[0] not in keywords + operators:
-        return 'noun'
-    elif items[0] in op_unary:
-        i = 1
-        while items[i] in op_unary:
-            i += 1
-        if items[i] not in keywords + operators:
-            return 'noun'
-        elif items[i] in '(' or '[':
-            scan(items[i:], 'noun')
-
-class automata(object):
-    def __init__(self, items):
-        self.items = items
-        self.expect = []
-        self.undesired = []
-    def scan(self):
-        items = self.items
-        if self.
-    def scan(self, expect):
-        items = self.items
-        if items[0] not in keywords + operators:
-            got = 'noun'
-        elif items[0] in op_unary:
-            i = 1
-            while items[i] in op_unary:
-                i += 1
-            scan('noun')
-        elif items[0] in op_binary:
-            got = 'op_binary'
-        elif items[0] in ['(', '[',]:
-            scan('noun')
-        elif items[0] in [',']:
-            scan('noun')
-        if got in expect:
-            scan(expect(got))
-        else:
-            error('syntax_error: invalid syntax')
-
-class state_machine(object):
-    def __init__(self, items):
-        self.items = items
-
-def scan_noun(items):
-    index = 0
-    while True:
-        if items[index] not in keywords + operators:
-            if items[index+1]
 
 def cut_out_string(string):
     items = []
@@ -229,6 +89,9 @@ def error(string):
     print string
     exit()
 
+def syntax_error():
+    error('syntax_error: invalid syntax')
+
 def cut(string):
     old_items = cut_out_string(string)
     op_list = [op_binary_1 + op_unary + op_others, op_binary_2, op_binary_3]
@@ -257,7 +120,9 @@ def scan(items):
             expect = op_binary
         elif got in op_binary:
             end = 0
-            undesired = op_binary + op_others
+            undesired = op_binary + op_others + keywords
+        elif got in ['[', '(',]:
+            undesired = op_binary + keywords
 
     index = 0
     while True:
@@ -275,6 +140,42 @@ def scan(items):
                 else:
                     error('syntax_error: invalid syntax')
 
+def scan_noun(items):
+    if items[0] not in keywords + operators:
+        return items[1:]
+    elif items[0] is '[':
+        return scan_square_bracket(items[1:])
+    elif items[0] is '(':
+        return scan_bracket(items[1:])
+    elif items[0] in op_unary:
+        return scan_noun(items[1:])
+    else:
+        syntax_error()
+
+def scan_square_bracket(items):
+    items = scan_noun(items)
+    if len(items) == 0:
+        syntax_error()
+    elif items[0] is ']':
+        return items[1:]
+    else:
+        while True:
+            items = scan_noun(items)
+            if items[0] in op_binary:
+                if len(items[1:]) == 0:
+                    syntax_error()
+                elif items[1] is ']':
+                    if items[0] is ',':
+                        return items[2:]
+                    else:
+                        syntax_error()
+                items = items[1:]
+            elif items[0] is ']':
+                return items[1:]
+            # haven't implemented [i for i in range(4)]...
+            else:
+                syntax_error()
+
 def main():
     while True:
         read()
@@ -284,9 +185,6 @@ def test():
         print ">>>",
         string = raw_input()
         print cut(string)
-
-# def test():
-#     cut(['a=', '"good"', '"day"', '+3**8/5-4--6', "you"])
 
 if __name__ == '__main__':
     test()
