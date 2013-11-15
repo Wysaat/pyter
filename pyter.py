@@ -85,12 +85,55 @@ def cut_out_string(string):
         if string == '':
             return items
 
+class scanner(object):
+    def __init__(self):
+        self.items = []
+        self.line_number = 0
+    def get_line(self):
+        self.string = raw_input()
+        self.index = 0
+        self.line_number += 1
+    def read(self):
+        if self.index < len(string):
+            if string[index] in operators:
+                if string[index:index+3] in operators:
+                    item = string[index:index+3]
+                    self.index += 3
+                elif string[index:index+2] in operators:
+                    item = string[index:index+2]
+                    self.index += 2
+                else:
+                    item = string[index]
+                    self.index += 1
+            self.items.append(item)
+            return item
+        else:
+            return ''
+
+def read(string):
+    items = []
+    index = 0
+    while index < len(string):
+        if string[index] in operators:
+            if string[index:index+3] in operators:
+                items.append(string[index:index+3])
+                index += 3
+            elif string[index:index+2] in operators:
+                items.append(string[index:index+2])
+                index += 2
+            else:
+                items.append(string[index])
+                index += 1
+
 def error(string):
     print string
     exit()
 
 def syntax_error():
     error('syntax_error: invalid syntax')
+
+def syntax_error(all_items, items):
+
 
 def cut(string):
     old_items = cut_out_string(string)
@@ -110,36 +153,6 @@ def cut(string):
         escaped += ops
     return old_items
 
-def scan(items):
-    expect = []
-    undesired = []
-    end = 1
-    def new_expect(got):
-        global expect, undesired, end
-        if got not in reserved:
-            expect = op_binary
-        elif got in op_binary:
-            end = 0
-            undesired = op_binary + op_others + keywords
-        elif got in ['[', '(',]:
-            undesired = op_binary + keywords
-
-    index = 0
-    while True:
-        if index == len(items) - 1:
-            if end == 1:
-                execute(items)
-            else:
-                error('syntax_error: invalid syntax')
-        else:
-            got = items[index]
-            index += 1
-            if got not in expect:
-                if got not in undisired:
-                    new_expect(got)
-                else:
-                    error('syntax_error: invalid syntax')
-
 def scan_noun(items):
     if items[0] not in keywords + operators:
         return items[1:]
@@ -147,6 +160,8 @@ def scan_noun(items):
         return scan_square_bracket(items[1:])
     elif items[0] is '(':
         return scan_bracket(items[1:])
+    elif items[0] is '{':
+        return scan_brace(items[1:])
     elif items[0] in op_unary:
         return scan_noun(items[1:])
     else:
@@ -176,15 +191,24 @@ def scan_square_bracket(items):
             else:
                 syntax_error()
 
-def main():
+def scan(items):
+    the_items = items
     while True:
-        read()
+        items = scan_noun(items)
+        if len(items) == 0:
+            return items
+        elif items[0] in op_binary:
+            items = items[1:]
+            if len(items) == 0:
+                syntax_error()
+
+def main():
+    pass
 
 def test():
     while True:
         print ">>>",
-        string = raw_input()
-        print cut(string)
+        print scan(cut(raw_input()))
 
 if __name__ == '__main__':
     test()
