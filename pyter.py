@@ -14,6 +14,17 @@ keywords = ['def', 'class',
             'if', 'else', 'elif',
             'import', 'from', 'as',]
 
+# # '<>' is deprecated in Python 3
+# operators = ['+', '-', '*', '**', '/', '//', '%',
+#              '<<', '>>', '&', '|', '^', '~',
+#              '<', '>', '<=', '>=', '==', '!=', '<>',]
+
+# # '`' is deprecated in Python 3
+# delimiters = ['(', ')', '[', ']', '{', '}', '@',
+#               ',', ':', '.', '`', '=', ';',
+#               '+=', '-=', '*=', '/=', '//=', '%=',
+#               '&=', '|=', '^=', '>>=', '<<=', '**=',]
+
 op_binary_3 = ['**=',]
 
 op_binary_2 = ['**', '==', '!=', '>=', '<=', '+=', '-=', '*=', '/=',]
@@ -89,83 +100,58 @@ class scanner(object):
     def __init__(self):
         self.items = []
         self.line_number = 0
+
     def get_line(self):
         self.string = raw_input()
         self.index = 0
         self.line_number += 1
+
     def read(self):
-        if self.index < len(string):
+        string = self.string
+        print string
+        index = self.index
+        if index < len(string):
+            while string[index] in [' ', '\t',]:
+                index += 1
+                print index
             if string[index] in operators:
                 if string[index:index+3] in operators:
                     item = string[index:index+3]
-                    self.index += 3
+                    index += 3
                 elif string[index:index+2] in operators:
                     item = string[index:index+2]
-                    self.index += 2
+                    index += 2
                 else:
                     item = string[index]
-                    self.index += 1
+                    index += 1
+            else:
+                item = ''
+                while index < len(string) and string[index] not in [' ', '\t',] + operators:
+                    item += string[index]
+                    index += 1
             self.items.append(item)
+            self.index = index
             return item
         else:
             return ''
 
-def read(string):
-    items = []
-    index = 0
-    while index < len(string):
-        if string[index] in operators:
-            if string[index:index+3] in operators:
-                items.append(string[index:index+3])
-                index += 3
-            elif string[index:index+2] in operators:
-                items.append(string[index:index+2])
-                index += 2
-            else:
-                items.append(string[index])
-                index += 1
+    def scan_noun(self):
+        item = self.read()
+        if item is '':
+            syntax_error()
+        if item is '[':
+            self.scan_square_bracket()
+        elif item is '(':
+            self.scan_bracket()
+        elif item is '{':
+            self.scan_brace()
+        elif item is op_unary:
+            self.scan_noun()
+        elif item in keyword + items:
+            syntax_error()
 
-def error(string):
-    print string
-    exit()
-
-def syntax_error():
-    error('syntax_error: invalid syntax')
-
-def syntax_error(all_items, items):
-
-
-def cut(string):
-    old_items = cut_out_string(string)
-    op_list = [op_binary_1 + op_unary + op_others, op_binary_2, op_binary_3]
-    escaped = []
-    for i in range(3):
-        items = []
-        ops = op_list.pop()
-        for item in old_items:
-            if item[0] in str_ops or item in escaped:
-                items.append(item)
-            else:
-                for op in ops:
-                    item = item.replace(op, ' '+op+' ')
-                items.extend(item.split())
-        old_items = items
-        escaped += ops
-    return old_items
-
-def scan_noun(items):
-    if items[0] not in keywords + operators:
-        return items[1:]
-    elif items[0] is '[':
-        return scan_square_bracket(items[1:])
-    elif items[0] is '(':
-        return scan_bracket(items[1:])
-    elif items[0] is '{':
-        return scan_brace(items[1:])
-    elif items[0] in op_unary:
-        return scan_noun(items[1:])
-    else:
-        syntax_error()
+    def scan_bracket(self):
+        pass
 
 def scan_square_bracket(items):
     items = scan_noun(items)
@@ -191,6 +177,66 @@ def scan_square_bracket(items):
             else:
                 syntax_error()
 
+def scan_noun(items):
+    if items[0] not in keywords + operators:
+        return items[1:]
+    elif items[0] is '[':
+        return scan_square_bracket(items[1:])
+    elif items[0] is '(':
+        return scan_bracket(items[1:])
+    elif items[0] is '{':
+        return scan_brace(items[1:])
+    elif items[0] in op_unary:
+        return scan_noun(items[1:])
+    else:
+        syntax_error()
+
+def read(string):
+    items = []
+    index = 0
+    while index < len(string):
+        if string[index] in operators:
+            if string[index:index+3] in operators:
+                items.append(string[index:index+3])
+                index += 3
+            elif string[index:index+2] in operators:
+                items.append(string[index:index+2])
+                index += 2
+            else:
+                items.append(string[index])
+                index += 1
+
+def error(string):
+    print string
+    exit()
+
+def syntax_error():
+    error('syntax_error: invalid syntax')
+
+# def syntax_error(all_items, items):
+#     pass
+
+def cut(string):
+    old_items = cut_out_string(string)
+    op_list = [op_binary_1 + op_unary + op_others, op_binary_2, op_binary_3]
+    escaped = []
+    for i in range(3):
+        items = []
+        ops = op_list.pop()
+        for item in old_items:
+            if item[0] in str_ops or item in escaped:
+                items.append(item)
+            else:
+                for op in ops:
+                    item = item.replace(op, ' '+op+' ')
+                items.extend(item.split())
+        old_items = items
+        escaped += ops
+    return old_items
+
+
+
+
 def scan(items):
     the_items = items
     while True:
@@ -209,6 +255,16 @@ def test():
     while True:
         print ">>>",
         print scan(cut(raw_input()))
+
+def test():
+    sc = scanner()
+    sc.get_line()
+    while True:
+        item = sc.read()
+        if item is '':
+            break
+        print item
+    print sc.items
 
 if __name__ == '__main__':
     test()
