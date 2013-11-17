@@ -27,12 +27,12 @@ keywords = ['def', 'class',
 
 op_binary_3 = ['**=',]
 
-op_binary_2 = ['**', '==', '!=', '>=', '<=', '+=', '-=', '*=', '/=',]
+op_binary_2 = ['**', '==', '!=', '>=', '<=', '+=', '-=', '*=', '/=', '%=',]
 
 op_binary_1 = ['+', '-', '*', '/',
-               '=', '>', '<',
+               '=', '>', '<', '%',
                '|', '&',
-               ',']
+               ',',]
 
 op_binary = op_binary_3 + op_binary_2 + op_binary_1
 
@@ -108,12 +108,10 @@ class scanner(object):
 
     def read(self):
         string = self.string
-        print string
         index = self.index
         if index < len(string):
             while string[index] in [' ', '\t',]:
                 index += 1
-                print index
             if string[index] in operators:
                 if string[index:index+3] in operators:
                     item = string[index:index+3]
@@ -124,13 +122,18 @@ class scanner(object):
                 else:
                     item = string[index]
                     index += 1
+            elif string[index] is '!':
+                item = string[index:index+2]
+                index += 2
             else:
                 item = ''
-                while index < len(string) and string[index] not in [' ', '\t',] + operators:
+                while index < len(string) and string[index] not in \
+                      [' ', '\t',] + operators + ['!']:
                     item += string[index]
                     index += 1
             self.items.append(item)
             self.index = index
+            print 'item:', item
             return item
         else:
             return ''
