@@ -66,19 +66,21 @@ class scanner(object):
     def syntax_error(self):
         self.error('syntax_error: invalid syntax')
 
-    def read(self):
+    def raw_read(self):
         string = self.string
         index = self.index
+        if string[index:].strip() == '':
+            return ''
         if index < len(string):
             while string[index] in [' ', '\t',]:
                 index += 1
-            if string[index:index+3] in operators:
+            if index+3 <= len(string) and string[index:index+3] in operators:
                 item = string[index:index+3]
                 index += 3
-            elif string[index:index+2] in operators:
+            elif index+2 <= len(string) and string[index:index+2] in operators:
                 item = string[index:index+2]
                 index += 2
-            elif string[index] in operators:
+            elif index+1 <= len(string) and string[index] in operators:
                 item = string[index]
                 index += 1
             else:
@@ -92,6 +94,27 @@ class scanner(object):
             return item
         else:
             return ''
+
+    def read(self):
+        item = self.raw_read()
+        if item == '\\':
+            self.items.pop()
+            if self.raw_read() != '':
+                self.error('syntax_error: unexpected character after line continuation character')
+            else:
+                print '...'
+                self.get_line()
+                return self.read()
+        return item
+
+    def readm(self):
+        item = self.read()
+        if item == '':
+            self.items.pop()
+            print '...',
+            self.get_line()
+            item = self.readm()
+        return item
 
     def scan_noun(self, item=-1):
         if item == -1:
@@ -112,12 +135,12 @@ class scanner(object):
     def scan_square_bracket(self):
         comma = 1
         while True:
-            item = self.read()
+            item = self.readm()
             if item is ']' and comma == 1:
                 return
             else:
                 self.scan_noun(item)
-            item = self.read()
+            item = self.readm()
             if item is ']':
                 return
             elif item in op_binary:
@@ -146,8 +169,9 @@ def test():
 def test():
     sc = scanner()
     while True:
+        print '>>>',
         sc.get_line()
-        sc.scan_noun()
+
 
 if __name__ == '__main__':
     test()
