@@ -69,28 +69,32 @@ class scanner(object):
     def raw_read(self):
         string = self.string
         index = self.index
-        if string[index:].strip() == '':
-            return ''
         if index < len(string):
-            while string[index] in [' ', '\t',]:
-                index += 1
-            if index+3 <= len(string) and string[index:index+3] in operators:
-                item = string[index:index+3]
-                index += 3
-            elif index+2 <= len(string) and string[index:index+2] in operators:
-                item = string[index:index+2]
-                index += 2
-            elif index+1 <= len(string) and string[index] in operators:
-                item = string[index]
-                index += 1
-            else:
+            if string[index:].strip() == '':
                 item = ''
-                while index < len(string) and string[index] not in [' ', '\t',] + operators \
-                      and string[index:index+2] not in operators:
-                    item += string[index]
+                # for printing error message, 1 more than true index
+                index = len(string)
+            else:
+                while string[index] in [' ', '\t',]:
                     index += 1
+                if index+3 <= len(string) and string[index:index+3] in operators:
+                    item = string[index:index+3]
+                    index += 3
+                elif index+2 <= len(string) and string[index:index+2] in operators:
+                    item = string[index:index+2]
+                    index += 2
+                elif index+1 <= len(string) and string[index] in operators:
+                    item = string[index]
+                    index += 1
+                else:
+                    item = ''
+                    while index < len(string) and string[index] not in [' ', '\t',] + operators \
+                          and string[index:index+2] not in operators:
+                        item += string[index]
+                        index += 1
             self.items.append(item)
             self.index = index
+            print 'item:', item
             return item
         else:
             return ''
@@ -102,7 +106,7 @@ class scanner(object):
             if self.raw_read() != '':
                 self.error('syntax_error: unexpected character after line continuation character')
             else:
-                print '...'
+                print '...',
                 self.get_line()
                 return self.read()
         return item
@@ -171,6 +175,22 @@ def test():
     while True:
         print '>>>',
         sc.get_line()
+        can_be_empty = 1
+        while sc.string.strip() == '' and sc.string != '':
+            print '...',
+            sc.get_line()
+        while True:
+            item = sc.read()
+            if can_be_empty and item == '':
+                break
+            can_be_empty = 0
+            sc.scan_noun(item)
+            item = sc.read()
+            if item != '':
+                if item not in op_binary:
+                    sc.syntax_error()
+            else:
+                break
 
 
 if __name__ == '__main__':
