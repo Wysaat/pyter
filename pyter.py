@@ -1,10 +1,6 @@
-# from __future__ import division
-# import operator
-# import math
-# import copy
-# 
-# env = vars(math)
-# env.update(vars(operator))
+from string import letters
+
+digits = '0123456789'
 
 keywords = ['def', 'class',
             'while',
@@ -24,6 +20,12 @@ keywords = ['def', 'class',
 #               ',', ':', '.', '`', '=', ';',
 #               '+=', '-=', '*=', '/=', '//=', '%=',
 #               '&=', '|=', '^=', '>>=', '<<=', '**=',]
+
+def lexical_analyser(string, index):
+    index0 = index
+    while index < len(string):
+        if string[index0:index+1] in keywords:
+            return 'keyword', string[index0:index+1]
 
 op_binary_3 = ['**=',]
 
@@ -66,6 +68,45 @@ class scanner(object):
     def syntax_error(self):
         self.error('syntax_error: invalid syntax')
 
+    def lexical_analyser(self):
+        string = self.string
+        index = self.index
+        index0 = index
+        if index < len(string):
+            if string[index:].strip() == '':
+                item = ''
+                index = len(string)
+            else:
+                while string[index] in [' ', '\t',]:
+                    index += 1
+                if string[index] in operators:
+                    self.read_operator()
+                if string[index] in letters:
+                    if self.read_string_literal():
+                        break
+                    self.read_identifier()
+                elif string[index] is '_':
+                    self.read_identifier()
+                elif string[index] in digits + ['.']:
+                    self.read_numeric_literal()
+                elif string[index] in ['"', "'",]:
+                    self.read_string_literal()
+
+    def read_operators(self):
+        string = self.string
+        index = self.index
+
+    def read_identifier(self):
+        string = self.string
+        index = self.index
+        item = ''
+        while string[index] in letters + digits + ['_']:
+            item += string[index]
+            index += 1
+        self.index = index
+        self.items.append(item)
+        return item
+
     def raw_read(self):
         string = self.string
         index = self.index
@@ -86,8 +127,10 @@ class scanner(object):
                 elif index+1 <= len(string) and string[index] in operators:
                     item = string[index]
                     index += 1
+                elif string[index] in
                 else:
                     item = ''
+                    while index < len(string) and string[index] in letters + digits + ['_']:
                     while index < len(string) and string[index] not in [' ', '\t',] + operators \
                           and string[index:index+2] not in operators:
                         item += string[index]
