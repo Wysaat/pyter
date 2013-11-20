@@ -107,6 +107,79 @@ class scanner(object):
         self.items.append(item)
         return item
 
+    def read_numeric_literal(self):
+        string = self.string
+        index = self.index
+        item = ''
+        other_starts = ['0' + digit for digit in digits]
+        if string[index] is '.':
+            self.read_float()
+        elif string[index] in digits:
+            tmp_ind = index
+            while string[tmp_ind] in digits:
+                tmp_ind += 1
+            if string[tmp_ind] is '.':
+                self.read_float()
+        if string[index:index+2] in ['0x', '0X', '0o', '0O', '0b', '0B',] + other_starts:
+            item += string[index:index+2]
+            if item in ['0b', '0B']:
+                digits = '01'
+            elif item in ['0o', '0O'] + other_starts:
+                digits = '01234567'
+            elif item in ['0x', '0X']:
+                digits = '0123456789abcedfABCEDF'
+            index += 2
+            if string[index] not in digits:
+                self.error('syntax_error: invalid token')
+            while string[index] in digits:
+                item += string[index]
+                index += 1
+            if string[index] in ['l', 'L']:
+                index += 1
+            self.index = index
+            self.items.append(item)
+            return item
+        elif string[index] in digits:
+            while string[index] in digits:
+                item += string[index]
+                index += 1
+            if string[index] not in ['e', 'E']:
+                self.index = index
+                self.items.append(item)
+                return item
+            else:
+                item += string[index]
+                index += 1
+                if string[index] not in digits + ['+', '-']:
+                    self.error('syntax_error: invalid token')
+                if string[index] in ['+', '-']:
+                    item += string[index]
+                    index += 1
+                    if string[index] not in digits:
+                        syntax_error('syntax_error: invalid token')
+                while string[index] in digits:
+                    item += string[index]
+                self.index = index
+                self.items.append(item)
+                return item
+
+        elif string[index] is 'e':
+            item += string[index]
+            index += 1
+            if string[index] not in digits:
+                self.error('syntax_error: invalid token')
+            while string[index] in digits:
+                item += string[index]
+                index += 1
+            self.index = index
+            self.items.append(item)
+            return item
+        elif string[index] in ['l', 'L']:
+            item += string[index]
+            self.index = index
+            self.items.append(item)
+            return item
+
     def raw_read(self):
         string = self.string
         index = self.index
@@ -127,7 +200,8 @@ class scanner(object):
                 elif index+1 <= len(string) and string[index] in operators:
                     item = string[index]
                     index += 1
-                elif string[index] in
+                elif string[index] in digits:
+                    self.read_numeric_literal()
                 else:
                     item = ''
                     while index < len(string) and string[index] in letters + digits + ['_']:
