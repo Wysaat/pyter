@@ -21,11 +21,11 @@ keywords = ['def', 'class',
 #               '+=', '-=', '*=', '/=', '//=', '%=',
 #               '&=', '|=', '^=', '>>=', '<<=', '**=',]
 
-def lexical_analyser(string, index):
-    index0 = index
-    while index < len(string):
-        if string[index0:index+1] in keywords:
-            return 'keyword', string[index0:index+1]
+# def lexical_analyser(string, index):
+#     index0 = index
+#     while index < len(string):
+#         if string[index0:index+1] in keywords:
+#             return 'keyword', string[index0:index+1]
 
 op_binary_3 = ['**=',]
 
@@ -111,74 +111,94 @@ class scanner(object):
         string = self.string
         index = self.index
         item = ''
+        is_float = 0
         other_starts = ['0' + digit for digit in digits]
         if string[index] is '.':
-            self.read_float()
+            item += string[index]
+            index += 1
+            is_float = 1
         elif string[index] in digits:
             tmp_ind = index
-            while string[tmp_ind] in digits:
+            while tmp_ind < len(string) and string[tmp_ind] in digits:
                 tmp_ind += 1
-            if string[tmp_ind] is '.':
-                self.read_float()
-        if string[index:index+2] in ['0x', '0X', '0o', '0O', '0b', '0B',] + other_starts:
+            if tmp_ind < len(string) and string[tmp_ind] is '.':
+                item += string[index:tmp_ind+1]
+                index = tmp_ind + 1
+                is_float = 1
+                if index == len(string):
+                    self.index = index
+                    self.items.append(item)
+                    return item
+        elif index+1 < len(string) and  \
+              string[index:index+2] in ['0x', '0X', '0o', '0O', '0b', '0B'] + other_starts:
             item += string[index:index+2]
             if item in ['0b', '0B']:
                 digits = '01'
             elif item in ['0o', '0O'] + other_starts:
                 digits = '01234567'
             elif item in ['0x', '0X']:
-                digits = '0123456789abcedfABCEDF'
+                digits = '0123456789abcdefABCDEF'
             index += 2
-            if string[index] not in digits:
+            if index == len(string):
+                self.error('syntax_error: invalid token')
+            elif string[index] not in digits:
                 self.error('syntax_error: invalid token')
             while string[index] in digits:
                 item += string[index]
                 index += 1
+                if index == len(string):
+                    self.index = index
+                    self.items.append(item)
+                    return item
             if string[index] in ['l', 'L']:
+                item += string[index]
                 index += 1
             self.index = index
             self.items.append(item)
             return item
-        elif string[index] in digits:
+        if string[index] in digits:
             while string[index] in digits:
                 item += string[index]
                 index += 1
-            if string[index] not in ['e', 'E']:
+                if index == len(string):
+                    self.index = index
+                    self.items.append(item)
+                    return item
+            if string[index] in ['l', 'L']:
+                if not is_float:
+                    item += string[index]
+                    index += 1
+                self.index = index
+                self.items.append(item)
+                return item
+            elif string[index] not in ['e', 'E']:
                 self.index = index
                 self.items.append(item)
                 return item
             else:
                 item += string[index]
                 index += 1
+                if index == len(string):
+                    self.error('syntax_error: invalid token')
                 if string[index] not in digits + ['+', '-']:
                     self.error('syntax_error: invalid token')
                 if string[index] in ['+', '-']:
                     item += string[index]
                     index += 1
+                    if index == len(string):
+                        self.error('syntax_error: invalid token')
                     if string[index] not in digits:
                         syntax_error('syntax_error: invalid token')
                 while string[index] in digits:
                     item += string[index]
+                    index += 1
+                    if index == len(string):
+                        self.index = index
+                        self.items.append(item)
+                        return item
                 self.index = index
                 self.items.append(item)
                 return item
-
-        elif string[index] is 'e':
-            item += string[index]
-            index += 1
-            if string[index] not in digits:
-                self.error('syntax_error: invalid token')
-            while string[index] in digits:
-                item += string[index]
-                index += 1
-            self.index = index
-            self.items.append(item)
-            return item
-        elif string[index] in ['l', 'L']:
-            item += string[index]
-            self.index = index
-            self.items.append(item)
-            return item
 
     def raw_read(self):
         string = self.string
@@ -200,8 +220,14 @@ class scanner(object):
                 elif index+1 <= len(string) and string[index] in operators:
                     item = string[index]
                     index += 1
+                elif string[index] is '.':
+                    if index+1 <= len(string) and string[index+1] in digits:
+                        item = self.read_numeric_literal()
+                    else:
+                        item = string[index]
+                        index += 1
                 elif string[index] in digits:
-                    self.read_numeric_literal()
+                    item = self.read_numeric_literal()
                 else:
                     item = ''
                     while index < len(string) and string[index] in letters + digits + ['_']:
