@@ -83,7 +83,7 @@ class scanner(object):
                     self.read_operator()
                 if string[index] in letters:
                     if self.read_string_literal():
-                        break
+                        return
                     self.read_identifier()
                 elif string[index] is '_':
                     self.read_identifier()
@@ -108,10 +108,12 @@ class scanner(object):
         return item
 
     def read_numeric_literal(self):
+        digits = '0123456789'
         string = self.string
         index = self.index
         item = ''
         is_float = 0
+        is_imaginary = 0
         other_starts = ['0' + digit for digit in digits]
         if string[index] is '.':
             item += string[index]
@@ -129,7 +131,16 @@ class scanner(object):
                     self.index = index
                     self.items.append(item)
                     return item
-        elif index+1 < len(string) and  \
+            # tmp_ind = index
+            # while tmp_ind < len(string) and string[tmp_ind] in digits:
+            #     tmp_ind += 1
+            # if tmp_ind < len(string) and string[tmp_ind] in digits:
+        # tmp_ind = index
+        # while tmp_ind < len(string) and string[tmp_ind] in numbers:
+        #     tmp_ind += 1
+        # if tmp_ind < len(string) and string[tmp_ind] in 'jJ':
+        #     is_imaginary = 1
+        if not is_float and index+1 < len(string) and  \
               string[index:index+2] in ['0x', '0X', '0o', '0O', '0b', '0B'] + other_starts:
             item += string[index:index+2]
             if item in ['0b', '0B']:
@@ -140,8 +151,10 @@ class scanner(object):
                 digits = '0123456789abcdefABCDEF'
             index += 2
             if index == len(string):
+                self.index = index
                 self.error('syntax_error: invalid token')
             elif string[index] not in digits:
+                self.index = index
                 self.error('syntax_error: invalid token')
             while string[index] in digits:
                 item += string[index]
@@ -156,7 +169,48 @@ class scanner(object):
             self.index = index
             self.items.append(item)
             return item
-        if string[index] in digits:
+        while string[index] in digits:
+            item += string[index]
+            index += 1
+            if index == len(string):
+                self.index = index
+                self.items.append(item)
+                return item
+        if string[index] in 'lL':
+            if not is_float:
+                item += string[index]
+                index += 1
+            self.index = index
+            self.items.append(item)
+            return item
+        elif string[index] in 'jJ':
+            item += string[index]
+            index += 1
+            self.index = index
+            self.items.append(item)
+            return item
+        elif string[index] not in 'eE':
+            self.index = index
+            self.items.append(item)
+            return item
+        else:
+            item += string[index]
+            index += 1
+            if index == len(string):
+                self.index = index
+                self.error('syntax_error: invalid token')
+            if string[index] not in digits + '+-':
+                self.index = index
+                self.error('syntax_error: invalid token')
+            if string[index] in ['+', '-']:
+                item += string[index]
+                index += 1
+                if index == len(string):
+                    self.index = index
+                    self.error('syntax_error: invalid token')
+                if string[index] not in digits:
+                    self.index = index
+                    syntax_error('syntax_error: invalid token')
             while string[index] in digits:
                 item += string[index]
                 index += 1
@@ -164,45 +218,17 @@ class scanner(object):
                     self.index = index
                     self.items.append(item)
                     return item
-            if string[index] in ['l', 'L']:
-                if not is_float:
-                    item += string[index]
-                    index += 1
-                self.index = index
-                self.items.append(item)
-                return item
-            elif string[index] not in ['e', 'E']:
-                self.index = index
-                self.items.append(item)
-                return item
-            else:
+            if string[index] in 'jJ':
                 item += string[index]
                 index += 1
-                if index == len(string):
-                    self.error('syntax_error: invalid token')
-                if string[index] not in digits + ['+', '-']:
-                    self.error('syntax_error: invalid token')
-                if string[index] in ['+', '-']:
-                    item += string[index]
-                    index += 1
-                    if index == len(string):
-                        self.error('syntax_error: invalid token')
-                    if string[index] not in digits:
-                        syntax_error('syntax_error: invalid token')
-                while string[index] in digits:
-                    item += string[index]
-                    index += 1
-                    if index == len(string):
-                        self.index = index
-                        self.items.append(item)
-                        return item
-                self.index = index
-                self.items.append(item)
-                return item
+            self.index = index
+            self.items.append(item)
+            return item
 
     def raw_read(self):
         string = self.string
         index = self.index
+        digits = '0123456789'
         if index < len(string):
             if string[index:].strip() == '':
                 item = ''
@@ -214,29 +240,35 @@ class scanner(object):
                 if index+3 <= len(string) and string[index:index+3] in operators:
                     item = string[index:index+3]
                     index += 3
+                    self.items.append(item)
+                    self.index = index
                 elif index+2 <= len(string) and string[index:index+2] in operators:
                     item = string[index:index+2]
                     index += 2
+                    self.items.append(item)
+                    self.index = index
                 elif index+1 <= len(string) and string[index] in operators:
                     item = string[index]
                     index += 1
+                    self.items.append(item)
+                    self.index = index
                 elif string[index] is '.':
                     if index+1 <= len(string) and string[index+1] in digits:
                         item = self.read_numeric_literal()
                     else:
                         item = string[index]
                         index += 1
+                        self.items.append(item)
+                        self.index = index
                 elif string[index] in digits:
                     item = self.read_numeric_literal()
                 else:
                     item = ''
-                    while index < len(string) and string[index] in letters + digits + ['_']:
-                    while index < len(string) and string[index] not in [' ', '\t',] + operators \
-                          and string[index:index+2] not in operators:
+                    while index < len(string) and string[index] in letters + digits + '_':
                         item += string[index]
                         index += 1
-            self.items.append(item)
-            self.index = index
+                        self.items.append(item)
+                        self.index = index
             print 'item:', item
             return item
         else:
@@ -335,6 +367,13 @@ def test():
             else:
                 break
 
+def test():
+    sc = scanner()
+    while True:
+        print '>>>',
+        sc.get_line()
+        item = sc.read_numeric_literal()
+        print item
 
 if __name__ == '__main__':
     test()
