@@ -2,6 +2,9 @@ from string import letters
 
 digits = '0123456789'
 
+stringprefixes = ['r', 'R', 'u', 'U', 'ur', 'uR', 'Ur', 'UR',
+                  'b', 'B', 'br', 'bR', 'Br', 'BR']
+
 keywords = ['def', 'class',
             'while',
             'for',
@@ -45,7 +48,7 @@ op_others   = ['(', ')', '[', ']', '{', '}',
 
 str_ops = ['"', "'", "'''", '"""']
 
-operators = op_binary + op_unary + op_others + str_ops
+operators = op_binary + op_unary + op_others
 
 reserved = keywords + operators
 
@@ -106,6 +109,30 @@ class scanner(object):
         self.index = index
         self.items.append(item)
         return item
+
+    def read_string_literal(self, item=''):
+        backslash = 0
+        if string[index:index+3] in ['"""', "'''"]:
+            item += string[index:index+3]
+            index += 3
+            while True:
+                if index == len(string):
+                    print '...',
+                    string = raw_input()
+        elif string[index] in ['"', "'"]:
+            item += string[index]
+            index += 1
+        op = item
+        while index < len(string) and string[index] not in ['"', "'"]:
+
+        while index < len(string):
+            if string[index] == '\\':
+                backslash = 1
+            if backslash == 1:
+                backslash = 0
+        if backslash == 1:
+            print '...',
+            string = raw_input()
 
     def read_numeric_literal(self):
         digits = '0123456789'
@@ -274,13 +301,21 @@ class scanner(object):
                         self.index = index
                 elif string[index] in digits:
                     item = self.read_numeric_literal()
+                elif string[index] in ["'", '"']:
+                    item = self.read_string_literal(item)
                 else:
                     item = ''
                     while index < len(string) and string[index] in letters + digits + '_':
                         item += string[index]
                         index += 1
+                    if item not in stringprefixes:
                         self.items.append(item)
                         self.index = index
+                    elif item in stringprefixes and string[index] not in ["'", '"']:
+                        self.items.append(item)
+                        self.index = index
+                    else:
+                        item = self.read_string_literal(item)
             print 'item:', item
             return item
         else:
