@@ -115,37 +115,11 @@ class scanner(object):
         is_float = 0
         is_imaginary = 0
         other_starts = ['0' + digit for digit in digits]
-        if string[index] is '.':
-            item += string[index]
-            index += 1
-            is_float = 1
-        elif string[index] in digits:
-            tmp_ind = index
-            while tmp_ind < len(string) and string[tmp_ind] in digits:
-                tmp_ind += 1
-            if tmp_ind < len(string) and string[tmp_ind] is '.':
-                item += string[index:tmp_ind+1]
-                index = tmp_ind + 1
-                is_float = 1
-                if index == len(string):
-                    self.index = index
-                    self.items.append(item)
-                    return item
-            # tmp_ind = index
-            # while tmp_ind < len(string) and string[tmp_ind] in digits:
-            #     tmp_ind += 1
-            # if tmp_ind < len(string) and string[tmp_ind] in digits:
-        # tmp_ind = index
-        # while tmp_ind < len(string) and string[tmp_ind] in numbers:
-        #     tmp_ind += 1
-        # if tmp_ind < len(string) and string[tmp_ind] in 'jJ':
-        #     is_imaginary = 1
-        if not is_float and index+1 < len(string) and  \
-              string[index:index+2] in ['0x', '0X', '0o', '0O', '0b', '0B'] + other_starts:
+        if index+1 < len(string) and string[index:index+2] in ['0x', '0X', '0o', '0O', '0b', '0B']:
             item += string[index:index+2]
             if item in ['0b', '0B']:
                 digits = '01'
-            elif item in ['0o', '0O'] + other_starts:
+            elif item in ['0o', '0O']:
                 digits = '01234567'
             elif item in ['0x', '0X']:
                 digits = '0123456789abcdefABCDEF'
@@ -169,6 +143,44 @@ class scanner(object):
             self.index = index
             self.items.append(item)
             return item
+        if index+1 < len(string) and string[index:index+2] in other_starts:
+            invalid = 0
+            while index < len(string) and string[index] in digits:
+                item += string[index]
+                if int(string[index]) > 7:
+                    invalid = 1
+                index += 1
+            if invalid:
+                if index == len(string):
+                    self.index = index
+                    self.error('syntax_error: invalid token')
+                elif string[index] not in '.eEjJ':
+                    self.index = index
+                    self.error('syntax_error: invalid token')
+            if index == len(string):
+                self.index = index
+                self.items.append(item)
+                return item
+        if string[index] is '.':
+            item += string[index]
+            index += 1
+            is_float = 1
+            if index == len(string):
+                self.index = index
+                self.items.append(item)
+                return item
+        elif string[index] in digits:
+            tmp_ind = index
+            while tmp_ind < len(string) and string[tmp_ind] in digits:
+                tmp_ind += 1
+            if tmp_ind < len(string) and string[tmp_ind] is '.':
+                item += string[index:tmp_ind+1]
+                index = tmp_ind + 1
+                is_float = 1
+                if index == len(string):
+                    self.index = index
+                    self.items.append(item)
+                    return item
         while string[index] in digits:
             item += string[index]
             index += 1
@@ -253,7 +265,7 @@ class scanner(object):
                     self.items.append(item)
                     self.index = index
                 elif string[index] is '.':
-                    if index+1 <= len(string) and string[index+1] in digits:
+                    if index+1 < len(string) and string[index+1] in digits:
                         item = self.read_numeric_literal()
                     else:
                         item = string[index]
