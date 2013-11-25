@@ -61,6 +61,7 @@ class scanner(object):
         self.string = raw_input()
         self.index = 0
         self.line_number += 1
+        return self.string
 
     def error(self, string):
         print self.string
@@ -111,28 +112,64 @@ class scanner(object):
         return item
 
     def read_string_literal(self, item=''):
+        string = self.string
+        index = self.index
         backslash = 0
         if string[index:index+3] in ['"""', "'''"]:
             item += string[index:index+3]
+            op = item[0]
+            op_num = 0
             index += 3
             while True:
                 if index == len(string):
                     print '...',
-                    string = raw_input()
+                    string = self.get_line()
+                    index = 0
+                    op_num = 0
+                    if backslash == 0:
+                        item += '\n'
+                else:
+                    item += string[index]
+                    if string[index] == '\\':
+                        if backslash == 0:
+                            if index == len(string) - 1:
+                                item = item[:-1]
+                            backslash = 1
+                    elif backslash == 0 and string[index] == op:
+                        op_num += 1
+                        if op_num == 3:
+                            index += 1
+                            self.index = index
+                            self.items.append(item)
+                            return item
+                    else:
+                        backslash = 0
+                    index += 1
         elif string[index] in ['"', "'"]:
             item += string[index]
+            op = item
             index += 1
-        op = item
-        while index < len(string) and string[index] not in ['"', "'"]:
-
-        while index < len(string):
-            if string[index] == '\\':
-                backslash = 1
-            if backslash == 1:
-                backslash = 0
-        if backslash == 1:
-            print '...',
-            string = raw_input()
+            while True:
+                while index < len(string):
+                    item += string[index]
+                    if backslash == 0 and string[index] == op:
+                        index += 1
+                        self.index = index
+                        self.items.append(item)
+                        return item
+                    elif backslash == 0 and string[index] == '\\':
+                        backslash = 1
+                    else:
+                        backslash = 0
+                    index += 1
+                if backslash == 1:
+                    item = item[:-1]
+                    string = self.get_line()
+                    index = 0
+                    backslash = 0
+                else:
+                    self.index = index
+                    self.error('syntax_error: EOL while scanning string literal')
 
     def read_numeric_literal(self):
         digits = '0123456789'
@@ -421,6 +458,14 @@ def test():
         sc.get_line()
         item = sc.read_numeric_literal()
         print item
+
+def test():
+    sc = scanner()
+    while True:
+        print '>>>',
+        sc.get_line()
+        item = sc.read_string_literal()
+        print [item]
 
 if __name__ == '__main__':
     test()
