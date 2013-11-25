@@ -1,3 +1,4 @@
+# reference: Python v2.7.2 documentation
 from string import letters
 
 digits = '0123456789'
@@ -5,30 +6,26 @@ digits = '0123456789'
 stringprefixes = ['r', 'R', 'u', 'U', 'ur', 'uR', 'Ur', 'UR',
                   'b', 'B', 'br', 'bR', 'Br', 'BR']
 
-keywords = ['def', 'class',
-            'while',
-            'for',
-            'in',
-            'range',
-            'if', 'else', 'elif',
-            'import', 'from', 'as',]
+keywords = ['and', 'as', 'assert', 'break', 'class', 'continue', 'def',
+            'del', 'elif', 'else', 'except', 'exec', 'finally', 'for',
+            'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'not',
+            'or', 'pass', 'print', 'raise', 'return', 'try','while',
+            'with', 'yield']
 
-# # '<>' is deprecated in Python 3
-# operators = ['+', '-', '*', '**', '/', '//', '%',
-#              '<<', '>>', '&', '|', '^', '~',
-#              '<', '>', '<=', '>=', '==', '!=', '<>',]
+# '<>' is deprecated in Python 3
+operators = ['+', '-', '*', '**', '/', '//', '%',
+             '<<', '>>', '&', '|', '^', '~',
+             '<', '>', '<=', '>=', '==', '!=', '<>',]
 
-# # '`' is deprecated in Python 3
-# delimiters = ['(', ')', '[', ']', '{', '}', '@',
-#               ',', ':', '.', '`', '=', ';',
-#               '+=', '-=', '*=', '/=', '//=', '%=',
-#               '&=', '|=', '^=', '>>=', '<<=', '**=',]
+# '`' is deprecated in Python 3
+delimiters = ['(', ')', '[', ']', '{', '}', '@',
+              ',', ':', '.', '`', '=', ';',
+              '+=', '-=', '*=', '/=', '//=', '%=',
+              '&=', '|=', '^=', '>>=', '<<=', '**=',]
 
-# def lexical_analyser(string, index):
-#     index0 = index
-#     while index < len(string):
-#         if string[index0:index+1] in keywords:
-#             return 'keyword', string[index0:index+1]
+other_tokens = ['!', '$', '?', '#', '\\',]
+
+tokens = operators + delimiters + other_tokens
 
 op_binary_3 = ['**=',]
 
@@ -47,10 +44,6 @@ op_others   = ['(', ')', '[', ']', '{', '}',
                ';', ':', '#', '\\',]
 
 str_ops = ['"', "'", "'''", '"""']
-
-operators = op_binary + op_unary + op_others
-
-reserved = keywords + operators
 
 class scanner(object):
     def __init__(self):
@@ -71,45 +64,6 @@ class scanner(object):
 
     def syntax_error(self):
         self.error('syntax_error: invalid syntax')
-
-    def lexical_analyser(self):
-        string = self.string
-        index = self.index
-        index0 = index
-        if index < len(string):
-            if string[index:].strip() == '':
-                item = ''
-                index = len(string)
-            else:
-                while string[index] in [' ', '\t',]:
-                    index += 1
-                if string[index] in operators:
-                    self.read_operator()
-                if string[index] in letters:
-                    if self.read_string_literal():
-                        return
-                    self.read_identifier()
-                elif string[index] is '_':
-                    self.read_identifier()
-                elif string[index] in digits + ['.']:
-                    self.read_numeric_literal()
-                elif string[index] in ['"', "'",]:
-                    self.read_string_literal()
-
-    def read_operators(self):
-        string = self.string
-        index = self.index
-
-    def read_identifier(self):
-        string = self.string
-        index = self.index
-        item = ''
-        while string[index] in letters + digits + ['_']:
-            item += string[index]
-            index += 1
-        self.index = index
-        self.items.append(item)
-        return item
 
     def read_string_literal(self, item=''):
         string = self.string
@@ -164,6 +118,7 @@ class scanner(object):
                     index += 1
                 if backslash == 1:
                     item = item[:-1]
+                    print '...',
                     string = self.get_line()
                     index = 0
                     backslash = 0
@@ -313,17 +268,18 @@ class scanner(object):
             else:
                 while string[index] in [' ', '\t',]:
                     index += 1
-                if index+3 <= len(string) and string[index:index+3] in operators:
+                    self.index = index
+                if index+2 < len(string) and string[index:index+3] in tokens:
                     item = string[index:index+3]
                     index += 3
                     self.items.append(item)
                     self.index = index
-                elif index+2 <= len(string) and string[index:index+2] in operators:
+                elif index+1 < len(string) and string[index:index+2] in tokens:
                     item = string[index:index+2]
                     index += 2
                     self.items.append(item)
                     self.index = index
-                elif index+1 <= len(string) and string[index] in operators:
+                elif index < len(string) and string[index] in tokens:
                     item = string[index]
                     index += 1
                     self.items.append(item)
@@ -339,7 +295,7 @@ class scanner(object):
                 elif string[index] in digits:
                     item = self.read_numeric_literal()
                 elif string[index] in ["'", '"']:
-                    item = self.read_string_literal(item)
+                    item = self.read_string_literal()
                 else:
                     item = ''
                     while index < len(string) and string[index] in letters + digits + '_':
@@ -456,16 +412,12 @@ def test():
     while True:
         print '>>>',
         sc.get_line()
-        item = sc.read_numeric_literal()
-        print item
-
-def test():
-    sc = scanner()
-    while True:
-        print '>>>',
-        sc.get_line()
-        item = sc.read_string_literal()
-        print [item]
+        items = []
+        item = sc.read()
+        while item != '':
+            items.append(item)
+            item = sc.read()
+        print items
 
 if __name__ == '__main__':
     test()
