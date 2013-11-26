@@ -26,6 +26,7 @@ delimiters = ['(', ')', '[', ']', '{', '}', '@',
 other_tokens = ['!', '$', '?', '#', '\\',]
 
 tokens = operators + delimiters + other_tokens
+tokens.remove('.')
 
 op_binary_3 = ['**=',]
 
@@ -82,6 +83,7 @@ class scanner(object):
                     op_num = 0
                     if backslash == 0:
                         item += '\n'
+                    backslash = 0
                 else:
                     item += string[index]
                     if string[index] == '\\':
@@ -89,7 +91,8 @@ class scanner(object):
                             if index == len(string) - 1:
                                 item = item[:-1]
                             backslash = 1
-                    elif backslash == 0 and string[index] == op:
+                    elif string[index] == op:
+                        backslash = 0
                         op_num += 1
                         if op_num == 3:
                             index += 1
@@ -98,6 +101,7 @@ class scanner(object):
                             return item
                     else:
                         backslash = 0
+                        op_num = 0
                     index += 1
         elif string[index] in ['"', "'"]:
             item += string[index]
@@ -309,7 +313,6 @@ class scanner(object):
                         self.index = index
                     else:
                         item = self.read_string_literal(item)
-            print 'item:', item
             return item
         else:
             return ''
