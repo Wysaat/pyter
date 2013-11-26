@@ -49,9 +49,12 @@ str_ops = ['"', "'", "'''", '"""']
 class scanner(object):
     def __init__(self):
         self.items = []
+        self.lines = []
         self.line_number = 0
 
     def get_line(self):
+        self.lines.append(self.items)
+        self.items = []
         self.string = raw_input()
         self.index = 0
         self.line_number += 1
@@ -338,7 +341,7 @@ class scanner(object):
             item = self.readm()
         return item
 
-    def scan_noun(self, item=-1):
+    def scan_atom(self, item=-1):
         if item == -1:
             item = self.read()
         if item is '':
@@ -350,7 +353,7 @@ class scanner(object):
         elif item is '{':
             self.scan_brace()
         elif item is op_unary:
-            self.scan_noun()
+            self.scan_atom()
         elif item in keywords + operators:
             self.syntax_error()
 
@@ -361,7 +364,7 @@ class scanner(object):
             if item is ']' and comma == 1:
                 return
             else:
-                self.scan_noun(item)
+                self.scan_atom(item)
             item = self.readm()
             if item is ']':
                 return
@@ -402,7 +405,7 @@ def test():
             if can_be_empty and item == '':
                 break
             can_be_empty = 0
-            sc.scan_noun(item)
+            sc.scan_atom(item)
             item = sc.read()
             if item != '':
                 if item not in op_binary:
@@ -420,7 +423,8 @@ def test():
         while item != '':
             items.append(item)
             item = sc.read()
-        print items
+        print sc.items
+        print sc.lines
 
 if __name__ == '__main__':
     test()
