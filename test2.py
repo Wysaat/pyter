@@ -1,3 +1,1 @@
-print 'hello, world!'
-print 'a'
-t = [ 3 + 'string', 3]
+a = 1 * 3e * 6
