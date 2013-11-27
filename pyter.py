@@ -28,16 +28,9 @@ other_tokens = ['!', '$', '?', '#', '\\',]
 tokens = operators + delimiters + other_tokens
 tokens.remove('.')
 
-op_binary_3 = ['**=',]
-
-op_binary_2 = ['**', '==', '!=', '>=', '<=', '+=', '-=', '*=', '/=', '%=',]
-
-op_binary_1 = ['+', '-', '*', '/',
-               '=', '>', '<', '%',
-               '|', '&',
-               ',',]
-
-op_binary = op_binary_3 + op_binary_2 + op_binary_1
+op_binary = ['+', '-', '*', '**', '/', '//', '%',
+             '<<', '>>', '&', '|', '^',
+             '<', '>', '<=', '>=', '==', '!=', '<>',]
 
 op_unary    = ['~',]
 
@@ -341,6 +334,8 @@ class scanner(object):
             item = self.readm()
         return item
 
+    def parse_atom(self):
+
     def scan_atom(self, item=-1):
         if item == -1:
             item = self.read()
@@ -373,6 +368,9 @@ class scanner(object):
                 else: comma = 0
             else:
                 self.syntax_error()
+
+    def scan_FOR_clause(self):
+        pass
 
 def error(string):
     print string
@@ -412,19 +410,6 @@ def test():
                     sc.syntax_error()
             else:
                 break
-
-def test():
-    sc = scanner()
-    while True:
-        print '>>>',
-        sc.get_line()
-        items = []
-        item = sc.read()
-        while item != '':
-            items.append(item)
-            item = sc.read()
-        print sc.items
-        print sc.lines
 
 if __name__ == '__main__':
     test()
