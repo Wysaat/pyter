@@ -28,26 +28,12 @@ other_tokens = ['!', '$', '?', '#', '\\',]
 tokens = operators + delimiters + other_tokens
 tokens.remove('.')
 
-op_binary = ['+', '-', '*', '**', '/', '//', '%',
-             '<<', '>>', '&', '|', '^',
-             '<', '>', '<=', '>=', '==', '!=', '<>',]
-
-op_unary    = ['~',]
-
-op_others   = ['(', ')', '[', ']', '{', '}',
-               ';', ':', '#', '\\',]
-
-str_ops = ['"', "'", "'''", '"""']
-
-class scanner(object):
+class lexical_analyzer(object):
     def __init__(self):
         self.items = []
-        self.lines = []
         self.line_number = 0
 
     def get_line(self):
-        self.lines.append(self.items)
-        self.items = []
         self.string = raw_input()
         self.index = 0
         self.line_number += 1
@@ -334,82 +320,81 @@ class scanner(object):
             item = self.readm()
         return item
 
-    def parse_atom(self):
+def is_id(item):
+    if item in keywords:
+        return False
+    if item[0] in letters + '_':
+        for i in range(len(item)):
+            if item[i] not in letters + digits + '_':
+                return False
+        return True
+    return False
 
-    def scan_atom(self, item=-1):
-        if item == -1:
-            item = self.read()
-        if item is '':
-            self.syntax_error()
-        elif item is '[':
-            self.scan_square_bracket()
-        elif item is '(':
-            self.scan_bracket()
-        elif item is '{':
-            self.scan_brace()
-        elif item is op_unary:
-            self.scan_atom()
-        elif item in keywords + operators:
-            self.syntax_error()
+def is_kw(item):
+    if item in keywords:
+        return True
+    return False
 
-    def scan_square_bracket(self):
-        comma = 1
-        while True:
-            item = self.readm()
-            if item is ']' and comma == 1:
-                return
-            else:
-                self.scan_atom(item)
-            item = self.readm()
-            if item is ']':
-                return
-            elif item in op_binary:
-                if item is ',': comma = 1
-                else: comma = 0
-            else:
-                self.syntax_error()
+def is_str(item):
+    if len(item) < 2:
+        return False
+    if item[0] in ["'", '"']:
+        return True
+    if item[0] in stringprefixes and item[1] in ["'", '"']:
+        return True
+    if len(item) > 2 and item[:2] in stringprefixes and item[2] in ["'", '"']:
+        return True
+    return False
 
-    def scan_FOR_clause(self):
-        pass
+def is_num(item):
+    if item[0] == '.' and len(item) > 1:
+        return True
+    if item[0] in digits:
+        return True
+    return False
 
-def error(string):
-    print string
-    exit()
+def is_op(item):
+    if item in operators:
+        return True
+    return False
 
-def syntax_error():
-    error('syntax_error: invalid syntax')
+def is_dot(item):
+    if item is '.':
+        return True
+    return False
 
-def test():
-    sc = scanner()
-    sc.get_line()
-    while True:
-        item = sc.read()
-        if item is '':
-            break
-        print item
-    print sc.items
+def is_dl(item):
+    if item in delimiters:
+        return True
+    return False
 
-def test():
-    sc = scanner()
-    while True:
-        print '>>>',
-        sc.get_line()
-        can_be_empty = 1
-        while sc.string.strip() == '' and sc.string != '':
-            print '...',
-            sc.get_line()
-        while True:
-            item = sc.read()
-            if can_be_empty and item == '':
-                break
-            can_be_empty = 0
-            sc.scan_atom(item)
-            item = sc.read()
-            if item != '':
-                if item not in op_binary:
-                    sc.syntax_error()
-            else:
-                break
 
-if __name__ == '__main__':
-    test()
+la = lexical_analyzer()
+
+def parse_atom():
+    item = la.read()
+    if is_id(item) or is_num(item) or is_str(item):
+        return True
+    if item is '(':
+        item = la.read()
+        if item is 'yield':
+            item = la.read()
+        parse_expression()
+        item = la.read()
+        if item is ',':
+            parse_expression_list()
+        elif item is 'for':
+            parse_target_list()
+            item = la.read()
+            if item is 'in':
+                parse_or_test()
+                item = la.read()
+                if item is 'for':
+    if item is '[':
+        return parse_list_display()
+    if item is '{':
+        return parse_dict_display()
+        return parse_set_display()
+    if item is '`':
+        return parse_string_conversion()
+    la.syntax_error()
