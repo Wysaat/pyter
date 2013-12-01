@@ -32,6 +32,7 @@ class lexical_analyzer(object):
     def __init__(self):
         self.items = []
         self.line_number = 0
+        self.rewind = 0
 
     def get_line(self):
         self.string = raw_input()
@@ -300,6 +301,9 @@ class lexical_analyzer(object):
             return ''
 
     def read(self):
+        if self.rewind == 1:
+            self.rewind = 0
+            return self.items[-1]
         item = self.raw_read()
         if item == '\\':
             self.items.pop()
@@ -377,19 +381,17 @@ def parse_atom():
         return True
     if item is '(':
         item = la.read()
+        item.rewind = 1
         if item is 'yield':
-            item = la.read()
-        parse_expression()
+            parse_yield_expression()
+        else:
+            parse_expression()
         item = la.read()
         if item is ',':
             parse_expression_list()
         elif item is 'for':
-            parse_target_list()
-            item = la.read()
-            if item is 'in':
-                parse_or_test()
-                item = la.read()
-                if item is 'for':
+            la.rewind = 1
+            parse_comp_for()
     if item is '[':
         return parse_list_display()
     if item is '{':
@@ -398,3 +400,44 @@ def parse_atom():
     if item is '`':
         return parse_string_conversion()
     la.syntax_error()
+
+def parse_comp_for():
+    item = la.read()
+    if item != 'for':
+        la.syntax_error()
+    parse_target_list()
+    item = la.read()
+    if item != 'if':
+        la.syntax_error()
+    parse_or_test()
+    item = la.read()
+    la.rewind = 1
+    if item == 'for':
+        parse_comp_for()
+    elif item == 'if':
+        parse_comp_if()
+    else:
+        return True
+
+def parse_comp_if():
+    item = la.read()
+    if item != 'if':
+        la.syntax_error()
+    parse_expression_noncond()
+    item == la.read()
+    la.rewind = 1
+    if item == 'for':
+        parse_comp_for()
+    elif item == 'if':
+        parse_comp_if()
+    else:
+        return True
+
+def parse_expression_list():
+    parse_expression()
+    item = la.read()
+    if item != ',':
+        la.rewind = 1
+        return True
+    else:
+        parse_expression_list()
