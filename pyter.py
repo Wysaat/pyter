@@ -388,10 +388,18 @@ def parse_atom():
             parse_expression()
         item = la.read()
         if item is ',':
+            item = la.read()
+            la.rewind = 1
+            if item == ')':
+                return True
             parse_expression_list(')')
         elif item is 'for':
             la.rewind = 1
             parse_comp_for()
+        elif item is ')':
+            return True
+        else:
+            la.syntax_error()
         item = la.read()
         if item == ')':
             return True
@@ -400,16 +408,98 @@ def parse_atom():
     if item is '[':
         parse_expression()
         if item is ',':
+            item = la.read()
+            la.rewind = 1
+            if item == ']':
+                return True
             parse_expression_list(')')
         elif item is 'for':
             la.rewind()
             parse_list_for()
+        elif item is ']':
+            return True
+        else:
+            la.syntax_error()
+        item = la.read()
+        if item == ']':
+            return True
+        else:
+            la.syntax_error()
     if item is '{':
-        return parse_dict_display()
-        return parse_set_display()
+        parse_expression()
+        item = la.read()
+        if item == ':':
+            parse_expression()
+            item = la.read()
+            if item == ',':
+                item = la.read()
+                if item == '}':
+                    return True
+                parse_key_datum_list('}')
+            elif item == 'for':
+                la.rewind = 1
+                parse_comp_for()
+            else:
+                la.syntax_error()
+        elif item == ',':
+            item = la.read()
+            la.rewind = 1
+            if item == '}':
+                return True
+            parse_expression_list('}')
+        elif item == 'for':
+            la.rewind = 1
+            parse_comp_for()
+        elif item == '}':
+            return True
+        else:
+            la.syntax_error()
+        item = la.read()
+        if item == '}':
+            return True
+        else:
+            la.syntax_error()
     if item is '`':
-        return parse_string_conversion()
+        parse_expression_list('`')
+        if item == '`':
+            return True
+        else:
+            la.syntax_error()
     la.syntax_error()
+
+def parse_primary():
+    parse_atom()
+    while True:
+        item = la.read()
+        if item == '.':
+            item = la.read()
+            if not is_id(item):
+                la.syntax_error()
+        elif item == '[':
+            parse_expression()
+        elif item == '(':
+            parse_exression()
+        else:
+            la.rewind = 1
+            return True
+
+def parse_key_datum_list(ending):
+    parse_expression()
+    item = la.read()
+    if item != ':':
+        la.syntax_error()
+    parse_expression()
+    item = la.read()
+    if item == ending:
+        la.rewind = 1
+        return True
+    elif item == ',':
+        item = la.read()
+        la.rewind = 1
+        if item == ending:
+            return True
+        else:
+            parse_key_datum_list()
 
 def parse_list_for(ending):
     item = la.read()
@@ -421,6 +511,7 @@ def parse_list_for(ending):
         la.syntax_error()
     parse_old_expression_list(ending)
     item = la.read()
+    la.rewind = 1
     if item == ending:
         return True
     elif item == 'for':
@@ -428,8 +519,25 @@ def parse_list_for(ending):
     elif item == 'if':
         parse_list_if(ending)
     item = la.read()
+    la.rewind = 1
     if item == ending:
         return True
+    else:
+        la.syntax_error()
+
+def parse_list_if(ending):
+    item = la.read()
+    if item != 'if':
+        la.syntax_error()
+    parse_old_expression()
+    item = la.read()
+    la.rewind = 1
+    if item == ending:
+        return True
+    elif item == 'for':
+        parse_list_for(ending)
+    elif item == 'if':
+        parse_list_if(ending)
     else:
         la.syntax_error()
 
@@ -487,4 +595,21 @@ def parse_expression():
     pass
 
 def parse_target_list():
+    pass
+
+def parse_old_expression_list(ending):
+    parse_old_expression()
+    item = la.read()
+    if item == ending:
+        la.rewind = 1
+        return True
+    elif item == ',':
+        item = la.read()
+        la.rewind = 1
+        if item == ending:
+            return True
+        else:
+            parse_old_expression_list()
+
+def parse_old_expression():
     pass
