@@ -476,10 +476,58 @@ def parse_primary():
             if not is_id(item):
                 la.syntax_error()
         elif item == '[':
-            parse_expression()
+            parse_slice_list(']')
+            item = la.read()
+            if item != ']':
+                la.syntax_error()
         elif item == '(':
-            parse_exression()
+            parse_expression()
         else:
+            la.rewind = 1
+            return True
+
+# expression_list is a subset of slice_list
+# short_slice is a subset of slice_list
+# So, subscriptions and slicings are both parsed
+# by this single function.
+def parse_slice_list(ending):
+    item = la.read()
+    if item == Ellipsis:
+        return True
+    if item != ':':
+        la.rewind = 1
+        parse_expression()
+        item = la.read()
+        if item == ending:
+            la.rewind = 1
+            return True
+        elif item == ',':
+            item = la.read()
+            la.rewind = 1
+            if item == ending:
+                return True
+            else:
+                parse_slice_list(ending)
+    if item == ':':
+        item = la.read()
+        if item not in [':', ',', ending]:
+            la.rewind = 1
+            parse_expression()
+            item = la.read()
+        if item == ':':
+            item = la.read()
+            if item not in [',', ending]:
+                la.rewind = 1
+                parse_expression()
+                item = la.read()
+        if item == ',':
+            item = la.read()
+            la.rewind = 1
+            if item != ending:
+                parse_slice_list(ending)
+            else:
+                return True
+        if item == ending:
             la.rewind = 1
             return True
 
