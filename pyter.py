@@ -381,46 +381,46 @@ def parse_atom():
         return True
     if item is '(':
         item = la.read()
-        if item is 'yield':
-            parse_expressin_list(')')
+        if item == ')':
+            return True
+        if item == 'yield':
+            parse_expression_list(')')
         else:
             la.rewind = 1
             parse_expression()
         item = la.read()
-        if item is ',':
+        if item == ',':
             item = la.read()
-            la.rewind = 1
             if item == ')':
                 return True
+            la.rewind = 1
             parse_expression_list(')')
+            item = la.read()
         elif item is 'for':
             la.rewind = 1
             parse_comp_for()
-        elif item is ')':
-            return True
-        else:
-            la.syntax_error()
-        item = la.read()
+            item = la.read()
         if item == ')':
             return True
         else:
             la.syntax_error()
     if item is '[':
+        item = la.read()
+        if item == ']':
+            return True
+        la.rewind = 1
         parse_expression()
         if item is ',':
             item = la.read()
-            la.rewind = 1
             if item == ']':
                 return True
+            la.rewind = 1
             parse_expression_list(')')
+            item = la.read()
         elif item is 'for':
             la.rewind()
-            parse_list_for()
-        elif item is ']':
-            return True
-        else:
-            la.syntax_error()
-        item = la.read()
+            parse_list_for(ending)
+            item = la.read()
         if item == ']':
             return True
         else:
@@ -461,6 +461,7 @@ def parse_atom():
             la.syntax_error()
     if item is '`':
         parse_expression_list('`')
+        item = la.read()
         if item == '`':
             return True
         else:
@@ -561,37 +562,39 @@ def parse_list_for(ending):
     item = la.read()
     if item != 'in':
         la.syntax_error()
-    parse_old_expression_list(ending)
+    parse_expression_nocond()
     item = la.read()
+    if item == ',':
+        while True:
+            parse_expression_nocond()
+            item = la.read()
+            if item != ',':
+                break
+            item = la.read()
+            la.rewind = 1
+            if item in ['for', 'if', ending]:
+                break
     la.rewind = 1
-    if item == ending:
-        return True
-    elif item == 'for':
+    if item == 'for':
         parse_list_for(ending)
     elif item == 'if':
         parse_list_if(ending)
-    item = la.read()
-    la.rewind = 1
-    if item == ending:
-        return True
     else:
-        la.syntax_error()
+        return True
 
 def parse_list_if(ending):
     item = la.read()
     if item != 'if':
         la.syntax_error()
-    parse_old_expression()
+    parse_expression_nocond()
     item = la.read()
     la.rewind = 1
-    if item == ending:
-        return True
-    elif item == 'for':
+    if item == 'for':
         parse_list_for(ending)
     elif item == 'if':
         parse_list_if(ending)
     else:
-        la.syntax_error()
+        return True
 
 def parse_comp_for():
     item = la.read()
@@ -615,12 +618,8 @@ def parse_comp_if():
     item = la.read()
     if item != 'if':
         la.syntax_error()
+    parse_expression_nocond()
     item = la.read()
-    la.rewind = 1
-    if item == 'if':
-        la.syntax_error()
-    parse_expression()
-    item == la.read()
     la.rewind = 1
     if item == 'for':
         parse_comp_for()
@@ -629,39 +628,22 @@ def parse_comp_if():
     else:
         return True
 
+def parse_expression_nocond():
+    pass
+
 def parse_expression_list(ending):
     parse_expression()
     item = la.read()
-    if item == ending:
-        la.rewind = 1
-        return True
-    elif item == ',':
+    if item == ',':
         item = la.read()
         la.rewind = 1
-        if item == ending:
-            return True
-        else:
-            parse_expression_list()
+        if item != ending:
+            parse_expression_list(ending)
+    la.rewind = 1
+    return True
 
 def parse_expression():
     pass
 
 def parse_target_list():
-    pass
-
-def parse_old_expression_list(ending):
-    parse_old_expression()
-    item = la.read()
-    if item == ending:
-        la.rewind = 1
-        return True
-    elif item == ',':
-        item = la.read()
-        la.rewind = 1
-        if item == ending:
-            return True
-        else:
-            parse_old_expression_list()
-
-def parse_old_expression():
     pass
