@@ -482,6 +482,10 @@ def parse_primary():
                 la.syntax_error()
         elif item == '(':
             parse_expression()
+            item = la.read()
+            if item == 'for':
+                la.rewind = 1
+                parse_comp_for()
         else:
             la.rewind = 1
             return True
