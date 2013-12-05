@@ -567,6 +567,125 @@ def parse_m_expr():
             return True
         parse_u_expr()
 
+def parse_a_expr():
+    parse_m_expr()
+    while True:
+        item = la.read()
+        if item not in '+-':
+            la.rewind = 1
+            return True
+        parse_m_expr()
+
+def parse_shift_expr():
+    parse_a_expr()
+    while True:
+        item = la.read()
+        if item not in ['<<', '>>']:
+            la.rewind = 1
+            return True
+        parse_a_expr()
+
+def parse_and_expr():
+    parse_shift_expr()
+    while True:
+        item = la.read()
+        if item != '&':
+            la.rewind = 1
+            return True
+        parse_shift_expr()
+
+def parse_xor_expr():
+    parse_and_expr()
+    while True:
+        item = la.read()
+        if item != '^':
+            la.rewind = 1
+            return True
+        parse_and_expr()
+
+def parse_or_expr():
+    parse_xor_expr()
+    while True:
+        item = la.read()
+        if item != '|':
+            la.rewind = 1
+            return True
+        parse_xor_expr()
+
+comp_operators = ['<', '>', '==', '>=', '<=', '<>', '!=',]
+
+def parse_comparison():
+    parse_or_expr()
+    while True:
+        item = la.read()
+        if item == 'is':
+            item = la.read()
+            if item != 'not':
+                la.rewind = 1
+            parse_or_expr()
+        if item == 'not':
+            item = la.read()
+            if item != 'in':
+                la.syntax_error()
+            parse_or_expr()
+        elif item in comp_operators:
+            parse_or_expr()
+        else:
+            la.rewind = 1
+            return True
+
+def parse_not_test():
+    item = la.read()
+    if item == 'not':
+        parse_not_test()
+    else:
+        la.rewind = 1
+        parse_comparison()
+
+def parse_and_test():
+    parse_not_test()
+    while True:
+        item = la.read()
+        if item != 'and':
+            la.rewind = 1
+            return True
+        parse_not_test()
+
+def parse_or_test():
+    parse_and_test()
+    while True:
+        item = la.read()
+        if item != 'or':
+            la.rewind = 1
+            return True
+        parse_and_test()
+
+def parse_conditional_expression():
+    parse_or_test()
+    item = la.read()
+    if item != 'if':
+        la.rewind = 1
+        return True
+    parse_or_test()
+    item = la.read()
+    if item != 'else':
+        la.syntax_error()
+    parse_expression()
+
+def parse_expression():
+    item = la.read()
+    if item == 'lambda':
+        parse_lambda_expr()
+    else:
+        la.rewind = 1
+        parse_conditional_expression()
+
+# lambda expressions cannot contain annotations(Python 3) and statements
+def parse_lambda_expr():
+    item = la.read()
+    if item != 'lambda':
+        la.syntax_error()
+
 # expression_list is a subset of slice_list
 # short_slice is a subset of slice_list
 # So, subscriptions and slicings are both parsed
@@ -704,9 +823,6 @@ def parse_comp_if():
     else:
         return True
 
-def parse_expression_nocond():
-    pass
-
 def parse_expression_list(ending):
     parse_expression()
     item = la.read()
@@ -717,9 +833,6 @@ def parse_expression_list(ending):
             parse_expression_list(ending)
     la.rewind = 1
     return True
-
-def parse_expression():
-    pass
 
 def parse_target_list():
     pass
