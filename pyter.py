@@ -426,6 +426,9 @@ def parse_atom():
         else:
             la.syntax_error()
     if item is '{':
+        item = la.read()
+        if item == '}':
+            return True
         parse_expression()
         item = la.read()
         if item == ':':
@@ -433,28 +436,14 @@ def parse_atom():
             item = la.read()
             if item == ',':
                 item = la.read()
-                if item == '}':
-                    return True
-                parse_key_datum_list('}')
+                if item != '}':
+                    la.rewind = 1
+                    parse_key_datum_list('}')
+                    item = la.read()
             elif item == 'for':
                 la.rewind = 1
                 parse_comp_for()
-            else:
-                la.syntax_error()
-        elif item == ',':
-            item = la.read()
-            la.rewind = 1
-            if item == '}':
-                return True
-            parse_expression_list('}')
-        elif item == 'for':
-            la.rewind = 1
-            parse_comp_for()
-        elif item == '}':
-            return True
-        else:
-            la.syntax_error()
-        item = la.read()
+                item = la.read()
         if item == '}':
             return True
         else:
@@ -482,14 +471,67 @@ def parse_primary():
             if item != ']':
                 la.syntax_error()
         elif item == '(':
-            parse_expression()
             item = la.read()
-            if item == 'for':
-                la.rewind = 1
-                parse_comp_for()
+            la.rewind = 1
+            if item == '*':
+                parse_argument_list()
+            elif item != ')':
+                parse_expression()
+                item = la.read()
+                if item == 'for':
+                    la.rewind = 1
+                    parse_comp_for()
+                elif item == ',':
+                    item = la.read()
+                    la.rewind = 1
+                    if item != ')':
+                        parse_argument_list()
         else:
             la.rewind = 1
             return True
+
+def parse_argument_list():
+    while True:
+        item = la.read()
+        if item == '*' or is_id(item):
+            if item == '*':
+                asterisk = 1
+            break
+        la.rewind = 1
+        parse_expression()
+        item = la.read()
+        if item != ',':
+            return True
+        else:
+            item = la.read()
+            la.rewind = 1
+            if item == ')':
+                return True
+    while True:
+        if is_id(item):
+            item = la.read()
+            if item != '=':
+                la.syntax_error()
+            parse_expression()
+        elif item == '*':
+            if asterisk == 1:
+                la.syntax_error()
+            asterisk = 1
+            item = la.read()
+            if item == '*':
+                parse_expression()
+                return True
+            else:
+                la.rewind = 1
+                parse_expression()
+        item = la.read()
+        if item != ',':
+            return True
+        else:
+            item = la.read()
+            la.rewind = 1
+            if item == ')':
+                return True
 
 # expression_list is a subset of slice_list
 # short_slice is a subset of slice_list
