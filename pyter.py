@@ -490,13 +490,22 @@ def parse_primary():
             la.rewind = 1
             return True
 
+# Trailing commas like: f(*arg, a, b) are allowed,
+# as is specified in the doc.
 def parse_argument_list():
+    asterisk = 0
     while True:
         item = la.read()
         if item == '*' or is_id(item):
             if item == '*':
                 asterisk = 1
             break
+        if item == '**':
+            parse_expression()
+            item = la.read()
+            if item != ',':
+                la.rewind = 1
+            return True
         la.rewind = 1
         parse_expression()
         item = la.read()
@@ -517,13 +526,13 @@ def parse_argument_list():
             if asterisk == 1:
                 la.syntax_error()
             asterisk = 1
+            parse_expression()
+        elif item == '**':
+            parse_expression()
             item = la.read()
-            if item == '*':
-                parse_expression()
-                return True
-            else:
+            if item != ',':
                 la.rewind = 1
-                parse_expression()
+            return True
         item = la.read()
         if item != ',':
             return True
@@ -532,6 +541,31 @@ def parse_argument_list():
             la.rewind = 1
             if item == ')':
                 return True
+
+def parse_power():
+    parse_primary()
+    item = la.read()
+    if item != '**':
+        la.rewind = 1
+        return True
+    parse_u_expr()
+
+def parse_u_expr():
+    item = la.read()
+    if item in '-+~':
+        parse_u_expr()
+    else:
+        la.rewind = 1
+        parse_power()
+
+def parse_m_expr():
+    parse_u_expr()
+    while True:
+        item = la.read()
+        if item not in ['*', '//', '/', '%']:
+            la.rewind = 1
+            return True
+        parse_u_expr()
 
 # expression_list is a subset of slice_list
 # short_slice is a subset of slice_list
