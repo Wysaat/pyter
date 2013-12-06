@@ -674,17 +674,84 @@ def parse_conditional_expression():
 
 def parse_expression():
     item = la.read()
+    la.rewind = 1
     if item == 'lambda':
         parse_lambda_expr()
     else:
-        la.rewind = 1
         parse_conditional_expression()
 
-# lambda expressions cannot contain annotations(Python 3) and statements
+def parse_expression_nocond():
+    item = la.read()
+    la.rewind = 1
+    if item == 'lambda':
+        parse_lambda_expr()
+    else:
+        parse_or_test()
+
+# lambda expressions cannot contain annotations(Python 3) or statements
 def parse_lambda_expr():
     item = la.read()
     if item != 'lambda':
         la.syntax_error()
+    parse_lambda_parameter_list()
+    item = la.read()
+    if item != ':':
+        la.syntax_error()
+    parse_expression()
+
+def parse_lambda_expr_nocond():
+    item = la.read()
+    if item != 'lambda':
+        la.syntax_error()
+    parse_lambda_parameter_list()
+    item = la.read()
+    if item != ':':
+        la.syntax_error()
+    parse_expression_nocond()
+
+# conform to Python 3
+def parse_lambda_parameter_list():
+    asterisk = 0
+    while True:
+        item = la.read()
+        if item == ':':
+            la.rewind = 1
+            return True
+        if is_id(item):
+            item = la.read()
+            if item == '=':
+                parse_expression()
+            else:
+                la.rewind = 1
+            item = la.read()
+            if item == ':':
+                la.rewind = 1
+                return True
+            elif item != ',':
+                la.syntax_error()
+        elif item == '*':
+            if asterisk == 1:
+                la.syntax_error()
+            asterisk = 1
+            item = la.read()
+            if is_id(item):
+                item = la.read()
+            if item == ':':
+                la.rewind = 1
+                return True
+            elif item != ',':
+                la.syntax_error()
+        elif item == '**':
+            item = la.read()
+            if not is_id(item):
+                la.syntax_error()
+            return True
+        else:
+            la.syntax_error()
+
+def parse_target():
+    item = la.read()
+    if is_num(item) or is_str(item) or is_kw(item):
 
 # expression_list is a subset of slice_list
 # short_slice is a subset of slice_list
@@ -692,8 +759,13 @@ def parse_lambda_expr():
 # by this single function.
 def parse_slice_list(ending):
     item = la.read()
-    if item == Ellipsis:
-        return True
+    if item == '.':
+        item = la.read()
+        if item == '.':
+            item = la.read()
+            if item == '.':
+                return True
+        la.syntax_error()
     if item != ':':
         la.rewind = 1
         parse_expression()
@@ -833,6 +905,3 @@ def parse_expression_list(ending):
             parse_expression_list(ending)
     la.rewind = 1
     return True
-
-def parse_target_list():
-    pass
