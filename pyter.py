@@ -33,12 +33,17 @@ class lexical_analyzer(object):
         self.items = []
         self.line_number = 0
         self.rewind = 0
+        self.multi_lines = 0
+        self.pass_empty_lines = 1
 
     def get_line(self):
+        if self.multi_lines:
+            print '...',
+        else:
+            print '>>>',
         self.string = raw_input()
         self.index = 0
         self.line_number += 1
-        return self.string
 
     def error(self, string):
         print self.string
@@ -50,59 +55,58 @@ class lexical_analyzer(object):
         self.error('syntax_error: invalid syntax')
 
     def read_string_literal(self, item=''):
-        string = self.string
         backslash = 0
-        op = string[self.index]
-        if string[self.index:self.index+3] in ['"""', "'''"]:
-            item += string[self.index:self.index+3]
+        op = self.string[self.index]
+        if self.string[self.index:self.index+3] in ['"""', "'''"]:
+            self.multi_lines = 1
+            item += self.string[self.index:self.index+3]
             op_num = 0
             self.index += 3
             while True:
-                if self.index == len(string):
-                    print '...',
-                    string = self.get_line()
+                if self.index == len(self.string):
+                    self.get_line()
                     self.index = 0
                     op_num = 0
                     if backslash == 0:
                         item += '\n'
                     backslash = 0
                 else:
-                    item += string[self.index]
-                    if string[self.index] == '\\':
+                    item += self.string[self.index]
+                    if self.string[self.index] == '\\':
                         if backslash == 0:
-                            if self.index == len(string) - 1:
+                            if self.index == len(self.string) - 1:
                                 item = item[:-1]
                             backslash = 1
-                    elif string[self.index] == op:
+                    elif self.string[self.index] == op:
                         backslash = 0
                         op_num += 1
                         if op_num == 3:
                             self.index += 1
                             self.items.append(item)
+                            self.multi_lines = 0
                             return item
                     else:
                         backslash = 0
                         op_num = 0
                     self.index += 1
-        elif string[self.index] in ['"', "'"]:
-            item += string[self.index]
+        elif self.string[self.index] in ['"', "'"]:
+            item += self.string[self.index]
             self.index += 1
             while True:
-                while self.index < len(string):
-                    item += string[self.index]
-                    if backslash == 0 and string[self.index] == op:
+                while self.index < len(self.string):
+                    item += self.string[self.index]
+                    if backslash == 0 and self.string[self.index] == op:
                         self.index += 1
                         self.items.append(item)
                         return item
-                    elif backslash == 0 and string[self.index] == '\\':
+                    elif backslash == 0 and self.string[self.index] == '\\':
                         backslash = 1
                     else:
                         backslash = 0
                     self.index += 1
                 if backslash == 1:
                     item = item[:-1]
-                    print '...',
-                    string = self.get_line()
+                    self.get_line()
                     self.index = 0
                     backslash = 0
                 else:
@@ -110,13 +114,12 @@ class lexical_analyzer(object):
 
     def read_numeric_literal(self):
         digits = '0123456789'
-        string = self.string
         item = ''
         is_float = 0
         is_imaginary = 0
         other_starts = ['0' + digit for digit in digits]
-        if self.index+1 < len(string) and string[self.index:self.index+2] in ['0x', '0X', '0o', '0O', '0b', '0B']:
-            item += string[self.index:self.index+2]
+        if self.index+1 < len(self.string) and self.string[self.index:self.index+2] in ['0x', '0X', '0o', '0O', '0b', '0B']:
+            item += self.string[self.index:self.index+2]
             if item in ['0b', '0B']:
                 digits = '01'
             elif item in ['0o', '0O']:
@@ -124,142 +127,143 @@ class lexical_analyzer(object):
             elif item in ['0x', '0X']:
                 digits = '0123456789abcdefABCDEF'
             self.index += 2
-            if self.index == len(string):
+            if self.index == len(self.string):
                 self.error('syntax_error: invalid token')
-            elif string[self.index] not in digits:
+            elif self.string[self.index] not in digits:
                 self.error('syntax_error: invalid token')
-            while string[self.index] in digits:
-                item += string[self.index]
+            while self.string[self.index] in digits:
+                item += self.string[self.index]
                 self.index += 1
-                if self.index == len(string):
+                if self.index == len(self.string):
                     self.items.append(item)
                     return item
-            if string[self.index] in ['l', 'L']:
-                item += string[self.index]
+            if self.string[self.index] in ['l', 'L']:
+                item += self.string[self.index]
                 self.index += 1
             self.items.append(item)
             return item
-        if self.index+1 < len(string) and string[self.index:self.index+2] in other_starts:
+        if self.index+1 < len(self.string) and self.string[self.index:self.index+2] in other_starts:
             invalid = 0
-            while self.index < len(string) and string[self.index] in digits:
-                item += string[self.index]
-                if int(string[self.index]) > 7:
+            while self.index < len(self.string) and self.string[self.index] in digits:
+                item += self.string[self.index]
+                if int(self.string[self.index]) > 7:
                     invalid = 1
                 self.index += 1
             if invalid:
-                if self.index == len(string):
+                if self.index == len(self.string):
                     self.error('syntax_error: invalid token')
-                elif string[self.index] not in '.eEjJ':
+                elif self.string[self.index] not in '.eEjJ':
                     self.error('syntax_error: invalid token')
-            if self.index == len(string):
+            if self.index == len(self.string):
                 self.items.append(item)
                 return item
-        if string[self.index] is '.':
-            item += string[self.index]
+        if self.string[self.index] is '.':
+            item += self.string[self.index]
             self.index += 1
             is_float = 1
-            if self.index == len(string):
+            if self.index == len(self.string):
                 self.items.append(item)
                 return item
-        elif string[self.index] in digits:
+        elif self.string[self.index] in digits:
             tmp_ind = self.index
-            while tmp_ind < len(string) and string[tmp_ind] in digits:
+            while tmp_ind < len(self.string) and self.string[tmp_ind] in digits:
                 tmp_ind += 1
-            if tmp_ind < len(string) and string[tmp_ind] is '.':
-                item += string[self.index:tmp_ind+1]
+            if tmp_ind < len(self.string) and self.string[tmp_ind] is '.':
+                item += self.string[self.index:tmp_ind+1]
                 self.index = tmp_ind + 1
                 is_float = 1
-                if self.index == len(string):
+                if self.index == len(self.string):
                     self.items.append(item)
                     return item
-        while string[self.index] in digits:
-            item += string[self.index]
+        while self.string[self.index] in digits:
+            item += self.string[self.index]
             self.index += 1
-            if self.index == len(string):
+            if self.index == len(self.string):
                 self.items.append(item)
                 return item
-        if string[self.index] in 'lL':
+        if self.string[self.index] in 'lL':
             if not is_float:
-                item += string[self.index]
+                item += self.string[self.index]
                 self.index += 1
             self.items.append(item)
             return item
-        elif string[self.index] in 'jJ':
-            item += string[self.index]
+        elif self.string[self.index] in 'jJ':
+            item += self.string[self.index]
             self.index += 1
             self.items.append(item)
             return item
-        elif string[self.index] not in 'eE':
+        elif self.string[self.index] not in 'eE':
             self.items.append(item)
             return item
         else:
-            item += string[self.index]
+            item += self.string[self.index]
             self.index += 1
-            if self.index == len(string):
+            if self.index == len(self.string):
                 self.error('syntax_error: invalid token')
-            if string[self.index] not in digits + '+-':
+            if self.string[self.index] not in digits + '+-':
                 self.error('syntax_error: invalid token')
-            if string[self.index] in ['+', '-']:
-                item += string[self.index]
+            if self.string[self.index] in ['+', '-']:
+                item += self.string[self.index]
                 self.index += 1
-                if self.index == len(string):
+                if self.index == len(self.string):
                     self.error('syntax_error: invalid token')
-                if string[self.index] not in digits:
+                if self.string[self.index] not in digits:
                     syntax_error('syntax_error: invalid token')
-            while string[self.index] in digits:
-                item += string[self.index]
+            while self.string[self.index] in digits:
+                item += self.string[self.index]
                 self.index += 1
-                if self.index == len(string):
+                if self.index == len(self.string):
                     self.items.append(item)
                     return item
-            if string[self.index] in 'jJ':
-                item += string[self.index]
+            if self.string[self.index] in 'jJ':
+                item += self.string[self.index]
                 self.index += 1
             self.items.append(item)
             return item
 
     def raw_read(self):
-        string = self.string
         digits = '0123456789'
-        if self.index < len(string):
-            if string[self.index:].strip() == '':
+        if self.index < len(self.string):
+            if self.string[self.index:].strip() == '':
                 item = ''
                 # for printing error message, 1 more than true self.index
-                self.index = len(string)
+                self.index = len(self.string)
             else:
-                while string[self.index] in [' ', '\t',]:
+                while self.string[self.index] in [' ', '\t',]:
                     self.index += 1
-                if self.index+2 < len(string) and string[self.index:self.index+3] in tokens:
-                    item = string[self.index:self.index+3]
+                if self.index+2 < len(self.string) and self.string[self.index:self.index+3] in tokens:
+                    item = self.string[self.index:self.index+3]
                     self.index += 3
                     self.items.append(item)
-                elif self.index+1 < len(string) and string[self.index:self.index+2] in tokens:
-                    item = string[self.index:self.index+2]
+                elif self.index+1 < len(self.string) and self.string[self.index:self.index+2] in tokens:
+                    item = self.string[self.index:self.index+2]
                     self.index += 2
                     self.items.append(item)
-                elif self.index < len(string) and string[self.index] in tokens:
-                    item = string[self.index]
+                elif self.index < len(self.string) and self.string[self.index] in tokens:
+                    item = self.string[self.index]
                     self.index += 1
                     self.items.append(item)
-                elif string[self.index] is '.':
-                    if self.index+1 < len(string) and string[self.index+1] in digits:
+                elif self.string[self.index] is '.':
+                    if self.index+1 < len(self.string) and self.string[self.index+1] in digits:
                         item = self.read_numeric_literal()
                     else:
-                        item = string[self.index]
+                        item = self.string[self.index]
                         self.index += 1
                         self.items.append(item)
-                elif string[self.index] in digits:
+                elif self.string[self.index] in digits:
                     item = self.read_numeric_literal()
-                elif string[self.index] in ["'", '"']:
+                elif self.string[self.index] in ["'", '"']:
                     item = self.read_string_literal()
                 else:
                     item = ''
-                    while self.index < len(string) and string[self.index] in letters + digits + '_':
-                        item += string[self.index]
+                    while self.index < len(self.string) and self.string[self.index] in letters + digits + '_':
+                        item += self.string[self.index]
                         self.index += 1
-                    if item not in stringprefixes:
+                    if self.index == len(self.string):
                         self.items.append(item)
-                    elif item in stringprefixes and string[self.index] not in ["'", '"']:
+                    elif item not in stringprefixes:
+                        self.items.append(item)
+                    elif item in stringprefixes and self.string[self.index] not in ["'", '"']:
                         self.items.append(item)
                     else:
                         item = self.read_string_literal(item)
@@ -277,17 +281,14 @@ class lexical_analyzer(object):
             if self.raw_read() != '':
                 self.error('syntax_error: unexpected character after line continuation character')
             else:
-                print '...',
+                self.multi_lines = 1
                 self.get_line()
-                return self.read()
-        return item
-
-    def readm(self):
-        item = self.read()
-        if item == '':
-            print '...',
+                self.multi_lines = 0
+                item = self.read()
+                return item
+        if item == '' and self.multi_lines:
             self.get_line()
-            item = self.readm()
+            item = self.read()
         return item
 
 def is_id(item):
@@ -310,9 +311,9 @@ def is_str(item):
         return False
     if item[0] in ["'", '"']:
         return True
-    if item[0] in stringprefixes and item[1] in ["'", '"']:
+    if item[0] in self.stringprefixes and item[1] in ["'", '"']:
         return True
-    if len(item) > 2 and item[:2] in stringprefixes and item[2] in ["'", '"']:
+    if len(item) > 2 and item[:2] in self.stringprefixes and item[2] in ["'", '"']:
         return True
     return False
 
@@ -886,10 +887,9 @@ def parse_expression_list(ending):
 
 def test():
     reader = lexical_analyzer()
-    print '>>>',
     reader.get_line()
     for i in range(10):
-        item = reader.readm()
+        item = reader.read()
         if item == '':
             print 'yes', '|',
         else:
