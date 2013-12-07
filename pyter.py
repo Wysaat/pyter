@@ -106,7 +106,9 @@ class lexical_analyzer(object):
                     self.index += 1
                 if backslash == 1:
                     item = item[:-1]
+                    self.multi_lines = 1
                     self.get_line()
+                    self.multi_lines = 0
                     self.index = 0
                     backslash = 0
                 else:
@@ -311,9 +313,9 @@ def is_str(item):
         return False
     if item[0] in ["'", '"']:
         return True
-    if item[0] in self.stringprefixes and item[1] in ["'", '"']:
+    if item[0] in stringprefixes and item[1] in ["'", '"']:
         return True
-    if len(item) > 2 and item[:2] in self.stringprefixes and item[2] in ["'", '"']:
+    if len(item) > 2 and item[:2] in stringprefixes and item[2] in ["'", '"']:
         return True
     return False
 
@@ -347,8 +349,10 @@ def parse_atom():
     if is_id(item) or is_num(item) or is_str(item):
         return True
     if item is '(':
+        la.multi_lines = 1
         item = la.read()
         if item == ')':
+            la.multi_lines = 0
             return True
         if item == 'yield':
             parse_expression_list(')')
@@ -359,6 +363,7 @@ def parse_atom():
         if item == ',':
             item = la.read()
             if item == ')':
+                la.multi_lines = 0
                 return True
             la.rewind = 1
             parse_expression_list(')')
@@ -368,18 +373,22 @@ def parse_atom():
             parse_comp_for()
             item = la.read()
         if item == ')':
+            la.multi_lines = 0
             return True
         else:
             la.syntax_error()
     if item is '[':
+        la.multi_lines = 1
         item = la.read()
         if item == ']':
+            la.multi_lines = 0
             return True
         la.rewind = 1
         parse_expression()
         if item is ',':
             item = la.read()
             if item == ']':
+                la.multi_lines = 0
                 return True
             la.rewind = 1
             parse_expression_list(')')
@@ -389,12 +398,15 @@ def parse_atom():
             parse_list_for(ending)
             item = la.read()
         if item == ']':
+            la.multi_lines = 0
             return True
         else:
             la.syntax_error()
     if item is '{':
+        la.multi_lines = 1
         item = la.read()
         if item == '}':
+            la.multi_lines = 0
             return True
         parse_expression()
         item = la.read()
@@ -412,6 +424,7 @@ def parse_atom():
                 parse_comp_for()
                 item = la.read()
         if item == '}':
+            la.multi_lines = 0
             return True
         else:
             la.syntax_error()
@@ -433,11 +446,14 @@ def parse_primary():
             if not is_id(item):
                 la.syntax_error()
         elif item == '[':
+            la.multi_lines = 1
             parse_slice_list(']')
             item = la.read()
             if item != ']':
                 la.syntax_error()
+            la.multi_lines = 0
         elif item == '(':
+            la.multi_lines = 1
             item = la.read()
             la.rewind = 1
             if item == '*':
@@ -453,11 +469,12 @@ def parse_primary():
                     la.rewind = 1
                     if item != ')':
                         parse_argument_list()
+            la.multi_lines = 0
         else:
             la.rewind = 1
             return True
 
-# Trailing commas like: f(*arg, a, b) are allowed,
+# Trailing commas like: f(*args, a, b) are allowed,
 # as is specified in the doc.
 def parse_argument_list():
     asterisk = 0
@@ -725,6 +742,9 @@ def parse_target_list(ending):
             la.rewind = 1
             if item == ending:
                 return True
+        else:
+            la.rewind = 1
+            return True
 
 def parse_star_expr():
     item = la.read()
@@ -875,25 +895,22 @@ def parse_comp_if():
         return True
 
 def parse_expression_list(ending):
-    parse_expression()
-    item = la.read()
-    if item == ',':
+    while True:
+        parse_expression()
         item = la.read()
-        la.rewind = 1
-        if item != ending:
-            parse_expression_list(ending)
-    la.rewind = 1
-    return True
+        if item == ',':
+            item = la.read()
+            la.rewind = 1
+            if item == ending:
+                return True
+        else:
+            la.rewind = 1
+            return True
 
 def test():
-    reader = lexical_analyzer()
-    reader.get_line()
-    for i in range(10):
-        item = reader.read()
-        if item == '':
-            print 'yes', '|',
-        else:
-            print item, '|',
+    la.get_line()
+    parse_expression_list('')
+    print la.items
 
 if __name__ == '__main__':
     test()
