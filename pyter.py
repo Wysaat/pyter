@@ -234,6 +234,7 @@ class lexical_analyzer(object):
                 item = ''
                 # for printing error message, 1 more than true self.index
                 self.index = len(self.string)
+                self.items.append(item)
             else:
                 while self.string[self.index] in [' ', '\t',]:
                     self.index += 1
@@ -275,7 +276,9 @@ class lexical_analyzer(object):
                         item = self.read_string_literal(item)
             return item
         else:
-            return ''
+            item = ''
+            self.items.append(item)
+            return item
 
     def rewind(self):
         self.string = self.last_string
@@ -293,6 +296,7 @@ class lexical_analyzer(object):
             if self.raw_read() != '':
                 self.error('syntax_error: unexpected character after line continuation character')
             else:
+                self.items.pop()
                 self.multi_lines = 1
                 self.get_line()
                 self.multi_lines = 0
@@ -544,7 +548,9 @@ def parse_power():
 
 def parse_u_expr():
     item = la.read()
-    if item in '-+~':
+    # BUG: if item in '-+~'
+    # REASON: '' in '-+~'
+    if item in ['-', '+', '~']:
         parse_u_expr()
     else:
         la.rewind()
@@ -563,7 +569,7 @@ def parse_a_expr():
     parse_m_expr()
     while True:
         item = la.read()
-        if item not in '+-':
+        if item not in ['+', '-']:
             la.rewind()
             return True
         parse_m_expr()
