@@ -1,4 +1,5 @@
-# reference: Python v2.7.2 documentation
+# references: Python 2.7 language reference
+#             Python 3.3 languare reference
 from string import letters
 
 digits = '0123456789'
@@ -34,6 +35,7 @@ class lexical_analyzer(object):
         self.line_number = 0
         self.multi_lines = 0
         self.pass_empty_lines = 1
+        self._rewind = 0
 
     def get_line(self):
         if self.multi_lines:
@@ -45,8 +47,14 @@ class lexical_analyzer(object):
         self.line_number += 1
 
     def error(self, string):
-        print self.string
-        print ' ' * (self.index - 1) + '^'
+        if self._rewind == 1:
+            self_string = self.last_string
+            self_index = self.last_index
+        else:
+            self_string = self.string
+            self_index = self.index
+        print self_string
+        print ' ' * (self_index - 1) + '^'
         print string
         exit()
 
@@ -281,15 +289,17 @@ class lexical_analyzer(object):
             return item
 
     def rewind(self):
-        self.string = self.last_string
-        self.index = self.last_index
-        self.line_number = self.last_line_number
-        self.items.pop()
+        self._rewind = 1
+        self.last_item = self.items.pop()
 
     def read(self):
         self.last_string = self.string
         self.last_index = self.index
         self.last_line_number = self.line_number
+        if self._rewind == 1:
+            self._rewind = 0
+            self.items.append(self.last_item)
+            return self.last_item
         item = self.raw_read()
         if item == '\\':
             self.items.pop()
@@ -481,11 +491,19 @@ def parse_primary():
                 if item == 'for':
                     la.rewind()
                     parse_comp_for()
+                    item = la.read()
+                    if item != ')':
+                        la.syntax_error()
                 elif item == ',':
                     item = la.read()
                     la.rewind()
                     if item != ')':
                         parse_argument_list()
+                        item = la.read()
+                        if item != ')':
+                            la.syntax_error()
+                elif item != ')':
+                    la.syntax_error()
             la.multi_lines = 0
         else:
             la.rewind()
@@ -509,6 +527,7 @@ def parse_argument_list():
         parse_expression()
         item = la.read()
         if item != ',':
+            la.rewind()
             return True
         else:
             item = la.read()
