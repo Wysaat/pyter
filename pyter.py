@@ -870,9 +870,9 @@ def parse_list_for(ending):
             if item != ',':
                 break
             item = la.read()
-            la.rewind()
             if item in ['for', 'if', ending]:
                 break
+            la.rewind()
     la.rewind()
     if item == 'for':
         parse_list_for(ending)
@@ -927,22 +927,141 @@ def parse_comp_if():
     else:
         return True
 
-def parse_expression_list(ending):
+def parse_expression_list(*endings):
     while True:
         parse_expression()
         item = la.read()
         if item == ',':
             item = la.read()
             la.rewind()
-            if item == ending:
+            if item in endings:
                 return True
         else:
             la.rewind()
             return True
 
+##############################################
+########## PARSE SIMPLE STATEMENTS ###########
+##############################################
+
+def parse_simple_stmt():
+    item = la.read()
+    if item == 'assert':
+        parse_expression_list('', ';')
+    elif item == 'pass':
+        return True
+    elif item == 'del':
+        parse_expression_list('', ';')
+    elif item == 'return':
+        parse_expression_list('', ';')
+    elif item == 'yield':
+        parse_expression_list('', ';')
+    elif item == 'raise':
+        item = la.read()
+        la.rewind()
+        if item in ['', ';']:
+            return True
+        parse_expression()
+        item = la.read()
+        if item == 'from':
+            parse_expression()
+        else:
+            la.rewind()
+            return True
+    elif item == 'break':
+        return True
+    elif item == 'continue':
+        return True
+    elif item == 'import':
+        while True:
+            parse_module()
+            item = la.read()
+            if item == 'as':
+                item = la.read()
+                if not is_id(item):
+                    la.syntax_error()
+                item = la.read()
+            if item != ',':
+                la.rewind()
+                return True
+    elif item == 'from':
+        wildcard = 0
+        item = la.read()
+        if item != '.':
+            parse_module()
+            wildcard = 1
+        else:
+            while True:
+                item = la.read()
+                if item == 'import':
+                    la.rewind()
+                    break
+                elif item != '.':
+                    la.rewind()
+                    parse_module()
+                    break
+        item = la.read()
+        if item != 'import':
+            la.syntax_error()
+        item = la.read()
+        if wildcard and item == '*':
+            return True
+        in_parentheses = 0
+        if item != '(':
+            la.rewind()
+        else:
+            in_parentheses = 1
+        while True:
+            item = la.read()
+            if not is_id(item):
+                la.syntax_error()
+            item = la.read()
+            if item == 'as':
+                item = la.read()
+                if not is_id(item):
+                    la.syntax_error()
+                item = la.read()
+            if item == ',':
+                if in_parentheses:
+                    item = la.read()
+                    if item == ')':
+                        return True
+                    la.rewind()
+            else:
+                la.rewind()
+                return True
+    elif item == 'global':
+        while True:
+            item = la.read()
+            if not is_id(item):
+                la.syntax_error()
+            item = la.read()
+            if item != ',':
+                la.rewind()
+                return True
+    elif item == 'nonlocal':
+        while True:
+            item = la.read()
+            if not is_id(item):
+                la.syntax_error()
+            item = la.read()
+            if item != ',':
+                la.rewind()
+                return True
+
+def parse_module():
+    while True:
+        item = la.read()
+        if not is_id(item):
+            la.syntax_error()
+        item = la.read()
+        if item != '.':
+            la.rewind()
+            return True
+
 def test():
     la.get_line()
-    parse_expression_list('')
+    parse_simple_stmt()
     print la.items
 
 if __name__ == '__main__':
