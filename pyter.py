@@ -1,16 +1,18 @@
 # references: Python 2.7 language reference
 #             Python 3.3 languare reference
 from string import letters
+import sys
 
 digits = '0123456789'
 
 stringprefixes = ['r', 'R', 'u', 'U', 'ur', 'uR', 'Ur', 'UR',
                   'b', 'B', 'br', 'bR', 'Br', 'BR']
 
+# confirm to python 3, 'print' is no more a keyword
 keywords = ['and', 'as', 'assert', 'break', 'class', 'continue', 'def',
             'del', 'elif', 'else', 'except', 'exec', 'finally', 'for',
             'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'not',
-            'or', 'pass', 'print', 'raise', 'return', 'try','while',
+            'or', 'pass', 'raise', 'return', 'try','while',
             'with', 'yield']
 
 # '<>' is deprecated in Python 3
@@ -39,13 +41,25 @@ class lexical_analyzer(object):
         self.multi_lines = 0
         self.pass_empty_lines = 1
         self._rewind = 0
+        self.file = None
+        self.interactive = 0
+        if len(sys.argv) > 1:
+            self.filename = sys.argv[1]
+            self.file = open(self.filename)
+            self.interactive = 1
 
     def get_line(self):
-        if self.multi_lines:
-            print '...',
+        if len(sys.argv) > 1:
+            self.string = self.file.readline()
+            if self.string[-1] == '\n':
+                self.string = self.string[:-1]
         else:
-            print '>>>',
-        self.string = raw_input()
+            self.filename = '<stdin>'
+            if self.multi_lines:
+                print '...',
+            else:
+                print '>>>',
+            self.string = raw_input()
         self.index = 0
         self.line_number += 1
 
@@ -56,8 +70,9 @@ class lexical_analyzer(object):
         else:
             self_string = self.string
             self_index = self.index
-        print self_string
-        print ' ' * (self_index - 1) + '^'
+        print '  File "' + self.filename + '", line ' + str(self.line_number)
+        print '    ' + self_string
+        print '    ' + ' ' * (self_index - 1) + '^'
         print string
         exit()
 
@@ -1087,10 +1102,34 @@ def parse_module():
             la.rewind()
             return True
 
+#############################################
+######### PARSE COMPOUND STATEMENTS #########
+#############################################
+
+def parse_compound_statement():
+    item = la.read()
+    if item == 'if':
+        parse_expression
+        item = la.read()
+        if item != ':':
+            la.syntax_error()
+        parse_suite()
+
+def parse_suite():
+    item = la.read()
+    if item == '':
+
 def test():
     la.get_line()
     parse_simple_stmt()
-    print la.items
+
+def test():
+    while True:
+        la._rewind = 0
+        la.get_line()
+        if la.string == '':
+            return
+        parse_simple_stmt()
 
 if __name__ == '__main__':
     test()
