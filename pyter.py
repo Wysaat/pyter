@@ -26,6 +26,9 @@ delimiters = ['(', ')', '[', ']', '{', '}', '@',
 
 other_tokens = ['!', '$', '?', '#', '\\',]
 
+aug_ops = ['+=', '-=', '*=', '/=', '//=', '%=', '**=',
+           '>>=', '<<=', '&=', '^=', '|=',]
+
 tokens = operators + delimiters + other_tokens
 tokens.remove('.')
 
@@ -766,14 +769,14 @@ def parse_lambda_parameter_list():
         else:
             la.syntax_error()
 
-def parse_target_list(ending):
+def parse_target_list(*endings):
     while True:
         parse_star_expr()
         item = la.read()
         if item == ',':
             item = la.read()
             la.rewind()
-            if item == ending:
+            if item in endings:
                 return True
         else:
             la.rewind()
@@ -953,6 +956,10 @@ def parse_simple_stmt():
     elif item == 'del':
         parse_expression_list('', ';')
     elif item == 'return':
+        item = la.read()
+        la.rewind()
+        if item in ['', ';']:
+            return True
         parse_expression_list('', ';')
     elif item == 'yield':
         parse_expression_list('', ';')
@@ -1048,6 +1055,27 @@ def parse_simple_stmt():
             if item != ',':
                 la.rewind()
                 return True
+    else:
+        la.rewind()
+        parse_target_list('=', '', ';', *aug_ops)
+        item = la.read()
+        if item == '=':
+            item = la.read()
+            if item == 'yield':
+                parse_expression_list('', ';')
+            else:
+                la.rewind()
+                parse_expression_list('', ';')
+        elif item in aug_ops:
+            item = la.read()
+            if item == 'yield':
+                parse_expression_list('', ';')
+            else:
+                la.rewind()
+                parse_expression_list('', ';')
+        else:
+            la.rewind()
+            return True
 
 def parse_module():
     while True:
