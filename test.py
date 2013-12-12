@@ -1,5 +1,4 @@
-import sys
-print 'a'
-print 'b'
-print 'c'
-print >? 3
+if a > 3:
+
+  a
+  

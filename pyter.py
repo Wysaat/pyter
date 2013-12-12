@@ -8,7 +8,7 @@ digits = '0123456789'
 stringprefixes = ['r', 'R', 'u', 'U', 'ur', 'uR', 'Ur', 'UR',
                   'b', 'B', 'br', 'bR', 'Br', 'BR']
 
-# confirm to python 3, 'print' is no more a keyword
+# confirm to Python 3, 'print' is no more a keyword
 keywords = ['and', 'as', 'assert', 'break', 'class', 'continue', 'def',
             'del', 'elif', 'else', 'except', 'exec', 'finally', 'for',
             'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'not',
@@ -34,6 +34,12 @@ aug_ops = ['+=', '-=', '*=', '/=', '//=', '%=', '**=',
 tokens = operators + delimiters + other_tokens
 tokens.remove('.')
 
+INDENT = hash('INDENT')
+DEDENT = hash('DEDENT')
+EOF = hash('EOF')
+
+compound_statement_starts = ['if', 'while', 'for', 'try', 'with', '@', 'def', 'class',]
+
 class lexical_analyzer(object):
     def __init__(self):
         self.items = []
@@ -48,9 +54,18 @@ class lexical_analyzer(object):
             self.file = open(self.filename)
             self.interactive = 1
 
+        self.indentation_stack = [0,]
+        self.indentation = 0
+        self.eof = 0
+        self.dedents = 0
+
     def get_line(self):
         if len(sys.argv) > 1:
             self.string = self.file.readline()
+            while self.string[-1] == '\n' and self.string.strip() == '':
+                self.string = self.file.readline()
+            if self.string == '':
+                self.eof = 1
             if self.string[-1] == '\n':
                 self.string = self.string[:-1]
         else:
@@ -60,6 +75,9 @@ class lexical_analyzer(object):
             else:
                 print '>>>',
             self.string = raw_input()
+            while self.string != '' and self.string.strip() == '':
+                print '...',
+                self.string = raw_input()
         self.index = 0
         self.line_number += 1
 
@@ -255,6 +273,10 @@ class lexical_analyzer(object):
 
     def raw_read(self):
         digits = '0123456789'
+        self.indentation = 0
+        if self.dedents > 0:
+            self.dedents -= 1
+            return DEDENT
         if self.index < len(self.string):
             if self.string[self.index:].strip() == '':
                 item = ''
@@ -263,7 +285,19 @@ class lexical_analyzer(object):
                 self.items.append(item)
             else:
                 while self.string[self.index] in [' ', '\t',]:
+                    self.indentation += 1
                     self.index += 1
+                if self.indentation > self.indentation_stack[-1]:
+                    self.indentation_stack.append(self.indentation)
+                    return INDENT
+                elif self.indentation < self.indentation_stack[-1]:
+                    for i in range(len(self.indentation_stack)-1, -1, -1):
+                        if self.indentation < self.indentation_stack[i]:
+                            la.error('indentation_error: unindent does not match any outer indentation level')
+                        elif self.indentation == self.indentation_stack[i]:
+                            break
+                        self.dedents += 1
+                        self.indentation_stack.pop()
                 if self.index+2 < len(self.string) and self.string[self.index:self.index+3] in tokens:
                     item = self.string[self.index:self.index+3]
                     self.index += 3
@@ -318,6 +352,10 @@ class lexical_analyzer(object):
             self._rewind = 0
             self.items.append(self.last_item)
             return self.last_item
+        if self.eof:
+            return EOF
+        if self.index == len(self.string):
+            self.get_line()
         item = self.raw_read()
         if item == '\\':
             self.items.pop()
@@ -331,7 +369,6 @@ class lexical_analyzer(object):
                 item = self.read()
                 return item
         if item == '' and self.multi_lines:
-            self.get_line()
             item = self.read()
         return item
 
@@ -1117,7 +1154,46 @@ def parse_compound_statement():
 
 def parse_suite():
     item = la.read()
-    if item == '':
+    if item != '':
+        la.rewind()
+        parse_stmt_list_plus_newline()
+    else:
+        item = la.read()
+        if item == INDENT:
+            while True:
+                parse_statement()
+                item = la.read()
+                if item == DEDENT:
+                    return True
+                la.rewind()
+        elif item == DEDENT:
+            la.error('indentation_error: unindent does not match any outer indentation level')
+        else:
+            la.error('indentation_error: expected an indented block')
+
+def parse_statement():
+    item = la.read()
+    la.rewind()
+    if item == EOF:
+        la.error('indentation_error: expected an indented block')
+    if item in compund_statement_starts:
+        parse_compound_statement()
+    else:
+        parse_stmt_list_plus_newline()
+
+def parse_stmt_list_plus_newline():
+    while True:
+        parse_simple_stmt()
+        item = la.read()
+        if item == ';':
+            item = la.read()
+            if item == '':
+                return True
+            la.rewind()
+        elif item == '':
+            return True
+        else:
+            la.syntax_error()
 
 def test():
     la.get_line()
