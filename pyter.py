@@ -58,7 +58,14 @@ class lexical_analyzer(object):
         self.indentation = 0
         self.eof = 0
         self.dedents = 0
+        # end of block flag for interactive input
+        self.eob = 0
+        # interactive input
+        self.symbol = '>>>'
+        self.in_block = 0
+        self.get_line()
 
+# BUGGY
     def get_line(self):
         if len(sys.argv) > 1:
             self.string = self.file.readline()
@@ -70,13 +77,24 @@ class lexical_analyzer(object):
                 self.string = self.string[:-1]
         else:
             self.filename = '<stdin>'
-            if self.multi_lines:
-                print '...',
+            if self.multi_lines or self.in_block:
+                self.symbol = '...'
             else:
-                print '>>>',
+                self.symbol = '>>>'
+            print self.symbol,
             self.string = raw_input()
+            while self.string.strip() == '':
+                if self.string != '':
+                    self.symbol = '>>>'
+                print self.symbol,
+
             while self.string != '' and self.string.strip() == '':
-                print '...',
+                print symbol,
+                self.string = raw_input()
+            if self.in_block and self.string == '':
+                self.eob = 1
+            elif self.string == '':
+                print self.symbol,
                 self.string = raw_input()
         self.index = 0
         self.line_number += 1
@@ -274,6 +292,9 @@ class lexical_analyzer(object):
     def raw_read(self):
         digits = '0123456789'
         self.indentation = 0
+        if self.eob:
+            self.dedents += len(self.indentation_stack) - 1
+            self.indentation_stack = [0]
         if self.dedents > 0:
             self.dedents -= 1
             return DEDENT
@@ -284,20 +305,24 @@ class lexical_analyzer(object):
                 self.index = len(self.string)
                 self.items.append(item)
             else:
-                while self.string[self.index] in [' ', '\t',]:
-                    self.indentation += 1
-                    self.index += 1
-                if self.indentation > self.indentation_stack[-1]:
-                    self.indentation_stack.append(self.indentation)
-                    return INDENT
-                elif self.indentation < self.indentation_stack[-1]:
-                    for i in range(len(self.indentation_stack)-1, -1, -1):
-                        if self.indentation < self.indentation_stack[i]:
-                            la.error('indentation_error: unindent does not match any outer indentation level')
-                        elif self.indentation == self.indentation_stack[i]:
-                            break
-                        self.dedents += 1
-                        self.indentation_stack.pop()
+                if self.index == 0:
+                    while self.string[self.index] in [' ', '\t',]:
+                        self.indentation += 1
+                        self.index += 1
+                    if self.indentation > self.indentation_stack[-1]:
+                        self.indentation_stack.append(self.indentation)
+                        return INDENT
+                    elif self.indentation < self.indentation_stack[-1]:
+                        for i in range(len(self.indentation_stack)-1, -1, -1):
+                            if self.indentation < self.indentation_stack[i]:
+                                la.error('indentation_error: unindent does not match any outer indentation level')
+                            elif self.indentation == self.indentation_stack[i]:
+                                break
+                            self.dedents += 1
+                            self.indentation_stack.pop()
+                else:
+                    while self.string[self.index] in [' ', '\t',]:
+                        self.index += 1
                 if self.index+2 < len(self.string) and self.string[self.index:self.index+3] in tokens:
                     item = self.string[self.index:self.index+3]
                     self.index += 3
@@ -1146,11 +1171,306 @@ def parse_module():
 def parse_compound_statement():
     item = la.read()
     if item == 'if':
-        parse_expression
+        parse_expression()
         item = la.read()
         if item != ':':
             la.syntax_error()
         parse_suite()
+        while True:
+            item = la.read()
+            if item == 'elif':
+                parse_expression()
+                item = la.read()
+                if item != ':':
+                    la.syntax_error()
+                parse_suite()
+            elif item == 'else':
+                item = la.read()
+                if item != ':':
+                    la.syntax_error()
+                parse_suite()
+                return True
+            else:
+                la.rewind()
+                return True
+    elif item == 'while':
+        parse_expression()
+        item = la.read()
+        if item != ':':
+            la.syntax_error()
+        parse_suite()
+        item = la.read()
+        if item == 'else':
+            item = la.read()
+            if item != ':':
+                la.syntax_error()
+            parse_suite()
+            return True
+        else:
+            la.rewind()
+            return True
+    elif item == 'for':
+        parse_target_list()
+        item = la.read()
+        if item != 'in':
+            la.syntax_error()
+        parse_expression_list(':')
+        item == la.read()
+        if item != ':':
+            la.syntax_error()
+        parse_suite()
+        item = la.read()
+        if item == 'else':
+            item = la.read()
+            if item != ':':
+                la.syntax_error()
+            parse_suite()
+            return True
+        else:
+            la.rewind()
+            return True
+    elif item == 'try':
+        item = la.read()
+        if item != ':':
+            la.syntax_error()
+        parse_suite()
+        item = la.read()
+        if item == 'except':
+            while True:
+                item = la.read()
+                if item != ':':
+                    la.rewind()
+                    parse_expression()
+                    item = la.read()
+                    if item == 'as':
+                        parse_star_expr()
+                        item = la.read()
+                        if item != ':':
+                            la.syntax_error()
+                    elif item != ':':
+                        la.syntax_error()
+                parse_suite()
+                item = la.read()
+                if item != 'except':
+                    break
+            if item == 'else':
+                item == la.read()
+                if item != ':':
+                    la.syntax_error()
+                parse_suite()
+                return True
+            elif item == 'finally':
+                item == la.read()
+                if item != ':':
+                    la.syntax_error()
+                parse_suite()
+                return True
+            else:
+                la.rewind()
+                return True
+        elif item == 'finally':
+            item = la.read()
+            if item != ':':
+                la.syntax_error()
+            parse_suite()
+            return True
+        else:
+            la.syntax_error()
+    elif item == 'with':
+        while True:
+            parse_expression()
+            item = la.read()
+            if item == 'as':
+                parse_star_expr()
+                item = la.read()
+            if item != ',':
+                if item == ':':
+                    parse_suite()
+                    return True
+                else:
+                    la.syntax_error()
+    elif item == '@':
+        la.rewind()
+        parse_decorators()
+        item = la.read()
+        if item == 'def':
+            la.rewind()
+            parse_funcdef()
+        elif item == 'class':
+            la.rewind()
+            parse_classdef()
+        else:
+            la.syntax_error()
+    elif item == 'def':
+        la.rewind()
+        parse_funcdef()
+    elif item == 'class':
+        la.rewind()
+        parse_classdef()
+    else:
+        la.syntax_error()
+
+# without decorators
+def parse_funcdef():
+    item = la.read()
+    if item != 'def':
+        la.syntax_error()
+    item = la.read()
+    if not is_id(item):
+        la.syntax_error()
+    item = la.read()
+    if item != '(':
+        la.syntax_error()
+    item = la.read()
+    if item != ')':
+        parse_parameter_list()
+        item = la.read()
+        if item != ')':
+            la.syntax_error()
+    item = la.read()
+    if item == '-':
+        item = la.read()
+        if item != '>':
+            la.syntax_error()
+        parse_expression()
+        item = la.read()
+    if item != ':':
+        la.syntax_error()
+    parse_suite()
+
+def parse_classdef():
+    item = la.read()
+    if item != 'class':
+        la.syntax_error()
+    item = la.read()
+    if not is_id(item):
+        la.syntax_error()
+    item = la.read()
+    if item == '(':
+        la.rewind()
+        parse_inheritance()
+        item = la.read()
+    if item != ':':
+        la.syntax_error()
+    parse_suite()
+
+def parse_inheritance():
+    item = la.read()
+    if item != '(':
+        la.syntax_error()
+    item = la.read()
+    if item == ')':
+        return True
+    la.rewind()
+    parse_parameter_list()
+    item = la.read()
+    if item == ')':
+        return True
+    else:
+        la.syntax_error()
+
+def parse_decorators():
+    while True:
+        parse_decorator()
+        item = la.read()
+        if item != '@':
+            return True
+        la.rewind()
+
+# not allowing trailing comma: @f(a,) is illegal
+def parse_decorator():
+    item = la.read()
+    if item != '@':
+        la.syntax_error()
+    parse_dotted_name()
+    item = la.read()
+    if item == '':
+        return True
+    elif item == '(':
+        item = la.read()
+        if item == ')':
+            item = la.read()
+            if item == '':
+                return True
+            else:
+                la.syntax_error()
+        else:
+            la.rewind()
+            parse_parameter_list()
+            item = la.read()
+            if item != ')':
+                la.syntax_error()
+            item = la.read()
+            if item != '':
+                la.syntax_error()
+    else:
+        la.syntax_error()
+
+def parse_dotted_name():
+    while True:
+        item = la.read()
+        if not is_id(item):
+            la.syntax_error()
+        item = la.read()
+        if item != '.':
+            la.rewind()
+            return True
+
+def parse_parameter_list():
+    while True:
+        item = la.read()
+        if item == '**':
+            parse_parameter()
+            return True
+        elif item == '*':
+            item = la.read()
+            la.rewind()
+            if item != ',':
+                parse_parameter_list()
+            break
+        else:
+            la.rewind()
+            parse_defparameter()
+        item = la.read()
+        if item != ',':
+            la.rewind()
+            return True
+    item = la.read()
+    if item != ',':
+        la.rewind()
+        return True
+    while True:
+        item = la.read()
+        if item == '**':
+            parse_parameter()
+            return True
+        else:
+            la.rewind()
+            parse_defparameter()
+            item = la.read()
+            if item != ',':
+                la.rewind()
+                return True
+
+def parse_defparameter():
+    parse_parameter()
+    item = la.read()
+    if item != '=':
+        la.rewind()
+    else:
+        parse_expression()
+    return True
+
+def parse_parameter():
+    item = la.read()
+    if not is_id(item):
+        la.syntax_error()
+    item = la.read()
+    if item == ':':
+        parse_expression()
+    else:
+        la.rewind()
+    return True
 
 def parse_suite():
     item = la.read()
@@ -1176,7 +1496,7 @@ def parse_statement():
     la.rewind()
     if item == EOF:
         la.error('indentation_error: expected an indented block')
-    if item in compund_statement_starts:
+    if item in compound_statement_starts:
         parse_compound_statement()
     else:
         parse_stmt_list_plus_newline()
@@ -1196,16 +1516,21 @@ def parse_stmt_list_plus_newline():
             la.syntax_error()
 
 def test():
-    la.get_line()
-    parse_simple_stmt()
-
-def test():
-    while True:
-        la._rewind = 0
-        la.get_line()
-        if la.string == '':
-            return
-        parse_simple_stmt()
+    if len(sys.argv) > 1:
+        while True:
+            if la.eof:
+                return True
+            parse_statement()
+    else:
+        while True:
+            item = la.read()
+            la.rewind()
+            if item in compound_statement_starts:
+                la.in_block = 1
+            parse_statement()
+            if la.eob:
+                la.in_block = 0
+                la.eob = 0
 
 if __name__ == '__main__':
     test()
