@@ -64,9 +64,11 @@ class lexical_analyzer(object):
         self.symbol = '>>>'
         self.in_block = 0
         self.get_line()
+        self.eol = 0
 
 # BUGGY
     def get_line(self):
+        self.eol = 0
         if len(sys.argv) > 1:
             self.string = self.file.readline()
             while self.string[-1] == '\n' and self.string.strip() == '':
@@ -83,19 +85,19 @@ class lexical_analyzer(object):
                 self.symbol = '>>>'
             print self.symbol,
             self.string = raw_input()
-            while self.string.strip() == '':
-                if self.string != '':
-                    self.symbol = '>>>'
-                print self.symbol,
-
-            while self.string != '' and self.string.strip() == '':
-                print symbol,
-                self.string = raw_input()
-            if self.in_block and self.string == '':
-                self.eob = 1
-            elif self.string == '':
-                print self.symbol,
-                self.string = raw_input()
+            if self.in_block:
+                while self.string != '' and self.string.strip() == '':
+                    print self.symbol,
+                    self.string = raw_input()
+                if self.string == '':
+                    self.eob = 1
+            else:
+                while self.string.strip() == '':
+                    if self.string == '':
+                        print '>>>',
+                    else:
+                        print '...',
+                    self.string = raw_input()
         self.index = 0
         self.line_number += 1
 
@@ -289,6 +291,7 @@ class lexical_analyzer(object):
             self.items.append(item)
             return item
 
+    # the indent/dedent part is BUGGY, to be fixed
     def raw_read(self):
         digits = '0123456789'
         self.indentation = 0
@@ -304,6 +307,7 @@ class lexical_analyzer(object):
                 # for printing error message, 1 more than true self.index
                 self.index = len(self.string)
                 self.items.append(item)
+                self.eol = 1
             else:
                 if self.index == 0:
                     while self.string[self.index] in [' ', '\t',]:
@@ -314,7 +318,7 @@ class lexical_analyzer(object):
                         return INDENT
                     elif self.indentation < self.indentation_stack[-1]:
                         for i in range(len(self.indentation_stack)-1, -1, -1):
-                            if self.indentation < self.indentation_stack[i]:
+                            if self.indentation > self.indentation_stack[i]:
                                 la.error('indentation_error: unindent does not match any outer indentation level')
                             elif self.indentation == self.indentation_stack[i]:
                                 break
@@ -363,6 +367,7 @@ class lexical_analyzer(object):
         else:
             item = ''
             self.items.append(item)
+            self.eol = 1
             return item
 
     def rewind(self):
@@ -377,10 +382,10 @@ class lexical_analyzer(object):
             self._rewind = 0
             self.items.append(self.last_item)
             return self.last_item
+        if self.eol:
+            self.get_line()
         if self.eof:
             return EOF
-        if self.index == len(self.string):
-            self.get_line()
         item = self.raw_read()
         if item == '\\':
             self.items.pop()
