@@ -298,6 +298,9 @@ class lexical_analyzer(object):
         if self.eob:
             self.dedents += len(self.indentation_stack) - 1
             self.indentation_stack = [0]
+            if self.dedents == 1:
+                self.eol = 1
+                self.in_block = 0
         if self.dedents > 0:
             self.dedents -= 1
             return DEDENT
@@ -321,7 +324,8 @@ class lexical_analyzer(object):
                             if self.indentation > self.indentation_stack[i]:
                                 la.error('indentation_error: unindent does not match any outer indentation level')
                             elif self.indentation == self.indentation_stack[i]:
-                                break
+                                self.dedents -= 1
+                                return DEDENT
                             self.dedents += 1
                             self.indentation_stack.pop()
                 else:
@@ -1533,9 +1537,7 @@ def test():
             if item in compound_statement_starts:
                 la.in_block = 1
             parse_statement()
-            if la.eob:
-                la.in_block = 0
-                la.eob = 0
+            la.line_number = 0
 
 if __name__ == '__main__':
     test()
