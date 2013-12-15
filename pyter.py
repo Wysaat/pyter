@@ -71,11 +71,11 @@ class lexical_analyzer(object):
         self.eol = 0
         if len(sys.argv) > 1:
             self.string = self.file.readline()
-            while self.string[-1] == '\n' and self.string.strip() == '':
+            while self.string.strip() == '' and self.string != '':
                 self.string = self.file.readline()
             if self.string == '':
                 self.eof = 1
-            if self.string[-1] == '\n':
+            if self.string != '' and self.string[-1] == '\n':
                 self.string = self.string[:-1]
         else:
             self.filename = '<stdin>'
@@ -298,11 +298,10 @@ class lexical_analyzer(object):
         if self.eob:
             self.dedents += len(self.indentation_stack) - 1
             self.indentation_stack = [0]
-            if self.dedents == 1:
-                self.eol = 1
-                self.in_block = 0
+            self.eob = 0
         if self.dedents > 0:
             self.dedents -= 1
+            self.items.append(DEDENT)
             return DEDENT
         if self.index < len(self.string):
             if self.string[self.index:].strip() == '':
@@ -325,6 +324,7 @@ class lexical_analyzer(object):
                                 la.error('indentation_error: unindent does not match any outer indentation level')
                             elif self.indentation == self.indentation_stack[i]:
                                 self.dedents -= 1
+                                self.items.append(DEDENT)
                                 return DEDENT
                             self.dedents += 1
                             self.indentation_stack.pop()
@@ -571,10 +571,13 @@ def parse_primary():
         elif item == '(':
             la.multi_lines = 1
             item = la.read()
+            if item == ')':
+                la.multi_lines = 0
+                return True
             la.rewind()
             if item in ['*', '**']:
                 parse_argument_list()
-            elif item != ')':
+            else:
                 parse_expression()
                 item = la.read()
                 if item == 'for':
@@ -1224,7 +1227,7 @@ def parse_compound_statement():
         if item != 'in':
             la.syntax_error()
         parse_expression_list(':')
-        item == la.read()
+        item = la.read()
         if item != ':':
             la.syntax_error()
         parse_suite()
@@ -1263,13 +1266,13 @@ def parse_compound_statement():
                 if item != 'except':
                     break
             if item == 'else':
-                item == la.read()
+                item = la.read()
                 if item != ':':
                     la.syntax_error()
                 parse_suite()
                 return True
             elif item == 'finally':
-                item == la.read()
+                item = la.read()
                 if item != ':':
                     la.syntax_error()
                 parse_suite()
@@ -1332,6 +1335,7 @@ def parse_funcdef():
         la.syntax_error()
     item = la.read()
     if item != ')':
+        la.rewind()
         parse_parameter_list()
         item = la.read()
         if item != ')':
@@ -1435,7 +1439,7 @@ def parse_parameter_list():
             item = la.read()
             la.rewind()
             if item != ',':
-                parse_parameter_list()
+                parse_parameter()
             break
         else:
             la.rewind()
@@ -1527,17 +1531,25 @@ def parse_stmt_list_plus_newline():
 def test():
     if len(sys.argv) > 1:
         while True:
+            print la.items
             if la.eof:
                 return True
             parse_statement()
     else:
         while True:
+            la.line_number = 0
             item = la.read()
             la.rewind()
             if item in compound_statement_starts:
                 la.in_block = 1
             parse_statement()
-            la.line_number = 0
+            print la.items
+            print [la.string], la.index
+            if la.in_block:
+                la.in_block = 0
+                item = la.read()
+                if item != '':
+                    la.syntax_error()
 
 if __name__ == '__main__':
     test()
