@@ -65,6 +65,7 @@ class lexical_analyzer(object):
         self.in_block = 0
         self.get_line()
         self.eol = 0
+        self.eof_not_dedented = 1
 
 # BUGGY
     def get_line(self):
@@ -72,8 +73,9 @@ class lexical_analyzer(object):
         if len(sys.argv) > 1:
             self.string = self.file.readline()
             while self.string.strip() == '' and self.string != '':
+                self.line_number += 1
                 self.string = self.file.readline()
-            if self.string == '':
+            if self.string == '' or self.string[-1] != '\n':
                 self.eof = 1
             if self.string != '' and self.string[-1] == '\n':
                 self.string = self.string[:-1]
@@ -88,6 +90,7 @@ class lexical_analyzer(object):
             if self.in_block:
                 while self.string != '' and self.string.strip() == '':
                     print self.symbol,
+                    self.line_number += 1
                     self.string = raw_input()
                 if self.string == '':
                     self.eob = 1
@@ -303,6 +306,8 @@ class lexical_analyzer(object):
             self.dedents -= 1
             self.items.append(DEDENT)
             return DEDENT
+        if self.eof and self.string == '':
+            return EOF
         if self.index < len(self.string):
             if self.string[self.index:].strip() == '':
                 item = ''
@@ -317,6 +322,7 @@ class lexical_analyzer(object):
                         self.index += 1
                     if self.indentation > self.indentation_stack[-1]:
                         self.indentation_stack.append(self.indentation)
+                        self.items.append(INDENT)
                         return INDENT
                     elif self.indentation < self.indentation_stack[-1]:
                         for i in range(len(self.indentation_stack)-1, -1, -1):
@@ -387,9 +393,13 @@ class lexical_analyzer(object):
             self.items.append(self.last_item)
             return self.last_item
         if self.eol:
+            if self.eof:
+                return EOF
             self.get_line()
-        if self.eof:
-            return EOF
+        if self.eof and self.string == '' and self.eof_not_dedented:
+            self.dedents += len(self.indentation_stack) - 1
+            self.indentation_stack = [0]
+            self.eof_not_dedented = 0
         item = self.raw_read()
         if item == '\\':
             self.items.pop()
@@ -507,7 +517,7 @@ def parse_atom():
                 la.multi_lines = 0
                 return True
             la.rewind()
-            parse_expression_list(')')
+            parse_expression_list(']')
             item = la.read()
         elif item == 'for':
             la.rewind()
@@ -524,6 +534,7 @@ def parse_atom():
         if item == '}':
             la.multi_lines = 0
             return True
+        la.rewind()
         parse_expression()
         item = la.read()
         if item == ':':
@@ -539,6 +550,13 @@ def parse_atom():
                 la.rewind()
                 parse_comp_for()
                 item = la.read()
+        elif item == ',':
+            parse_expression_list('}')
+            item = la.read()
+        elif item == 'for':
+            la.rewind()
+            parse_comp_for()
+            item = la.read()
         if item == '}':
             la.multi_lines = 0
             return True
@@ -736,6 +754,8 @@ def parse_comparison():
             item = la.read()
             if item != 'in':
                 la.syntax_error()
+            parse_or_expr()
+        elif item == 'in':
             parse_or_expr()
         elif item in comp_operators:
             parse_or_expr()
@@ -943,7 +963,7 @@ def parse_key_datum_list(ending):
         if item == ending:
             return True
         else:
-            parse_key_datum_list()
+            parse_key_datum_list(ending)
 
 def parse_list_for(ending):
     item = la.read()
@@ -1507,8 +1527,6 @@ def parse_suite():
 def parse_statement():
     item = la.read()
     la.rewind()
-    if item == EOF:
-        la.error('indentation_error: expected an indented block')
     if item in compound_statement_starts:
         parse_compound_statement()
     else:
@@ -1531,10 +1549,12 @@ def parse_stmt_list_plus_newline():
 def test():
     if len(sys.argv) > 1:
         while True:
-            print la.items
-            if la.eof:
-                return True
             parse_statement()
+            item = la.read()
+            if item == EOF:
+                print la.items
+                return True
+            la.rewind()
     else:
         while True:
             la.line_number = 0
