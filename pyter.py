@@ -65,19 +65,21 @@ class lexical_analyzer(object):
         self.in_block = 0
         self.get_line()
         self.eol = 0
-        self.eof_not_dedented = 1
 
 # BUGGY
     def get_line(self):
+        if self.eof:
+            self.string = ''
+            return
         self.eol = 0
         if len(sys.argv) > 1:
             self.string = self.file.readline()
-            while self.string.strip() == '' and self.string != '':
+            while self.string.strip() == '':
                 self.line_number += 1
                 self.string = self.file.readline()
-            if self.string == '' or self.string[-1] != '\n':
-                self.eof = 1
-            if self.string != '' and self.string[-1] == '\n':
+                if self.string == '' or self.string[-1] != '\n':
+                    self.eof = 1
+                    break
                 self.string = self.string[:-1]
         else:
             self.filename = '<stdin>'
@@ -306,7 +308,13 @@ class lexical_analyzer(object):
             self.dedents -= 1
             self.items.append(DEDENT)
             return DEDENT
-        if self.eof and self.string == '':
+        if self.eof and self.string.strip() == '':
+            if len(self.indentation_stack) > 1:
+                self.dedents += len(self.indentation_stack) - 1
+                self.indentation_stack = [0]
+                self.dedents -= 1
+                self.items.append(DEDENT)
+                return DEDENT
             return EOF
         if self.index < len(self.string):
             if self.string[self.index:].strip() == '':
@@ -316,7 +324,7 @@ class lexical_analyzer(object):
                 self.items.append(item)
                 self.eol = 1
             else:
-                if self.index == 0:
+                if self.index == 0 and not self.multi_lines:
                     while self.string[self.index] in [' ', '\t',]:
                         self.indentation += 1
                         self.index += 1
@@ -393,13 +401,7 @@ class lexical_analyzer(object):
             self.items.append(self.last_item)
             return self.last_item
         if self.eol:
-            if self.eof:
-                return EOF
             self.get_line()
-        if self.eof and self.string == '' and self.eof_not_dedented:
-            self.dedents += len(self.indentation_stack) - 1
-            self.indentation_stack = [0]
-            self.eof_not_dedented = 0
         item = self.raw_read()
         if item == '\\':
             self.items.pop()
@@ -413,6 +415,7 @@ class lexical_analyzer(object):
                 item = self.read()
                 return item
         if item == '' and self.multi_lines:
+            self.items.pop()
             item = self.read()
         return item
 
@@ -750,7 +753,7 @@ def parse_comparison():
             if item != 'not':
                 la.rewind()
             parse_or_expr()
-        if item == 'not':
+        elif item == 'not':
             item = la.read()
             if item != 'in':
                 la.syntax_error()
@@ -878,7 +881,7 @@ def parse_lambda_parameter_list():
         else:
             la.syntax_error()
 
-def parse_target_list(*endings):
+def parse_star_expr_list(*endings):
     while True:
         parse_star_expr()
         item = la.read()
@@ -889,6 +892,20 @@ def parse_target_list(*endings):
                 return True
         else:
             la.rewind()
+            return True
+
+def parse_target_list(*endings):
+    while True:
+        item = la.read()
+        if item != '*':
+            la.rewind()
+        parse_primary()
+        item = la.read()
+        if item != ',':
+            la.rewind()
+            return True
+        item = la.read()
+        if item in endings:
             return True
 
 def parse_star_expr():
@@ -1104,6 +1121,7 @@ def parse_simple_stmt():
         wildcard = 0
         item = la.read()
         if item != '.':
+            la.rewind()
             parse_module()
             wildcard = 1
         else:
@@ -1166,7 +1184,7 @@ def parse_simple_stmt():
                 return True
     else:
         la.rewind()
-        parse_target_list('=', '', ';', *aug_ops)
+        parse_star_expr_list('=', '', ';', *aug_ops)
         item = la.read()
         if item == '=':
             item = la.read()
@@ -1551,6 +1569,8 @@ def test():
         while True:
             parse_statement()
             item = la.read()
+            print la.items
+            print item
             if item == EOF:
                 print la.items
                 return True
@@ -1564,7 +1584,6 @@ def test():
                 la.in_block = 1
             parse_statement()
             print la.items
-            print [la.string], la.index
             if la.in_block:
                 la.in_block = 0
                 item = la.read()
