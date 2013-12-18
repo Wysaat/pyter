@@ -74,7 +74,7 @@ class lexical_analyzer(object):
         self.eol = 0
         if len(sys.argv) > 1:
             self.string = self.file.readline()
-            while self.string.strip() == '':
+            while self.string.strip() == '' or self.string.strip()[0] == '#':
                 self.line_number += 1
                 self.string = self.file.readline()
                 if self.string == '' or self.string[-1] != '\n':
@@ -97,11 +97,13 @@ class lexical_analyzer(object):
                 if self.string == '':
                     self.eob = 1
             else:
-                while self.string.strip() == '':
+                while self.string.strip() == '' or self.string.strip()[0] == '#':
                     if self.string == '':
                         print '>>>',
+                        self.line_number = 0
                     else:
                         print '...',
+                        self.line_number += 1
                     self.string = raw_input()
         self.index = 0
         self.line_number += 1
@@ -315,6 +317,7 @@ class lexical_analyzer(object):
                 self.dedents -= 1
                 self.items.append(DEDENT)
                 return DEDENT
+            self.items.append(EOF)
             return EOF
         if self.index < len(self.string):
             if self.string[self.index:].strip() == '':
@@ -345,7 +348,12 @@ class lexical_analyzer(object):
                 else:
                     while self.string[self.index] in [' ', '\t',]:
                         self.index += 1
-                if self.index+2 < len(self.string) and self.string[self.index:self.index+3] in tokens:
+                if self.string[self.index] == '#':
+                    item = ''
+                    self.items.append(item)
+                    self.eol = 1
+                    return item
+                elif self.index+2 < len(self.string) and self.string[self.index:self.index+3] in tokens:
                     item = self.string[self.index:self.index+3]
                     self.index += 3
                     self.items.append(item)
@@ -388,6 +396,8 @@ class lexical_analyzer(object):
             self.eol = 1
             return item
 
+    # EOF should be appended to items,
+    # or cannot rewind it.
     def rewind(self):
         self._rewind = 1
         self.last_item = self.items.pop()
@@ -1545,7 +1555,9 @@ def parse_suite():
 def parse_statement():
     item = la.read()
     la.rewind()
-    if item in compound_statement_starts:
+    if item == INDENT:
+        la.error("indentation_error: unexpected indent")
+    elif item in compound_statement_starts:
         parse_compound_statement()
     else:
         parse_stmt_list_plus_newline()
@@ -1567,17 +1579,14 @@ def parse_stmt_list_plus_newline():
 def test():
     if len(sys.argv) > 1:
         while True:
-            parse_statement()
             item = la.read()
-            print la.items
-            print item
             if item == EOF:
                 print la.items
                 return True
             la.rewind()
+            parse_statement()
     else:
         while True:
-            la.line_number = 0
             item = la.read()
             la.rewind()
             if item in compound_statement_starts:
@@ -1589,6 +1598,7 @@ def test():
                 item = la.read()
                 if item != '':
                     la.syntax_error()
+            la.line_number = 0
 
 if __name__ == '__main__':
     test()

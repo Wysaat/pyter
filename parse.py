@@ -21,8 +21,7 @@ def parse_atom():
 
     def parse_set_display():
         pass
-
-    # deprecated in Python 3
+        
     def parse_string_conversion():
         pass
 
