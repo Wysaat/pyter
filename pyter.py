@@ -98,7 +98,7 @@ class lexical_analyzer(object):
                     self.eob = 1
             else:
                 while self.string.strip() == '' or self.string.strip()[0] == '#':
-                    if self.string == '':
+                    if self.string == '' and not self.multi_lines:
                         print '>>>',
                         self.line_number = 0
                     else:
@@ -125,7 +125,7 @@ class lexical_analyzer(object):
         self.error('syntax_error: invalid syntax')
 
     def raw_error(self, string):
-        print 'line', self.line_number
+        print '  File "' + self.filename + '", line ' + str(self.line_number)
         print string
         exit()
 
@@ -421,8 +421,8 @@ class lexical_analyzer(object):
                 self.items.pop()
                 self.multi_lines = 1
                 self.get_line()
-                self.multi_lines = 0
                 item = self.read()
+                self.multi_lines = 0
                 return item
         if item == '' and self.multi_lines:
             self.items.pop()
@@ -602,13 +602,14 @@ def parse_primary():
         elif item == '(':
             la.multi_lines = 1
             item = la.read()
-            if item == ')':
-                la.multi_lines = 0
-                return True
-            la.rewind()
             if item in ['*', '**']:
+                la.rewind()
                 parse_argument_list()
-            else:
+                item = la.read()
+                if item != ')':
+                    la.syntax_error()
+            elif item != ')':
+                la.rewind()
                 parse_expression()
                 item = la.read()
                 if item == 'for':
@@ -619,8 +620,20 @@ def parse_primary():
                         la.syntax_error()
                 elif item == ',':
                     item = la.read()
-                    la.rewind()
                     if item != ')':
+                        la.rewind()
+                        parse_argument_list()
+                        item = la.read()
+                        if item != ')':
+                            la.syntax_error()
+                elif item == '=':
+                    parse_expression()
+                    item = la.read()
+                    if item != ',':
+                        la.syntax_error()
+                    item = la.read()
+                    if item != ')':
+                        la.rewind()
                         parse_argument_list()
                         item = la.read()
                         if item != ')':
@@ -635,10 +648,12 @@ def parse_primary():
 # Trailing commas like: f(*args, a, b) are allowed,
 # as is specified in the doc.
 def parse_argument_list():
+    asterisk = 0
     while True:
         item = la.read()
         if item == '*':
             parse_expression()
+            asterisk = 1
             break
         if item == '**':
             parse_expression()
@@ -649,7 +664,10 @@ def parse_argument_list():
         la.rewind()
         parse_expression()
         item = la.read()
-        if item != ',':
+        if item == '=':
+            parse_expression()
+            break
+        elif item != ',':
             la.rewind()
             return True
         else:
@@ -662,23 +680,52 @@ def parse_argument_list():
         if item != ',':
             la.rewind()
             return True
-        item = la.read()
-        if item == ')':
-            la.rewind()
-            return True
-        elif is_id(item):
+        else:
             item = la.read()
-            if item != '=':
-                la.raw_error('syntax_error: only named arguments may follow *expression')
+            la.rewind()
+            if item == ')':
+                return True
+        item = la.read()
+        if item == '*':
+            if asterisk:
+                la.syntax_error()
             parse_expression()
-        elif item == '**':
+            break
+        if item == '**':
             parse_expression()
             item = la.read()
             if item != ',':
                 la.rewind()
             return True
-        else:
+        la.rewind()
+        parse_expression()
+        item = la.read()
+        if item != '=':
             la.raw_error('syntax_error: only named arguments may follow *expression')
+        parse_expression()
+    while True:
+        item = la.read()
+        if item != ',':
+            la.rewind()
+            return True
+        else:
+            item = la.read()
+            la.rewind()
+            if item == ')':
+                return True
+        item = la.read()
+        if item == '**':
+            parse_expression()
+            item = la.read()
+            if item != ',':
+                la.rewind()
+            return True
+        la.rewind()
+        parse_expression()
+        item = la.read()
+        if item != '=':
+            la.raw_error('syntax_error: only named arguments may follow *expression')
+        parse_expression()
 
 def parse_power():
     parse_primary()
@@ -915,6 +962,7 @@ def parse_target_list(*endings):
             la.rewind()
             return True
         item = la.read()
+        la.rewind()
         if item in endings:
             return True
 
@@ -1270,7 +1318,7 @@ def parse_compound_statement():
             la.rewind()
             return True
     elif item == 'for':
-        parse_target_list()
+        parse_target_list('in')
         item = la.read()
         if item != 'in':
             la.syntax_error()
