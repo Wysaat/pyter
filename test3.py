@@ -1,3 +1,6 @@
-class f: pass
+f[
 
-a = b
+
+
+
+

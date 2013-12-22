@@ -141,6 +141,8 @@ class lexical_analyzer(object):
             op_num = 0
             self.index += 3
             while True:
+                if self.eof:
+                    self.error('EOF while scanning triple-quoted string literal')  
                 if self.index == len(self.string):
                     self.get_line()
                     self.index = 0
@@ -433,6 +435,9 @@ class lexical_analyzer(object):
         return item
 
 def is_id(item):
+    if type(item) != str:
+        return False
+
     if item == '':
         return False
     if item in keywords:
@@ -450,6 +455,9 @@ def is_kw(item):
     return False
 
 def is_str(item):
+    if type(item) != str:
+        return False
+
     if len(item) < 2:
         return False
     if item[0] in ["'", '"']:
@@ -461,6 +469,9 @@ def is_str(item):
     return False
 
 def is_num(item):
+    if type(item) != str:
+        return False
+
     if item == '':
         return False
     if item[0] == '.' and len(item) > 1:
@@ -1214,6 +1225,7 @@ def parse_simple_stmt():
             la.rewind()
         else:
             in_parentheses = 1
+            la.multi_lines += 1
         while True:
             item = la.read()
             if not is_id(item):
@@ -1228,9 +1240,18 @@ def parse_simple_stmt():
                 if in_parentheses:
                     item = la.read()
                     if item == ')':
+                        la.multi_lines -= 1
                         return True
                     la.rewind()
+            elif item == ')':
+                if in_parentheses:
+                    la.multi_lines -= 1
+                    return True
+                la.rewind()
+                return True
             else:
+                if in_parentheses:
+                    la.syntax_error()
                 la.rewind()
                 return True
     elif item == 'global':
