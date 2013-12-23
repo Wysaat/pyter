@@ -63,8 +63,11 @@ class lexical_analyzer(object):
         # interactive input
         self.symbol = '>>>'
         self.in_block = 0
-        self.get_line()
         self.eol = 0
+        self.line_joining = 0
+
+        # DANGEROUS to put a function here!!! fix it some day...
+        self.get_line()
 
 # BUGGY
     def get_line(self):
@@ -86,11 +89,12 @@ class lexical_analyzer(object):
                 self.string = self.string[:-1]
         else:
             self.filename = '<stdin>'
-            if self.multi_lines or self.in_block:
+            if self.multi_lines or self.in_block or self.line_joining:
                 self.symbol = '...'
             else:
                 self.symbol = '>>>'
             print self.symbol,
+            self.line_joining = 0
             self.string = raw_input()
             if self.in_block:
                 while self.string != '' and self.string.strip() == '':
@@ -424,10 +428,9 @@ class lexical_analyzer(object):
                 self.error('syntax_error: unexpected character after line continuation character')
             else:
                 self.items.pop()
-                self.multi_lines += 1
+                self.line_joining = 1
                 self.get_line()
                 item = self.read()
-                self.multi_lines -= 1
                 return item
         if item == '' and self.multi_lines:
             self.items.pop()
@@ -1686,6 +1689,10 @@ def parse_stmt_list_plus_newline():
             return True
         else:
             la.syntax_error()
+
+#############################################################################
+################################# EXECUTING #################################
+#############################################################################
 
 def test():
     if len(sys.argv) > 1:
