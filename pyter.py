@@ -734,7 +734,7 @@ def parse_argument_list():
             la.rewind()
             return True
         else:
-            item = la.read()
+            item = la.r            ead()
             la.rewind()
             if item == ')':
                 return True
