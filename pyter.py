@@ -483,6 +483,42 @@ def is_num(item):
         return True
     return False
 
+def is_int(item):
+    if not is_num(item):
+        return False
+    not_int = ['.', 'e', 'E', 'j', 'J', 'l', 'L']
+    for i in not_int:
+        if i in item:
+            return False
+    return True
+
+def is_float(item):
+    if not is_num(item):
+        return False
+    _float = ['.', 'e', 'E']
+    for i in _float:
+        if i in item:
+            return True
+    return False
+
+def is_imag(item):
+    if not is_num(item):
+        return False
+    _imag = ['j', 'J']
+    for i in _imag:
+        if i in item:
+            return True
+    return False
+
+def is_long(item):
+    if not is_num(item):
+        return False
+    _long = ['l', 'L']
+    for i in _long:
+        if i in item:
+            return True
+    return False
+
 def is_op(item):
     if item in operators:
         return True
@@ -503,8 +539,16 @@ la = lexical_analyzer()
 
 def parse_atom():
     item = la.read()
-    if is_id(item) or is_num(item):
-        return True
+    if is_id(item):
+        return identifier(item)
+    elif is_int(item):
+        return integer(item)
+    elif is_float(item):
+        return floatnumber(item)
+    elif is_imag(item):
+        return imagnumber(item)
+    elif is_long(item):
+        return longinteger(item)
     if is_str(item):
         while is_str(item):
             item = la.read()
@@ -734,7 +778,7 @@ def parse_argument_list():
             la.rewind()
             return True
         else:
-            item = la.r            ead()
+            item = la.read()
             la.rewind()
             if item == ')':
                 return True
