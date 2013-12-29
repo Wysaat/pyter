@@ -13,7 +13,20 @@ class literal(atom):
 	pass
 
 class stringliteral(literal):
-	pass
+	def __init__(self, items):
+		pass
+	def makestring(self, item):
+		if item[:2] in stringprefixes:
+			prefix = item[:2]
+			i = 2
+		elif item[0] in stringprefixes:
+			prefix = item[0]
+			i = 1
+		else:
+			prefix = None
+			i = 0
+		if prefix and ('i' in prefix or 'I' in prefix):
+			item.replace('\\', '\\\\')
 
 class integer(literal):
 	def __init__(self, item):

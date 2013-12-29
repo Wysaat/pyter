@@ -452,11 +452,6 @@ def is_id(item):
         return True
     return False
 
-def is_kw(item):
-    if item in keywords:
-        return True
-    return False
-
 def is_str(item):
     if type(item) != str:
         return False
@@ -519,21 +514,6 @@ def is_long(item):
             return True
     return False
 
-def is_op(item):
-    if item in operators:
-        return True
-    return False
-
-def is_dot(item):
-    if item is '.':
-        return True
-    return False
-
-def is_dl(item):
-    if item in delimiters:
-        return True
-    return False
-
 
 la = lexical_analyzer()
 
@@ -550,10 +530,12 @@ def parse_atom():
     elif is_long(item):
         return longinteger(item)
     if is_str(item):
+        items = []
         while is_str(item):
+            items.append(item)
             item = la.read()
         la.rewind()
-        return True
+        return stringliteral(items)
     if item is '(':
         la.multi_lines += 1
         item = la.read()
