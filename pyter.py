@@ -136,6 +136,7 @@ class lexical_analyzer(object):
         print string
         exit()
 
+    # use Python's encoder/decoder... implement that someday...
     def read_string_literal(self, item=''):
         backslash = 0
         op = self.string[self.index]
