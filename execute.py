@@ -1,5 +1,18 @@
 environment = {}
 
+escape = {'\\n': '\n',
+          '\\\\': '\\',
+          '\\\'': '\'',
+          '\\\"': '\"',
+          '\\a': '\a',
+          '\\b': '\b',
+          '\\f': '\f',
+          '\\n': '\n',
+          '\\r': '\r',
+          '\\t': '\t',
+          '\\v': '\v',
+          }
+
 class identifier(atom):
     def __init__(self, item):
         self.name = item
@@ -23,13 +36,15 @@ class stringliteral(literal):
             string = item[:i] + item[i+3:-3]
         else:
             string = item[:i] + item[i+1:-1]
-        if 'u' in item[:2] or 'U' in item[:2]:
-            string = string.decode('unicode-escape')
-            self.type = 'unicode'
-        if 'r' in item[:2] or 'R' in item[:2]:
-            string = string.replace('\\', '\\\\')
-    def evaluate(self):
-        return self.string
+        if 'r' not in item[:2] and 'R' not in item[:2]:
+            self.escape(string)
+    def escape(self, string):
+        if string[0] == '\\':
+            if string[:2] in escape:
+                string .self.escape(string, 0, 1)
+                string = self.replace(string, 0, 2, escape(string[:2]))
+    def replace(self, string, begin, end, item):
+        return item.join(string[:begin], string[end:])
 
 class integer(literal):
     def __init__(self, item):

@@ -4,6 +4,8 @@ from string import letters
 import sys
 
 digits = '0123456789'
+oct_digits = '01234567'
+hex_digits = '0123456789abcdefABCDEF'
 
 stringprefixes = ['r', 'R', 'u', 'U', 'ur', 'uR', 'Ur', 'UR',
                   'b', 'B', 'br', 'bR', 'Br', 'BR']
@@ -136,9 +138,21 @@ class lexical_analyzer(object):
         print string
         exit()
 
+escape = {'\\n': '\n',
+          '\\\\': '\\',
+          '\\\'': '\'',
+          '\\\"': '\"',
+          '\\a': '\a',
+          '\\b': '\b',
+          '\\f': '\f',
+          '\\n': '\n',
+          '\\r': '\r',
+          '\\t': '\t',
+          '\\v': '\v',
+          }
+
     # use Python's encoder/decoder... implement that someday...
     def read_string_literal(self, item=''):
-        backslash = 0
         op = self.string[self.index]
         if self.string[self.index:self.index+3] in ['"""', "'''"]:
             self.multi_lines += 1
@@ -146,37 +160,76 @@ class lexical_analyzer(object):
             op_num = 0
             self.index += 3
             while True:
+                if op_num == 3:
+                    self.items.append(item)
+                    return item
                 if self.eof:
                     self.error('EOF while scanning triple-quoted string literal')  
                 if self.index == len(self.string):
                     self.get_line()
                     self.index = 0
                     op_num = 0
-                    if backslash == 0:
-                        item += '\n'
-                    backslash = 0
-                else:
-                    item += self.string[self.index]
-                    if self.string[self.index] == '\\':
-                        if backslash == 0:
-                            if self.index == len(self.string) - 1:
-                                item = item[:-1]
-                            backslash = 1
-                    elif self.string[self.index] == op:
-                        backslash = 0
-                        op_num += 1
-                        if op_num == 3:
-                            self.index += 1
-                            self.items.append(item)
-                            self.multi_lines -= 1
-                            return item
+                    if item[-1] == '\\':
+                        item = item[:-1]
                     else:
-                        backslash = 0
-                        op_num = 0
-                    self.index += 1
+                        item += '\n'
+                else:
+                    if self.string[self.index] == '\\':
+                        if self.index+1 < len(self.string) and self.string[self.index:self.index+2] in escape:
+                            item += escape(self.string[self.index:self.index+2])
+                            self.index += 2
+                        elif self.index+3 < len(self.string) and self.string[self.index+1] == '0' \
+                                                             and self.string[self.index+2] in oct_digits \
+                                                             and self.string[self.index+3] in oct_digits:
+                            item += chr(int(self.string[index+1:index+4], 8))
+                            self.index += 4
+                        elif self.index+3 < len(self.string) and self.string[self.index+1] == 'x' \
+                                                             and self.string[self.index+2] in hex_digits \
+                                                             and self.string[self.index+3] in hex_digits:
+                            item += chr(int(self.string[index+1:index+4], 16))
+                            self.index += 4
+                        else:
+                            item += self.string[self.index]
+                            self.index += 1
+                    else:
+                        item += self.string[self.index]
+                        self.index += 1
+                        if item == op:
+                            op_num += 1
         elif self.string[self.index] in ['"', "'"]:
             item += self.string[self.index]
             self.index += 1
+            while True:
+                while self.index < len(self.string):
+                    if self.string[self.index] == '\\':
+                        if self.index+1 < len(self.string) and self.string[self.index:self.index+2] in escape:
+                            item += escape(self.string[self.index:self.index+2])
+                            self.index += 2
+                        elif self.index+3 < len(self.string) and self.string[self.index+1] == '0' \
+                                                             and self.string[self.index+2] in oct_digits \
+                                                             and self.string[self.index+3] in oct_digits:
+                            item += chr(int(self.string[index+1:index+4], 8))
+                            self.index += 4
+                        elif self.index+3 < len(self.string) and self.string[self.index+1] == 'x' \
+                                                             and self.string[self.index+2] in hex_digits \
+                                                             and self.string[self.index+3] in hex_digits:
+                            item += chr(int(self.string[index+1:index+4], 16))
+                            self.index += 4
+                        elif self.index+1 < len(self.string):
+                            item += self.string[self.index]
+                            self.index += 1
+                        else:
+                            self.multi_lines += 1
+                            self.get_line()
+                            self.multi_lines -= 1
+                            self.index = 0
+                    else:
+                        item += self.string[self.index]
+                        self.index += 1
+                        if item == op:
+                            self.items.append(item)
+                            return item
+
             while True:
                 while self.index < len(self.string):
                     item += self.string[self.index]
