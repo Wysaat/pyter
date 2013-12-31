@@ -154,11 +154,15 @@ escape = {'\\n': '\n',
     # use Python's encoder/decoder... implement that someday...
     def read_string_literal(self, item=''):
         op = self.string[self.index]
+        utf = 0
+        if 'u' in item or 'U' in item:
+            utf = 1
         if self.string[self.index:self.index+3] in ['"""', "'''"]:
             self.multi_lines += 1
             item += self.string[self.index:self.index+3]
             op_num = 0
             self.index += 3
+            ind_delt = self.index
             while True:
                 if op_num == 3:
                     self.items.append(item)
@@ -188,6 +192,17 @@ escape = {'\\n': '\n',
                                                              and self.string[self.index+3] in hex_digits:
                             item += chr(int(self.string[index+1:index+4], 16))
                             self.index += 4
+                        elif self.index+1 < len(self.string) and self.string[self.index+1] in ['u', 'U']:
+                            if self.string[self.index+1] == 'u':
+                                if self.index+5 < len(self.string):
+                                    if all(self.string[self.index+i] in hex_digits for i in range(2, 6)):
+                                        item += self.string[self.index:self.index+6].decode('unicode-escape')
+                                    else:
+                                        self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: truncated \uXXXX escape" 
+                                                              % (self.index-ind_delt, self.index+5-ind_delt))
+                                else:
+                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: end of string in escape sequence"
+                                                          % (self.index-ind_delt, len(self.string)-1-ind_delt))
                         else:
                             item += self.string[self.index]
                             self.index += 1
@@ -199,58 +214,36 @@ escape = {'\\n': '\n',
         elif self.string[self.index] in ['"', "'"]:
             item += self.string[self.index]
             self.index += 1
-            while True:
-                while self.index < len(self.string):
-                    if self.string[self.index] == '\\':
-                        if self.index+1 < len(self.string) and self.string[self.index:self.index+2] in escape:
-                            item += escape(self.string[self.index:self.index+2])
-                            self.index += 2
-                        elif self.index+3 < len(self.string) and self.string[self.index+1] == '0' \
-                                                             and self.string[self.index+2] in oct_digits \
-                                                             and self.string[self.index+3] in oct_digits:
-                            item += chr(int(self.string[index+1:index+4], 8))
-                            self.index += 4
-                        elif self.index+3 < len(self.string) and self.string[self.index+1] == 'x' \
-                                                             and self.string[self.index+2] in hex_digits \
-                                                             and self.string[self.index+3] in hex_digits:
-                            item += chr(int(self.string[index+1:index+4], 16))
-                            self.index += 4
-                        elif self.index+1 < len(self.string):
-                            item += self.string[self.index]
-                            self.index += 1
-                        else:
-                            self.multi_lines += 1
-                            self.get_line()
-                            self.multi_lines -= 1
-                            self.index = 0
-                    else:
+            while self.index < len(self.string):
+                if self.string[self.index] == '\\':
+                    if self.index+1 < len(self.string) and self.string[self.index:self.index+2] in escape:
+                        item += escape[self.string[self.index:self.index+2]]
+                        self.index += 2
+                    elif self.index+3 < len(self.string) and self.string[self.index+1] == '0' \
+                                                         and self.string[self.index+2] in oct_digits \
+                                                         and self.string[self.index+3] in oct_digits:
+                        item += chr(int(self.string[index+1:index+4], 8))
+                        self.index += 4
+                    elif self.index+3 < len(self.string) and self.string[self.index+1] == 'x' \
+                                                         and self.string[self.index+2] in hex_digits \
+                                                         and self.string[self.index+3] in hex_digits:
+                        item += chr(int(self.string[index+1:index+4], 16))
+                        self.index += 4
+                    elif self.index+1 < len(self.string):
                         item += self.string[self.index]
                         self.index += 1
-                        if item == op:
-                            self.items.append(item)
-                            return item
-
-            while True:
-                while self.index < len(self.string):
+                    else:
+                        self.multi_lines += 1
+                        self.get_line()
+                        self.multi_lines -= 1
+                        self.index = 0
+                else:
                     item += self.string[self.index]
-                    if backslash == 0 and self.string[self.index] == op:
-                        self.index += 1
+                    self.index += 1
+                    if item == op:
                         self.items.append(item)
                         return item
-                    elif backslash == 0 and self.string[self.index] == '\\':
-                        backslash = 1
-                    else:
-                        backslash = 0
-                    self.index += 1
-                if backslash == 1:
-                    item = item[:-1]
-                    self.multi_lines += 1
-                    self.get_line()
-                    self.multi_lines -= 1
-                    self.index = 0
-                    backslash = 0
-                else:
-                    self.error('syntax_error: EOL while scanning string literal')
+            self.error('syntax_error: EOL while scanning string literal')
 
     def read_numeric_literal(self):
         digits = '0123456789'
