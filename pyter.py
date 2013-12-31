@@ -192,7 +192,7 @@ escape = {'\\n': '\n',
                                                              and self.string[self.index+3] in hex_digits:
                             item += chr(int(self.string[index+1:index+4], 16))
                             self.index += 4
-                        elif self.index+1 < len(self.string) and self.string[self.index+1] in ['u', 'U']:
+                        elif utf and self.index+1 < len(self.string) and self.string[self.index+1] in ['u', 'U']:
                             if self.string[self.index+1] == 'u':
                                 if self.index+5 < len(self.string):
                                     if all(self.string[self.index+i] in hex_digits for i in range(2, 6)):
@@ -203,6 +203,30 @@ escape = {'\\n': '\n',
                                 else:
                                     self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: end of string in escape sequence"
                                                           % (self.index-ind_delt, len(self.string)-1-ind_delt))
+                            elif self.string[self.index+1] == 'U':
+                                if self.index+9 < len(self.string):
+                                    if all(self.string[self.index+i] in hex_digits for i in range(2, 10)):
+                                        try:
+                                            item += self.string[self.index:self.index+6].decode('unicode-escape')
+                                        except:
+                                            self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: illegal Unicode character"
+                                                                  % (self.index-ind_delt, self.index+9-ind_delt))
+                                    else:
+                                        self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positon %s-%s: truncated \UXXXXXXXX escape"
+                                                              % (self.index-ind_delt, self.index+9-ind_delt))
+                                else:
+                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: end of string in escape sequence"
+                                                          % (self.index-ind_delt, len(self.string)-1-ind_delt))
+                            elif self.string[self.index+1] == 'N':
+                                begin = self.index
+                                if self.index+4 >= len(self.string):
+                                    self.syntax_error('')
+                                if self.string[self.index+2] != '{':
+                                    self.syntax_error("...")
+                                self.index += 3
+                                while self.index < len(self.string):
+                                    self.index += 1
+                                    if self.
                         else:
                             item += self.string[self.index]
                             self.index += 1

@@ -37,14 +37,7 @@ class stringliteral(literal):
         else:
             string = item[:i] + item[i+1:-1]
         if 'r' not in item[:2] and 'R' not in item[:2]:
-            self.escape(string)
-    def escape(self, string):
-        if string[0] == '\\':
-            if string[:2] in escape:
-                string .self.escape(string, 0, 1)
-                string = self.replace(string, 0, 2, escape(string[:2]))
-    def replace(self, string, begin, end, item):
-        return item.join(string[:begin], string[end:])
+            pass
 
 class integer(literal):
     def __init__(self, item):
