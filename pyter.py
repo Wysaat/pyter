@@ -42,6 +42,19 @@ EOF = hash('EOF')
 
 compound_statement_starts = ['if', 'while', 'for', 'try', 'with', '@', 'def', 'class',]
 
+escape = {'\\n': '\n',
+          '\\\\': '\\',
+          '\\\'': '\'',
+          '\\\"': '\"',
+          '\\a': '\a',
+          '\\b': '\b',
+          '\\f': '\f',
+          '\\n': '\n',
+          '\\r': '\r',
+          '\\t': '\t',
+          '\\v': '\v',
+          }
+
 class lexical_analyzer(object):
     def __init__(self):
         self.items = []
@@ -138,25 +151,15 @@ class lexical_analyzer(object):
         print string
         exit()
 
-escape = {'\\n': '\n',
-          '\\\\': '\\',
-          '\\\'': '\'',
-          '\\\"': '\"',
-          '\\a': '\a',
-          '\\b': '\b',
-          '\\f': '\f',
-          '\\n': '\n',
-          '\\r': '\r',
-          '\\t': '\t',
-          '\\v': '\v',
-          }
-
     # use Python's encoder/decoder... implement that someday...
     def read_string_literal(self, item=''):
         op = self.string[self.index]
         utf = 0
+        escape = 1
         if 'u' in item or 'U' in item:
             utf = 1
+        if 'r' in item or 'R' in item:
+            escape = 0
         if self.string[self.index:self.index+3] in ['"""', "'''"]:
             self.multi_lines += 1
             item += self.string[self.index:self.index+3]
@@ -173,12 +176,12 @@ escape = {'\\n': '\n',
                     self.get_line()
                     self.index = 0
                     op_num = 0
-                    if item[-1] == '\\':
+                    if item[-1] == '\\' and escape:
                         item = item[:-1]
                     else:
                         item += '\n'
                 else:
-                    if self.string[self.index] == '\\':
+                    if self.string[self.index] == '\\' and escape:
                         if self.index+1 < len(self.string) and self.string[self.index:self.index+2] in escape:
                             item += escape(self.string[self.index:self.index+2])
                             self.index += 2
@@ -218,15 +221,27 @@ escape = {'\\n': '\n',
                                     self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: end of string in escape sequence"
                                                           % (self.index-ind_delt, len(self.string)-1-ind_delt))
                             elif self.string[self.index+1] == 'N':
-                                begin = self.index
-                                if self.index+4 >= len(self.string):
-                                    self.syntax_error('')
-                                if self.string[self.index+2] != '{':
-                                    self.syntax_error("...")
-                                self.index += 3
-                                while self.index < len(self.string):
-                                    self.index += 1
-                                    if self.
+                                if self.index+3 < len(self.string) and self.string[self.index+2] == '{' and self.string[sefl.index+3] != '}':
+                                    name = ''
+                                    name_begin = self.index+3
+                                    i = self.index+3
+                                    while self.string[i] != '}':
+                                        name += self.string[i]
+                                        i += 1
+                                        if i == len(self.string):
+                                            self.syntax_error("syntax_error: (unicode error) 'uicodeescape' codec can't decode bytes in positions %s-%s: malformed \N character escape"
+                                                                  % (self.index-ind_delt, i-ind_delt))
+                                    try:
+                                        item += self.string[self.index, i+1].decode('unicode-escape')
+                                    except:
+                                        self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positions %s-%s: unknown Unicode character name"
+                                                              % (self.index-ind_delt, i-ind_delt))
+                                    self.items.append(item)
+                                    self.index = i + 1
+                                    return item
+                                else:
+                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positions %s-%s: malformed \N character escape"
+                                                          % (self.index-ind_delt, len(self.string)-1-ind_delt))
                         else:
                             item += self.string[self.index]
                             self.index += 1
@@ -238,8 +253,9 @@ escape = {'\\n': '\n',
         elif self.string[self.index] in ['"', "'"]:
             item += self.string[self.index]
             self.index += 1
+            ind_delt = self.index
             while self.index < len(self.string):
-                if self.string[self.index] == '\\':
+                if self.string[self.index] == '\\' and escape:
                     if self.index+1 < len(self.string) and self.string[self.index:self.index+2] in escape:
                         item += escape[self.string[self.index:self.index+2]]
                         self.index += 2
@@ -253,6 +269,53 @@ escape = {'\\n': '\n',
                                                          and self.string[self.index+3] in hex_digits:
                         item += chr(int(self.string[index+1:index+4], 16))
                         self.index += 4
+                    elif utf and self.index+1 < len(self.string) and self.string[self.index+1] in ['u', 'U']:
+                        if self.string[self.index+1] == 'u':
+                            if self.index+5 < len(self.string):
+                                if all(self.string[self.index+i] in hex_digits for i in range(2, 6)):
+                                    item += self.string[self.index:self.index+6].decode('unicode-escape')
+                                else:
+                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: truncated \uXXXX escape" 
+                                                          % (self.index-ind_delt, self.index+5-ind_delt))
+                            else:
+                                self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: end of string in escape sequence"
+                                                      % (self.index-ind_delt, len(self.string)-1-ind_delt))
+                        elif self.string[self.index+1] == 'U':
+                            if self.index+9 < len(self.string):
+                                if all(self.string[self.index+i] in hex_digits for i in range(2, 10)):
+                                    try:
+                                        item += self.string[self.index:self.index+6].decode('unicode-escape')
+                                    except:
+                                        self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: illegal Unicode character"
+                                                              % (self.index-ind_delt, self.index+9-ind_delt))
+                                else:
+                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positon %s-%s: truncated \UXXXXXXXX escape"
+                                                          % (self.index-ind_delt, self.index+9-ind_delt))
+                            else:
+                                self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: end of string in escape sequence"
+                                                      % (self.index-ind_delt, len(self.string)-1-ind_delt))
+                        elif self.string[self.index+1] == 'N':
+                            if self.index+3 < len(self.string) and self.string[self.index+2] == '{' and self.string[sefl.index+3] != '}':
+                                name = ''
+                                name_begin = self.index+3
+                                i = self.index+3
+                                while self.string[i] != '}':
+                                    name += self.string[i]
+                                    i += 1
+                                    if i == len(self.string):
+                                        self.syntax_error("syntax_error: (unicode error) 'uicodeescape' codec can't decode bytes in positions %s-%s: malformed \N character escape"
+                                                              % (self.index-ind_delt, i-ind_delt))
+                                try:
+                                    item += self.string[self.index, i+1].decode('unicode-escape')
+                                except:
+                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positions %s-%s: unknown Unicode character name"
+                                                          % (self.index-ind_delt, i-ind_delt))
+                                self.items.append(item)
+                                self.index = i + 1
+                                return item
+                            else:
+                                self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positions %s-%s: malformed \N character escape"
+                                                      % (self.index-ind_delt, len(self.string)-1-ind_delt))
                     elif self.index+1 < len(self.string):
                         item += self.string[self.index]
                         self.index += 1
@@ -601,12 +664,12 @@ def parse_atom():
     elif is_long(item):
         return longinteger(item)
     if is_str(item):
-        items = []
+        string_literal = stringliteral()
         while is_str(item):
-            items.append(item)
+            string_literal.add(stringlitera(item))
             item = la.read()
         la.rewind()
-        return stringliteral(items)
+        return string_literal
     if item is '(':
         la.multi_lines += 1
         item = la.read()
@@ -1786,10 +1849,6 @@ def parse_stmt_list_plus_newline():
             return True
         else:
             la.syntax_error()
-
-#############################################################################
-################################# EXECUTING #################################
-#############################################################################
 
 def test():
     if len(sys.argv) > 1:

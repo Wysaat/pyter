@@ -1,17 +1,6 @@
-environment = {}
+import error
 
-escape = {'\\n': '\n',
-          '\\\\': '\\',
-          '\\\'': '\'',
-          '\\\"': '\"',
-          '\\a': '\a',
-          '\\b': '\b',
-          '\\f': '\f',
-          '\\n': '\n',
-          '\\r': '\r',
-          '\\t': '\t',
-          '\\v': '\v',
-          }
+environment = {}
 
 class identifier(atom):
     def __init__(self, item):
@@ -27,17 +16,28 @@ class literal(atom):
 
 # just implement it... not standard.
 class stringliteral(literal):
-    def __init__(self, item):
-        i = 0
-        self.type = 'str'
-        while item[i] not in ["\"", "\'"]:
-            i += 1
-        if item[i:i+3] == item[i] * 3:
-            string = item[:i] + item[i+3:-3]
+    def __init__(self, item=None):
+        if item == None:
+            self.type = 'str'
+            self.value = ''
         else:
-            string = item[:i] + item[i+1:-1]
-        if 'r' not in item[:2] and 'R' not in item[:2]:
-            pass
+            if 'u' in item[:2] or 'U' in item[:2]:
+                self.type = 'unicode'
+            else:
+                self.type = 'str'
+            if item[0] not in ["'", '"']:
+                item = item[1:]
+                if item[0] not in ["'", '"']:
+                    item = item[1:]
+            if item[:3] in ['"""', "'''"]:
+                item = item[3:-3]
+            else:
+                item = item[1:-1]
+            self.value = item
+    def evaluate(self):
+        return self.value
+    def add(self, another):
+        if another
 
 class integer(literal):
     def __init__(self, item):
@@ -118,7 +118,7 @@ class power(object):
         try:
             return self.primary.evaluate() ** self.u_expr.evaluate()
         except:
-            error()
+            return type_error()
 
 class u_expr(object):
     def __init__(self, unary, u_expr):
