@@ -37,7 +37,21 @@ class stringliteral(literal):
     def evaluate(self):
         return self.value
     def add(self, another):
-        if another
+        if not any(another.type == _type for _type in ['str', 'unicode',]):
+            if self.type == 'unicode':
+                return name_error('type_error: coercing to Unicode: need string or buffer, %s found'
+                                       % another.type)
+            elif self.type == 'str':
+                return name_error('type_error: cannot concatenate str and %s objects'
+                                       % another.type)
+        else:
+            value = self.value + another.value
+            string = stringliteral()
+            string.value = value
+            types = [self.type, another.type]
+            if 'unicode' in types: string.type = 'unicode'
+            elif 'str' in types: string.type = 'str'
+            return string
 
 class integer(literal):
     def __init__(self, item):
@@ -63,6 +77,7 @@ class floatnumber(literal):
 class imagnumber(litearl):
     def __init__(self, item):
         self.value = complex(item)
+        self.value = Complex(item)
         self.type = 'complex'
     def evaluate(self):
         return self.value
@@ -74,7 +89,9 @@ class parenth_form(enclosure):
     pass
 
 class list_display(enclosure):
-    pass
+    def __init__(self, expression_list=None):
+        if expression_list == None:
+            return ()
 
 class set_display(enclosure):
     pass
@@ -86,9 +103,8 @@ class generator_expression(enclosure):
     pass
 
 class yield_expression(enclosure):
-    pass
-
-
+    def __init__(self, expression):
+        
 
 class primary(object):
     pass

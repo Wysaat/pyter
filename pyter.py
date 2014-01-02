@@ -666,7 +666,7 @@ def parse_atom():
     if is_str(item):
         string_literal = stringliteral()
         while is_str(item):
-            string_literal.add(stringlitera(item))
+            string_literal = string_literal.add(stringlitera(item))
             item = la.read()
         la.rewind()
         return string_literal
@@ -675,9 +675,10 @@ def parse_atom():
         item = la.read()
         if item == ')':
             la.multi_lines -= 1
-            return True
+            return list_display()
         if item == 'yield':
-            parse_expression_list(')')
+            expression_list = parse_expression_list(')')
+            yield_expression = 
         else:
             la.rewind()
             parse_expression()
@@ -830,7 +831,7 @@ def parse_primary():
             la.rewind()
             return True
 
-# Trailing commas like: f(*args, a, b) are allowed,
+# Trailing commas like: f(*args, a, b,) are allowed,
 # as is specified in the doc.
 def parse_argument_list():
     asterisk = 0

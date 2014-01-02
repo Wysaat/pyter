@@ -7,3 +7,6 @@ class exception(base_exception):
 class name_error(exception):
 	def __init__(self, string, traceback):
 		self.string = string
+	def evaluate(self):
+		print self.string
+		exit()
