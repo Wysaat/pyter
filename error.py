@@ -1,12 +1,12 @@
 class base_exception(object):
-	pass
+    pass
 
 class exception(base_exception):
-	pass
+    pass
 
 class name_error(exception):
-	def __init__(self, string, traceback):
-		self.string = string
-	def evaluate(self):
-		print self.string
-		exit()
+    def __init__(self, string, traceback):
+        self.string = string
+    def evaluate(self):
+        print self.string
+        exit()

@@ -649,9 +649,13 @@ def parse_atom():
     elif is_long(item):
         return longinteger(item)
     if is_str(item):
-        string_literal = stringliteral()
+        first = True
         while is_str(item):
-            string_literal = string_literal.add(stringlitera(item))
+            if first:
+                string_literal = stringliteral(item)
+                first = False
+            newstring_literal = stringliteral(item)
+            string_literal.value += newstring_literal.value
             item = la.read()
         la.rewind()
         return string_literal
@@ -663,10 +667,15 @@ def parse_atom():
             return list_display()
         if item == 'yield':
             expression_list = parse_expression_list(')')
-            yield_expression = 
+            item = la.read()
+            if item != ')':
+                la.syntax_error()
+            else:
+                la.multi_lines -= 1
+                return yield_expression(expression_list)
         else:
             la.rewind()
-            parse_expression()
+            expression = parse_expression()
         item = la.read()
         if item == ',':
             item = la.read()

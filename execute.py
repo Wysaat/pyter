@@ -16,20 +16,17 @@ class literal(atom):
 
 # just implement it... not standard.
 class stringliteral(literal):
-    def __init__(self, item=None):
-        if item == None:
-            self.value = Str()
-        else:
-            tp = 'Unicode' if 'u' in item[:2] or 'U' in item[:2] else 'Str'
+    def __init__(self, item):
+        tp = 'Unicode' if 'u' in item[:2] or 'U' in item[:2] else 'Str'
+        if item[0] not in ["'", '"']:
+            item = item[1:]
             if item[0] not in ["'", '"']:
                 item = item[1:]
-                if item[0] not in ["'", '"']:
-                    item = item[1:]
-            if item[:3] in ['"""', "'''"]:
-                item = item[3:-3]
-            else:
-                item = item[1:-1]
-            self.value = Str(item) if _type == 'Str' else Unicode(item)
+        if item[:3] in ['"""', "'''"]:
+            item = item[3:-3]
+        else:
+            item = item[1:-1]
+        self.value = Str(item) if _type == 'Str' else Unicode(item)
     def evaluate(self):
         return self.value
     # def add(self, another):
@@ -124,11 +121,7 @@ class power(object):
         self.primary = primary
         self.u_expr = u_expr
     def evaluate(self):
-        try:
-            return pow(self.primary.evaluate(), self.u_expr.evaluate())
-        except:
-            return type_error("unsupported operand type(s) for ** or pow(): %s and %s"
-                                   %type(self.primary.evaluate()), type(self.u_expr.evaluate()))
+        return pow(self.primary, evaluate(), self.u_expr.evaluate())
 
 class u_expr(object):
     def __init__(self, unary, u_expr):
