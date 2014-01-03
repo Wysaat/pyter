@@ -18,13 +18,9 @@ class literal(atom):
 class stringliteral(literal):
     def __init__(self, item=None):
         if item == None:
-            self.type = 'str'
-            self.value = ''
+            self.value = Str()
         else:
-            if 'u' in item[:2] or 'U' in item[:2]:
-                self.type = 'unicode'
-            else:
-                self.type = 'str'
+            tp = 'Unicode' if 'u' in item[:2] or 'U' in item[:2] else 'Str'
             if item[0] not in ["'", '"']:
                 item = item[1:]
                 if item[0] not in ["'", '"']:
@@ -33,52 +29,51 @@ class stringliteral(literal):
                 item = item[3:-3]
             else:
                 item = item[1:-1]
-            self.value = item
+            self.value = Str(item) if _type == 'Str' else Unicode(item)
     def evaluate(self):
         return self.value
-    def add(self, another):
-        if not any(another.type == _type for _type in ['str', 'unicode',]):
-            if self.type == 'unicode':
-                return name_error('type_error: coercing to Unicode: need string or buffer, %s found'
-                                       % another.type)
-            elif self.type == 'str':
-                return name_error('type_error: cannot concatenate str and %s objects'
-                                       % another.type)
-        else:
-            value = self.value + another.value
-            string = stringliteral()
-            string.value = value
-            types = [self.type, another.type]
-            if 'unicode' in types: string.type = 'unicode'
-            elif 'str' in types: string.type = 'str'
-            return string
+    # def add(self, another):
+    #     if not any(another.type == _type for _type in ['str', 'unicode',]):
+    #         if self.type == 'unicode':
+    #             return name_error('type_error: coercing to Unicode: need string or buffer, %s found'
+    #                                    % another.type)
+    #         elif self.type == 'str':
+    #             return name_error('type_error: cannot concatenate str and %s objects'
+    #                                    % another.type)
+    #     else:
+    #         value = self.value + another.value
+    #         string = stringliteral()
+    #         string.value = value
+    #         types = [self.type, another.type]
+    #         if 'unicode' in types: string.type = 'unicode'
+    #         elif 'str' in types: string.type = 'str'
+    #         return string
 
 class integer(literal):
     def __init__(self, item):
-        self.value = int(item)
-        self.type = 'int'
+        item = str2int(item)
+        self.value = Int(item)
     def evaluate(self):
         return self.value
 
 class longinteger(literal):
     def __init__(self, item):
-        self.value = long(item)
-        self.type = 'long'
+        item = str2long(item)
+        self.value = Long(item)
     def evaluate(self):
         return self.value
 
 class floatnumber(literal):
     def __init__(self, item):
-        self.value = float(item)
-        self.type = 'float'
+        item = str2float(item)
+        self.value = Float(item)
     def evaluate(self):
         return self.value
 
 class imagnumber(litearl):
     def __init__(self, item):
-        self.value = complex(item)
+        item = str2complex(item)
         self.value = Complex(item)
-        self.type = 'complex'
     def evaluate(self):
         return self.value
 
@@ -104,7 +99,7 @@ class generator_expression(enclosure):
 
 class yield_expression(enclosure):
     def __init__(self, expression):
-        
+        pass
 
 class primary(object):
     pass
@@ -124,17 +119,16 @@ class slicing(primary):
 class call(primary):
     pass
 
-
-
 class power(object):
     def __init__(self, primary, u_expr):
         self.primary = primary
         self.u_expr = u_expr
     def evaluate(self):
         try:
-            return self.primary.evaluate() ** self.u_expr.evaluate()
+            return pow(self.primary.evaluate(), self.u_expr.evaluate())
         except:
-            return type_error()
+            return type_error("unsupported operand type(s) for ** or pow(): %s and %s"
+                                   %type(self.primary.evaluate()), type(self.u_expr.evaluate()))
 
 class u_expr(object):
     def __init__(self, unary, u_expr):

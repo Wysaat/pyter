@@ -84,7 +84,6 @@ class lexical_analyzer(object):
         # DANGEROUS to put a function here!!! fix it some day...
         self.get_line()
 
-# BUGGY
     def get_line(self):
         if self.eof:
             self.string = ''
@@ -441,7 +440,6 @@ class lexical_analyzer(object):
             self.items.append(item)
             return item
 
-    # the indent/dedent part is BUGGY, to be fixed
     def raw_read(self):
         digits = '0123456789'
         self.indentation = 0
@@ -616,38 +614,25 @@ def is_int(item):
     if not is_num(item):
         return False
     not_int = ['.', 'e', 'E', 'j', 'J', 'l', 'L']
-    for i in not_int:
-        if i in item:
-            return False
-    return True
+    return not any(i in item for i in not_int)
 
 def is_float(item):
     if not is_num(item):
         return False
     _float = ['.', 'e', 'E']
-    for i in _float:
-        if i in item:
-            return True
-    return False
+    return any(i in item for i in _float)
 
 def is_imag(item):
     if not is_num(item):
         return False
     _imag = ['j', 'J']
-    for i in _imag:
-        if i in item:
-            return True
-    return False
+    return any(i in item for i in _imag)
 
 def is_long(item):
     if not is_num(item):
         return False
     _long = ['l', 'L']
-    for i in _long:
-        if i in item:
-            return True
-    return False
-
+    return any(i in item for i in _long)
 
 la = lexical_analyzer()
 
