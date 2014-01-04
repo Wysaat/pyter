@@ -1235,33 +1235,47 @@ def parse_comp_for():
     item = la.read()
     if item != 'for':
         la.syntax_error()
-    parse_target_list('in')
+    compfors = compifs = []
+    targetlist = parse_target_list('in')
     item = la.read()
     if item != 'in':
         la.syntax_error()
-    parse_or_test()
+    ortest = parse_or_test()
+    compfor = comp_for(targetlist, ortest)
+    compfors.append(compfor)
     item = la.read()
     la.rewind()
     if item == 'for':
-        parse_comp_for()
+        cfs, cis = parse_comp_for()
+        compfors += cfs
+        compifs += cis
     elif item == 'if':
-        parse_comp_if()
+        cfs, cis = parse_comp_if()
+        compfors += cfs
+        compifs += cis
     else:
-        return True
+        return compfors, compifs
 
 def parse_comp_if():
     item = la.read()
     if item != 'if':
         la.syntax_error()
-    parse_expression_nocond()
+    compfors = compifs = []
+    expressionnocond = parse_expression_nocond()
+    compif = comp_if(expressionnocond)
+    compifs.append(compif)
     item = la.read()
     la.rewind()
     if item == 'for':
-        parse_comp_for()
+        cfs, cis = parse_comp_for()
+        compfors += cfs
+        compifs += cis
     elif item == 'if':
-        parse_comp_if()
+        cfs, cis = parse_comp_if()
+        compfors += cfs
+        compifs += cis
     else:
-        return True
+        return compfors, compifs
 
 def parse_expression_list(*endings):
     while True:

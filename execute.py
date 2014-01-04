@@ -1,6 +1,7 @@
 import error
 
-environment = {}
+class enviroment(dict):
+    pass
 
 class identifier(atom):
     def __init__(self, item):
@@ -97,10 +98,17 @@ class dictionary_display(enclosure):
     pass
 
 class comp_for(object):
-    pass
+    def __init__(self, target_list, or_test):
+        pass
+
+class comp_if(object):
+    def __init__(self, expression_nocond):
+        pass
 
 class generator_expression(enclosure):
-    pass
+    def __init__(self, comp_for_list, comp_if_list):
+        self.comp_for_list = comp_for_list
+        self.comp_if_list = comp_if_list
 
 class yield_expression(enclosure):
     def __init__(self, expression):

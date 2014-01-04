@@ -1,10 +1,12 @@
-class A(object):
-	def __init__(self, name):
-		self.name = name
-	def add(self, x):
-		name = self.name + x
-		return A(name)
-
-a = A('dog')
-b = a.add('cat')
-print b.name
+class squares(object):
+	def __init__(self, start, stop):
+		self.start = start
+		self.stop = stop
+	def __iter__(self):
+		return self
+	def next(self):
+		if self.start >= self.stop:
+			raise StopIteration
+		current = self.start * self.start
+		self.start += 1
+		return current
