@@ -30,3 +30,20 @@ class Unicode(object):
         else:
             self.value = value
         self.__class__ = 'Unicode'
+
+class Tuple(object):
+    def __init__(self):
+        self.value = ()
+        self.type = 'Tuple'
+    def append(item):
+        self.value += (item)
+    def __add__(self, another):
+        if type(another) == 'Tuple':
+            tup = Tuple()
+            tup.value = self.value + another.value
+            return tup
+        else:
+            return type_error('can only concatenate tuple (not "str") to tuple')
+
+class Generator(object):
+    pass

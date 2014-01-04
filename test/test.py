@@ -1,3 +1,10 @@
-def _pow(x, y): return __builtins__.pow(x, y)
+class A(object):
+	def __init__(self, name):
+		self.name = name
+	def add(self, x):
+		name = self.name + x
+		return A(name)
 
-print _pow(3,8)
+a = A('dog')
+b = a.add('cat')
+print b.name

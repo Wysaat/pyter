@@ -664,7 +664,7 @@ def parse_atom():
         item = la.read()
         if item == ')':
             la.multi_lines -= 1
-            return list_display()
+            return parenth_form()
         if item == 'yield':
             expression_list = parse_expression_list(')')
             item = la.read()
@@ -677,23 +677,34 @@ def parse_atom():
             la.rewind()
             expression = parse_expression()
         item = la.read()
+        if item == ')':
+            la.multi_lines -= 1
+            # (3) == 3 != (3,)
+            return expression
         if item == ',':
+            expressionlist = expression_list(expression)
             item = la.read()
             if item == ')':
                 la.multi_lines -= 1
-                return True
+                return parenth_form(expressionlist)
             la.rewind()
-            parse_expression_list(')')
+            expressionlist2 = parse_expressoin_list(')')
+            expressionlist.append(expressionlist2)
             item = la.read()
+            if item != ')':
+                la.syntax_error()
+            else:
+                la.multi_lines -= 1
+                return parenth_form(expressionlist)
         elif item == 'for':
             la.rewind()
-            parse_comp_for()
+            compfor = parse_comp_for()
             item = la.read()
-        if item == ')':
-            la.multi_lines -= 1
-            return True
-        else:
-            la.syntax_error()
+            if item != ')':
+                la.syntax_error()
+            else:
+                la.multi_lines -= 1
+                return generator_expression(expression, compfor)
     if item is '[':
         la.multi_lines += 1
         item = la.read()
@@ -713,7 +724,7 @@ def parse_atom():
             item = la.read()
         elif item == 'for':
             la.rewind()
-            parse_list_for(']')
+            parse_comp_for()
             item = la.read()
         if item == ']':
             la.multi_lines -= 1
@@ -1219,48 +1230,6 @@ def parse_key_datum_list(ending):
             return True
         else:
             parse_key_datum_list(ending)
-
-def parse_list_for(ending):
-    item = la.read()
-    if item != 'for':
-        la.syntax_error()
-    parse_target_list('in')
-    item = la.read()
-    if item != 'in':
-        la.syntax_error()
-    parse_expression_nocond()
-    item = la.read()
-    if item == ',':
-        while True:
-            parse_expression_nocond()
-            item = la.read()
-            if item != ',':
-                break
-            item = la.read()
-            if item in ['for', 'if', ending]:
-                break
-            la.rewind()
-    la.rewind()
-    if item == 'for':
-        parse_list_for(ending)
-    elif item == 'if':
-        parse_list_if(ending)
-    else:
-        return True
-
-def parse_list_if(ending):
-    item = la.read()
-    if item != 'if':
-        la.syntax_error()
-    parse_expression_nocond()
-    item = la.read()
-    la.rewind()
-    if item == 'for':
-        parse_list_for(ending)
-    elif item == 'if':
-        parse_list_if(ending)
-    else:
-        return True
 
 def parse_comp_for():
     item = la.read()

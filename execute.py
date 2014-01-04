@@ -78,17 +78,25 @@ class enclosure(atom):
     pass
 
 class parenth_form(enclosure):
-    pass
+    def __init__(self, expression_list=None):
+        self.expression_list = expression_list
+    def evaluate(self):
+        tup = Tuple()
+        if self.expression_list:
+            for expression in self.expression_list:
+                tup.append(expression.evaluate())
+        return tup
 
 class list_display(enclosure):
-    def __init__(self, expression_list=None):
-        if expression_list == None:
-            return ()
+    pass
 
 class set_display(enclosure):
     pass
 
 class dictionary_display(enclosure):
+    pass
+
+class comp_for(object):
     pass
 
 class generator_expression(enclosure):
@@ -184,4 +192,11 @@ class lambda_expr_nocond(object):
     pass
 
 class expression_list(object):
-    pass
+    def __init__(self, expression):
+        self.expressions = []
+        self.expressions.append(expression)
+    def append(self, another):
+        self.expressions += another.expressions
+    def evaluate(self):
+        for expression in self.expressions:
+            expression.evaluate()
