@@ -3,6 +3,8 @@ import error
 class enviroment(dict):
     pass
 
+env = environment()
+
 class identifier(atom):
     def __init__(self, item):
         self.name = item
@@ -99,16 +101,32 @@ class dictionary_display(enclosure):
 
 class comp_for(object):
     def __init__(self, target_list, or_test):
-        pass
+        self.target_list = target_list
+        self.or_test = or_test
 
 class comp_if(object):
     def __init__(self, expression_nocond):
-        pass
+        self.expression_nocond = expression_nocond
 
 class generator_expression(enclosure):
-    def __init__(self, comp_for_list, comp_if_list):
+    def __init__(self, expression, comp_for_list, comp_if_list):
+        self.expression = expression
         self.comp_for_list = comp_for_list
         self.comp_if_list = comp_if_list
+    def evaluate(self):
+        targets = values = []
+        for comp in self.comp_for_list:
+            targets += comp.target_list
+            targets.reverse()
+        values = self.comp_for_list[0].evaluate()
+        for comp in self.comp_for_list[1:]:
+            values = [[h, t] for h in comp.evaluate() for t in values]
+        result = []
+        for value in values:
+            if all(comp_if.expression_nocond.evaluate() for comp_if in self.comp_if_list):
+                targets.assign(value)
+                result.append(self.expression.evaluate())
+        return result
 
 class yield_expression(enclosure):
     def __init__(self, expression):
@@ -155,25 +173,32 @@ class u_expr(object):
             error()
 
 class m_expr(object):
-    pass
+    def __init__(self):
+        self.type = 'operator'
 
 class a_expr(object):
-    pass
+    def __init__(self):
+        self.type = 'operator'
 
 class shift_expr(object):
-    pass
+    def __init__(self):
+        self.type = 'operator'
 
 class and_expr(object):
-    pass
+    def __init__(self):
+        self.type = 'operator'
 
 class xor_expr(object):
-    pass
+    def __init__(self):
+        self.type = 'operator'
 
 class or_expr(object):
-    pass
+    def __init__(self):
+        self.type = 'operator'
 
 class comparison(object):
-    pass
+    def __init__(self):
+        self.type = 'comparison'
 
 class not_test(object):
     pass

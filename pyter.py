@@ -710,10 +710,13 @@ def parse_atom():
         item = la.read()
         if item == ']':
             la.multi_lines -= 1
-            return True
+            return list_display()
         la.rewind()
-        parse_expression()
+        expression = parse_expression()
+        expressionlist = expression_list(expression)
         item = la.read()
+        if item is ']':
+            return list_display(expression)
         if item is ',':
             item = la.read()
             if item == ']':
