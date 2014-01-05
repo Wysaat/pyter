@@ -698,42 +698,48 @@ def parse_atom():
                 return parenth_form(expressionlist)
         elif item == 'for':
             la.rewind()
-            compfor = parse_comp_for()
+            compfors, compifs = parse_comp_for()
             item = la.read()
             if item != ')':
                 la.syntax_error()
             else:
                 la.multi_lines -= 1
-                return generator_expression(expression, compfor)
+                return generator_expression(expression, compfors, compifs)
     if item is '[':
         la.multi_lines += 1
         item = la.read()
         if item == ']':
             la.multi_lines -= 1
-            return list_display()
+            return list_expr()
         la.rewind()
         expression = parse_expression()
         expressionlist = expression_list(expression)
         item = la.read()
-        if item is ']':
-            return list_display(expression)
-        if item is ',':
+        if item == ']':
+            la.multi_lines -= 1
+            return list_expr(expressionlist)
+        if item == ',':
             item = la.read()
             if item == ']':
                 la.multi_lines -= 1
-                return True
+                return list_expr(expressionlist)
             la.rewind()
-            parse_expression_list(']')
+            expressionlist.append(parse_expression_list(']'))
             item = la.read()
+            if item != ']':
+                la.syntax_error()
+            else:
+                la.multi_lines -= 1
+                return list_expr(expressionlist)
         elif item == 'for':
             la.rewind()
-            parse_comp_for()
+            compfors, compifs = parse_comp_for()
             item = la.read()
-        if item == ']':
-            la.multi_lines -= 1
-            return True
-        else:
-            la.syntax_error()
+            if item != ']':
+                la.syntax_error()
+            else:
+                la.multi_lines -= 1
+                return list_comp(expression, compfors, compifs)
     if item is '{':
         la.multi_lines += 1
         item = la.read()
@@ -778,7 +784,7 @@ def parse_atom():
     la.syntax_error()
 
 def parse_primary():
-    parse_atom()
+    atom = parse_atom()
     while True:
         item = la.read()
         if item == '.':
@@ -837,7 +843,7 @@ def parse_primary():
             la.multi_lines -= 1
         else:
             la.rewind()
-            return True
+            return atom
 
 # Trailing commas like: f(*args, a, b,) are allowed,
 # as is specified in the doc.

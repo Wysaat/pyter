@@ -51,29 +51,29 @@ class stringliteral(literal):
 
 class integer(literal):
     def __init__(self, item):
-        item = str2int(item)
-        self.value = Int(item)
+        self.value = int(item)
+        self.type = "integer"
     def evaluate(self):
         return self.value
 
 class longinteger(literal):
     def __init__(self, item):
-        item = str2long(item)
-        self.value = Long(item)
+        self.value = long(item)
+        self.type = "long"
     def evaluate(self):
         return self.value
 
 class floatnumber(literal):
     def __init__(self, item):
-        item = str2float(item)
-        self.value = Float(item)
+        self.value = float(item)
+        self.type = "float"
     def evaluate(self):
         return self.value
 
-class imagnumber(litearl):
+class imagnumber(literal):
     def __init__(self, item):
-        item = str2complex(item)
-        self.value = Complex(item)
+        self.value = complex(item)
+        self.type = "complex"
     def evaluate(self):
         return self.value
 
@@ -83,15 +83,37 @@ class enclosure(atom):
 class parenth_form(enclosure):
     def __init__(self, expression_list=None):
         self.expression_list = expression_list
+        self.type = "tuple"
     def evaluate(self):
-        tup = Tuple()
+        value = []
         if self.expression_list:
             for expression in self.expression_list:
-                tup.append(expression.evaluate())
-        return tup
+                value.append(expression.evaluate())
+        return value
 
 class list_display(enclosure):
     pass
+
+# a list of expressions
+class list_expr(list_display):
+    def __init__(self, expression_list=None):
+        self.expression_list = expression_list
+    def evaluate(self):
+        value = []
+        if self.expression_list:
+            for expression in self.expression_list:
+                value.append(expression.evaluate())
+        return value
+
+# a list comprehension
+class list_comp(list_display):
+    def __init__(self, expression, comp_for_list, comp_if_list):
+        self.expression = expression
+        self.comp_for_list = comp_for_list
+        self.comp_if_list = comp_if_list
+        self.type = 'list'
+    def evaluate(self):
+        pass
 
 class set_display(enclosure):
     pass
@@ -113,33 +135,39 @@ class generator_expression(enclosure):
         self.expression = expression
         self.comp_for_list = comp_for_list
         self.comp_if_list = comp_if_list
-    def evaluate(self):
-        targets = values = []
-        for comp in self.comp_for_list:
-            targets += comp.target_list
-            targets.reverse()
-        values = self.comp_for_list[0].evaluate()
-        for comp in self.comp_for_list[1:]:
-            values = [[h, t] for h in comp.evaluate() for t in values]
-        result = []
-        for value in values:
-            if all(comp_if.expression_nocond.evaluate() for comp_if in self.comp_if_list):
-                targets.assign(value)
-                result.append(self.expression.evaluate())
-        return result
+        self.type = 'generator'
+    # def evaluate(self):
+    #     targets = values = []
+    #     for comp in self.comp_for_list:
+    #         targets += comp.target_list
+    #         targets.reverse()
+    #     values = self.comp_for_list[0].evaluate()
+    #     for comp in self.comp_for_list[1:]:
+    #         values = [[h, t] for h in comp.evaluate() for t in values]
+    #     result = []
+    #     for value in values:
+    #         if all(comp_if.expression_nocond.evaluate() for comp_if in self.comp_if_list):
+    #             targets.assign(value)
+    #             result.append(self.expression.evaluate())
+    #     return result
 
 class yield_expression(enclosure):
     def __init__(self, expression):
         pass
 
 class primary(object):
-    pass
+    def attribute(self, identifier):
+        return
 
 class atom(primary):
     pass
 
 class attributeref(primary):
-    pass
+    def __init__(self, primary, identifier):
+        self.primary = primary
+        self.identifier = identifier
+    def evaluate(self):
+        pass
 
 class subscription(primary):
     pass
