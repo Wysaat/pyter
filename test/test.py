@@ -10,3 +10,12 @@ class squares(object):
 		current = self.start * self.start
 		self.start += 1
 		return current
+
+class test(object):
+	def __getitem__(self, item):
+		print type(item), item
+
+class a: pass
+class b: pass
+def f(): pass
+x = 3

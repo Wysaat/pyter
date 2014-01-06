@@ -784,13 +784,14 @@ def parse_atom():
     la.syntax_error()
 
 def parse_primary():
-    atom = parse_atom()
+    primary = parse_atom()
     while True:
         item = la.read()
         if item == '.':
             item = la.read()
             if not is_id(item):
                 la.syntax_error()
+            primary = attributeref(primary, item)
         elif item == '[':
             la.multi_lines += 1
             parse_slice_list(']')
@@ -843,7 +844,7 @@ def parse_primary():
             la.multi_lines -= 1
         else:
             la.rewind()
-            return atom
+            return primary
 
 # Trailing commas like: f(*args, a, b,) are allowed,
 # as is specified in the doc.
@@ -1172,55 +1173,110 @@ def parse_star_expr():
         la.rewind()
     parse_expression()
 
-# expression_list is a subset of slice_list
-# short_slice is a subset of slice_list
-# So, subscriptions and slicings are both parsed
-# by this single function.
-def parse_slice_list(ending):
+def parse_slice_item(ending):
     item = la.read()
     if item == '.':
         item = la.read()
         if item == '.':
             item = la.read()
             if item == '.':
-                return True
+                return ellipsis
         la.syntax_error()
-    if item != ':':
-        la.rewind()
-        parse_expression()
-        item = la.read()
-        if item == ending:
-            la.rewind()
-            return True
-        elif item == ',':
-            item = la.read()
-            la.rewind()
-            if item == ending:
-                return True
-            else:
-                parse_slice_list(ending)
     if item == ':':
+        start = None
         item = la.read()
-        if item not in [':', ',', ending]:
-            la.rewind()
-            parse_expression()
-            item = la.read()
         if item == ':':
+            stop = None
             item = la.read()
-            if item not in [',', ending]:
+            if item == ',' or item == ending:
                 la.rewind()
-                parse_expression()
-                item = la.read()
-        if item == ',':
-            item = la.read()
-            la.rewind()
-            if item != ending:
-                parse_slice_list(ending)
+                step = None
+                return slice_item(start, stop, step)
             else:
-                return True
-        if item == ending:
+                la.rewind()
+                step = parse_expression()
+                return slice_item(start, stop, step)
+        else:
             la.rewind()
-            return True
+            stop = parse_expression()
+            item = la.read()
+            if item == ':':
+                item = la.read()
+                if item == ',' or item == ending:
+                    la.rewind()
+                    step = None
+                    return slice_item(start, stop, step)
+                else:
+                    la.rewind()
+                    step = parse_expression()
+                    return slice_item(start, stop, step)
+            elif item == ',' or item == ending:
+                la.rewind()
+                step = None
+                return slice_item(start, stop, step)
+            else:
+                la.syntax_error()
+    else:
+        expression = parse_expression()
+        item = la.read()
+        if item == ',' or item == ending:
+            la.rewind()
+            return expression
+        elif item != ':':
+            la.syntax_error()
+        else:
+            start = expression
+            item = la.read()
+            if item == ':':
+                stop = None
+                item = la.read()
+                if item == ',' or item == ending:
+                    la.rewind()
+                    step = None
+                    return slice_item(start, stop, step)
+                else:
+                    la.rewind()
+                    step = parse_expression()
+                    return slice_item(start, stop, step)
+            else:
+                la.rewind()
+                stop = parse_expression()
+                item = la.read()
+                if item == ':':
+                    item = la.read()
+                    if item == ',' or item == ending:
+                        la.rewind()
+                        step = None
+                        return slice_item(start, stop, step)
+                    else:
+                        la.rewind()
+                        step = parse_expression()
+                        return slice_item(start, stop, step)
+                elif item == ',' or item == ending:
+                    la.rewind()
+                    step = None
+                    return slice_item(start, stop, step)
+                else:
+                    la.syntax_error()
+
+def parse_slice_list(ending):
+    slice_item_list = []
+    slice_item = parse_slice_item
+    item = la.read()
+    if item == ending:
+        la.rewind()
+        return slice_item
+    elif item != ',':
+        la.syntax_error()
+    else:
+        slice_item_list.append(slice_item)
+        while True:
+            item = la.read()
+            if item == ending:
+                la.rewind()
+                return parenth_form(slice_item_list)
+            elif item != ',':
+                la.syntax_error()
 
 def parse_key_datum_list(ending):
     parse_expression()

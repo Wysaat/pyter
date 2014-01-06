@@ -335,8 +335,9 @@ class lexical_analyzer(object):
                 self.index = len(self.string)
                 self.items.append(item)
                 self.eol = 1
+                self.line_joining = 0
             else:
-                if self.index == 0 and not self.multi_lines:
+                if self.index == 0 and not self.multi_lines and not self.line_joining:
                     while self.string[self.index] in [' ', '\t',]:
                         self.indentation += 1
                         self.index += 1
@@ -361,6 +362,7 @@ class lexical_analyzer(object):
                     item = ''
                     self.items.append(item)
                     self.eol = 1
+                    self.line_joining = 0
                     return item
                 elif self.index+2 < len(self.string) and self.string[self.index:self.index+3] in tokens:
                     item = self.string[self.index:self.index+3]
@@ -403,6 +405,7 @@ class lexical_analyzer(object):
             item = ''
             self.items.append(item)
             self.eol = 1
+            self.line_joining = 0
             return item
 
     # EOF should be appended to items,
