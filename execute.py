@@ -5,6 +5,8 @@ class enviroment(dict):
 
 env = environment()
 
+env.
+
 class identifier(atom):
     def __init__(self, item):
         self.name = item
@@ -136,6 +138,13 @@ class generator_expression(enclosure):
         self.comp_for_list = comp_for_list
         self.comp_if_list = comp_if_list
         self.type = 'generator'
+        self.methods = {
+            'next': self.next
+        }
+    def evaluate(self):
+        return self
+    def call(self, method_name):
+        self.methods[method_name]()
     # def evaluate(self):
     #     targets = values = []
     #     for comp in self.comp_for_list:
@@ -170,10 +179,14 @@ class attributeref(primary):
         pass
 
 class subscription(primary):
-    pass
+    def __init__(self, primary, expression_list):
+        self.primary = primary
+        self.expression_list = expression_list
 
 class slicing(primary):
-    pass
+    def __init__(self, primary, slice_list):
+        self.primary = primary
+        self.slice_list = slice_list
 
 class call(primary):
     pass
@@ -241,7 +254,8 @@ class conditional_expression(object):
     pass
 
 class expression(object):
-    pass
+    def __init__(self):
+        self.type = 'expression'
 
 class expression_nocond(object):
     pass
@@ -253,9 +267,9 @@ class lambda_expr_nocond(object):
     pass
 
 class expression_list(object):
-    def __init__(self, expression):
-        self.expressions = []
-        self.expressions.append(expression)
+    def __init__(self, expressions):
+        self.expressions = expressions
+        self.type = 'exression_list'
     def append(self, another):
         self.expressions += another.expressions
     def evaluate(self):

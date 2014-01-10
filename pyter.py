@@ -816,11 +816,20 @@ def parse_primary():
             primary = attributeref(primary, item)
         elif item == '[':
             la.multi_lines += 1
-            parse_slice_list(']')
+            slicelist = parse_slice_list(']')
             item = la.read()
             if item != ']':
                 la.syntax_error()
             la.multi_lines -= 1
+            if slicelist.type == 'expression':
+                expressionitem = slicelist
+                expressionlist = expression_list(expression)
+                primary = subscription(primary, expressionlist)
+            elif slicelist.type == 'expression_list':
+                expressionlist = slicelist
+                primary = subscription(primary, expressionlist)
+            else:
+                primary = slice_list(primary, slicelist)
         elif item == '(':
             la.multi_lines += 1
             item = la.read()
@@ -1296,7 +1305,11 @@ def parse_slice_list(ending):
             item = la.read()
             if item == ending:
                 la.rewind()
-                return parenth_form(slice_item_list)
+                if all(item.type == 'expression' for item in slice_item_list):
+                    expressionlist = expressionlist(slice_item_list)
+                    return expressionlist
+                else:
+                    return parenth_form(slice_item_list)
             elif item != ',':
                 la.syntax_error()
 
