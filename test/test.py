@@ -19,3 +19,6 @@ class a: pass
 class b: pass
 def f(): pass
 x = 3
+\
+a +
+t

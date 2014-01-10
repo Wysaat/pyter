@@ -64,7 +64,6 @@ class lexical_analyzer(object):
         self.symbol = '>>>'
         self.in_block = 0
         self.eol = 0
-        self.line_joining = 0
 
         # DANGEROUS to put a function here!!! fix it some day...
         self.get_line()
@@ -89,12 +88,11 @@ class lexical_analyzer(object):
                 self.string = self.string[:-1]
         else:
             self.filename = '<stdin>'
-            if self.multi_lines or self.in_block or self.line_joining:
+            if self.multi_lines or self.in_block:
                 self.symbol = '...'
             else:
                 self.symbol = '>>>'
             print self.symbol,
-            self.line_joining = 0
             self.string = raw_input()
             if self.in_block:
                 while self.string != '' and self.string.strip() == '':
@@ -335,9 +333,8 @@ class lexical_analyzer(object):
                 self.index = len(self.string)
                 self.items.append(item)
                 self.eol = 1
-                self.line_joining = 0
             else:
-                if self.index == 0 and not self.multi_lines and not self.line_joining:
+                if self.index == 0 and not self.multi_lines:
                     while self.string[self.index] in [' ', '\t',]:
                         self.indentation += 1
                         self.index += 1
@@ -362,7 +359,6 @@ class lexical_analyzer(object):
                     item = ''
                     self.items.append(item)
                     self.eol = 1
-                    self.line_joining = 0
                     return item
                 elif self.index+2 < len(self.string) and self.string[self.index:self.index+3] in tokens:
                     item = self.string[self.index:self.index+3]
@@ -405,7 +401,6 @@ class lexical_analyzer(object):
             item = ''
             self.items.append(item)
             self.eol = 1
-            self.line_joining = 0
             return item
 
     # EOF should be appended to items,
@@ -427,14 +422,22 @@ class lexical_analyzer(object):
         item = self.raw_read()
         if item == '\\':
             self.items.pop()
+            # here is a RAW_READ, got a SELF.EOL!
             if self.raw_read() != '':
                 self.error('syntax_error: unexpected character after line continuation character')
             else:
                 self.items.pop()
-                self.line_joining = 1
-                self.get_line()
-                item = self.read()
-                return item
+                self.eol = 0
+                print '...',
+                self.string = raw_input()
+                self.line_number += 1
+                if self.string.strip() == '':
+                    self.eol = 1
+                    self.items.append('')
+                    return ''
+                else:
+                    item = self.read()
+                    return item
         if item == '' and self.multi_lines:
             self.items.pop()
             item = self.read()
@@ -1667,6 +1670,8 @@ def test():
     else:
         while True:
             item = la.read()
+            while item == '':
+                item = la.read()
             la.rewind()
             if item in compound_statement_starts:
                 la.in_block = 1

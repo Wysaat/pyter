@@ -1,11 +1,9 @@
 # references: Python 2.7 language reference
-#             Python 3.3 languare reference
+# Python 3.3 languare reference
 from string import letters
 import sys
 
 digits = '0123456789'
-oct_digits = '01234567'
-hex_digits = '0123456789abcdefABCDEF'
 
 stringprefixes = ['r', 'R', 'u', 'U', 'ur', 'uR', 'Ur', 'UR',
                   'b', 'B', 'br', 'bR', 'Br', 'BR']
@@ -42,19 +40,6 @@ EOF = hash('EOF')
 
 compound_statement_starts = ['if', 'while', 'for', 'try', 'with', '@', 'def', 'class',]
 
-escape = {'\\n': '\n',
-          '\\\\': '\\',
-          '\\\'': '\'',
-          '\\\"': '\"',
-          '\\a': '\a',
-          '\\b': '\b',
-          '\\f': '\f',
-          '\\n': '\n',
-          '\\r': '\r',
-          '\\t': '\t',
-          '\\v': '\v',
-          }
-
 class lexical_analyzer(object):
     def __init__(self):
         self.items = []
@@ -83,6 +68,7 @@ class lexical_analyzer(object):
         # DANGEROUS to put a function here!!! fix it some day...
         self.get_line()
 
+# BUGGY
     def get_line(self):
         if self.eof:
             self.string = ''
@@ -134,9 +120,9 @@ class lexical_analyzer(object):
         else:
             self_string = self.string
             self_index = self.index
-        print '  File "' + self.filename + '", line ' + str(self.line_number)
-        print '    ' + self_string
-        print '    ' + ' ' * (self_index - 1) + '^'
+        print ' File "' + self.filename + '", line ' + str(self.line_number)
+        print ' ' + self_string
+        print ' ' + ' ' * (self_index - 1) + '^'
         print string
         exit()
 
@@ -144,190 +130,71 @@ class lexical_analyzer(object):
         self.error('syntax_error: invalid syntax')
 
     def raw_error(self, string):
-        print '  File "' + self.filename + '", line ' + str(self.line_number)
+        print ' File "' + self.filename + '", line ' + str(self.line_number)
         print string
         exit()
 
-    # use Python's encoder/decoder... implement that someday...
     def read_string_literal(self, item=''):
+        backslash = 0
         op = self.string[self.index]
-        utf = 0
-        escape = 1
-        if 'u' in item or 'U' in item:
-            utf = 1
-        if 'r' in item or 'R' in item:
-            escape = 0
         if self.string[self.index:self.index+3] in ['"""', "'''"]:
             self.multi_lines += 1
             item += self.string[self.index:self.index+3]
             op_num = 0
             self.index += 3
-            ind_delt = self.index
             while True:
-                if op_num == 3:
-                    self.items.append(item)
-                    return item
                 if self.eof:
-                    self.error('EOF while scanning triple-quoted string literal')  
+                    self.error('EOF while scanning triple-quoted string literal')
                 if self.index == len(self.string):
                     self.get_line()
                     self.index = 0
                     op_num = 0
-                    if item[-1] == '\\' and escape:
-                        item = item[:-1]
-                    else:
+                    if backslash == 0:
                         item += '\n'
+                    backslash = 0
                 else:
-                    if self.string[self.index] == '\\' and escape:
-                        if self.index+1 < len(self.string) and self.string[self.index:self.index+2] in escape:
-                            item += escape(self.string[self.index:self.index+2])
-                            self.index += 2
-                        elif self.index+3 < len(self.string) and self.string[self.index+1] == '0' \
-                                                             and self.string[self.index+2] in oct_digits \
-                                                             and self.string[self.index+3] in oct_digits:
-                            item += chr(int(self.string[index+1:index+4], 8))
-                            self.index += 4
-                        elif self.index+3 < len(self.string) and self.string[self.index+1] == 'x' \
-                                                             and self.string[self.index+2] in hex_digits \
-                                                             and self.string[self.index+3] in hex_digits:
-                            item += chr(int(self.string[index+1:index+4], 16))
-                            self.index += 4
-                        elif utf and self.index+1 < len(self.string) and self.string[self.index+1] in ['u', 'U']:
-                            if self.string[self.index+1] == 'u':
-                                if self.index+5 < len(self.string):
-                                    if all(self.string[self.index+i] in hex_digits for i in range(2, 6)):
-                                        item += self.string[self.index:self.index+6].decode('unicode-escape')
-                                    else:
-                                        self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: truncated \uXXXX escape" 
-                                                              % (self.index-ind_delt, self.index+5-ind_delt))
-                                else:
-                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: end of string in escape sequence"
-                                                          % (self.index-ind_delt, len(self.string)-1-ind_delt))
-                            elif self.string[self.index+1] == 'U':
-                                if self.index+9 < len(self.string):
-                                    if all(self.string[self.index+i] in hex_digits for i in range(2, 10)):
-                                        try:
-                                            item += self.string[self.index:self.index+6].decode('unicode-escape')
-                                        except:
-                                            self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: illegal Unicode character"
-                                                                  % (self.index-ind_delt, self.index+9-ind_delt))
-                                    else:
-                                        self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positon %s-%s: truncated \UXXXXXXXX escape"
-                                                              % (self.index-ind_delt, self.index+9-ind_delt))
-                                else:
-                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: end of string in escape sequence"
-                                                          % (self.index-ind_delt, len(self.string)-1-ind_delt))
-                            elif self.string[self.index+1] == 'N':
-                                if self.index+3 < len(self.string) and self.string[self.index+2] == '{' and self.string[sefl.index+3] != '}':
-                                    name = ''
-                                    name_begin = self.index+3
-                                    i = self.index+3
-                                    while self.string[i] != '}':
-                                        name += self.string[i]
-                                        i += 1
-                                        if i == len(self.string):
-                                            self.syntax_error("syntax_error: (unicode error) 'uicodeescape' codec can't decode bytes in positions %s-%s: malformed \N character escape"
-                                                                  % (self.index-ind_delt, i-ind_delt))
-                                    try:
-                                        item += self.string[self.index, i+1].decode('unicode-escape')
-                                    except:
-                                        self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positions %s-%s: unknown Unicode character name"
-                                                              % (self.index-ind_delt, i-ind_delt))
-                                    self.items.append(item)
-                                    self.index = i + 1
-                                    return item
-                                else:
-                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positions %s-%s: malformed \N character escape"
-                                                          % (self.index-ind_delt, len(self.string)-1-ind_delt))
-                        else:
-                            item += self.string[self.index]
+                    item += self.string[self.index]
+                    if self.string[self.index] == '\\':
+                        if backslash == 0:
+                            if self.index == len(self.string) - 1:
+                                item = item[:-1]
+                            backslash = 1
+                    elif self.string[self.index] == op:
+                        backslash = 0
+                        op_num += 1
+                        if op_num == 3:
                             self.index += 1
+                            self.items.append(item)
+                            self.multi_lines -= 1
+                            return item
                     else:
-                        item += self.string[self.index]
-                        self.index += 1
-                        if item == op:
-                            op_num += 1
+                        backslash = 0
+                        op_num = 0
+                    self.index += 1
         elif self.string[self.index] in ['"', "'"]:
             item += self.string[self.index]
             self.index += 1
-            ind_delt = self.index
-            while self.index < len(self.string):
-                if self.string[self.index] == '\\' and escape:
-                    if self.index+1 < len(self.string) and self.string[self.index:self.index+2] in escape:
-                        item += escape[self.string[self.index:self.index+2]]
-                        self.index += 2
-                    elif self.index+3 < len(self.string) and self.string[self.index+1] == '0' \
-                                                         and self.string[self.index+2] in oct_digits \
-                                                         and self.string[self.index+3] in oct_digits:
-                        item += chr(int(self.string[index+1:index+4], 8))
-                        self.index += 4
-                    elif self.index+3 < len(self.string) and self.string[self.index+1] == 'x' \
-                                                         and self.string[self.index+2] in hex_digits \
-                                                         and self.string[self.index+3] in hex_digits:
-                        item += chr(int(self.string[index+1:index+4], 16))
-                        self.index += 4
-                    elif utf and self.index+1 < len(self.string) and self.string[self.index+1] in ['u', 'U']:
-                        if self.string[self.index+1] == 'u':
-                            if self.index+5 < len(self.string):
-                                if all(self.string[self.index+i] in hex_digits for i in range(2, 6)):
-                                    item += self.string[self.index:self.index+6].decode('unicode-escape')
-                                else:
-                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: truncated \uXXXX escape" 
-                                                          % (self.index-ind_delt, self.index+5-ind_delt))
-                            else:
-                                self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: end of string in escape sequence"
-                                                      % (self.index-ind_delt, len(self.string)-1-ind_delt))
-                        elif self.string[self.index+1] == 'U':
-                            if self.index+9 < len(self.string):
-                                if all(self.string[self.index+i] in hex_digits for i in range(2, 10)):
-                                    try:
-                                        item += self.string[self.index:self.index+6].decode('unicode-escape')
-                                    except:
-                                        self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: illegal Unicode character"
-                                                              % (self.index-ind_delt, self.index+9-ind_delt))
-                                else:
-                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positon %s-%s: truncated \UXXXXXXXX escape"
-                                                          % (self.index-ind_delt, self.index+9-ind_delt))
-                            else:
-                                self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in position %s-%s: end of string in escape sequence"
-                                                      % (self.index-ind_delt, len(self.string)-1-ind_delt))
-                        elif self.string[self.index+1] == 'N':
-                            if self.index+3 < len(self.string) and self.string[self.index+2] == '{' and self.string[sefl.index+3] != '}':
-                                name = ''
-                                name_begin = self.index+3
-                                i = self.index+3
-                                while self.string[i] != '}':
-                                    name += self.string[i]
-                                    i += 1
-                                    if i == len(self.string):
-                                        self.syntax_error("syntax_error: (unicode error) 'uicodeescape' codec can't decode bytes in positions %s-%s: malformed \N character escape"
-                                                              % (self.index-ind_delt, i-ind_delt))
-                                try:
-                                    item += self.string[self.index, i+1].decode('unicode-escape')
-                                except:
-                                    self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positions %s-%s: unknown Unicode character name"
-                                                          % (self.index-ind_delt, i-ind_delt))
-                                self.items.append(item)
-                                self.index = i + 1
-                                return item
-                            else:
-                                self.syntax_error("syntax_error: (unicode error) 'unicodeescape' codec can't decode bytes in positions %s-%s: malformed \N character escape"
-                                                      % (self.index-ind_delt, len(self.string)-1-ind_delt))
-                    elif self.index+1 < len(self.string):
-                        item += self.string[self.index]
-                        self.index += 1
-                    else:
-                        self.multi_lines += 1
-                        self.get_line()
-                        self.multi_lines -= 1
-                        self.index = 0
-                else:
+            while True:
+                while self.index < len(self.string):
                     item += self.string[self.index]
-                    self.index += 1
-                    if item == op:
+                    if backslash == 0 and self.string[self.index] == op:
+                        self.index += 1
                         self.items.append(item)
                         return item
-            self.error('syntax_error: EOL while scanning string literal')
+                    elif backslash == 0 and self.string[self.index] == '\\':
+                        backslash = 1
+                    else:
+                        backslash = 0
+                    self.index += 1
+                if backslash == 1:
+                    item = item[:-1]
+                    self.multi_lines += 1
+                    self.get_line()
+                    self.multi_lines -= 1
+                    self.index = 0
+                    backslash = 0
+                else:
+                    self.error('syntax_error: EOL while scanning string literal')
 
     def read_numeric_literal(self):
         digits = '0123456789'
@@ -438,6 +305,7 @@ class lexical_analyzer(object):
             self.items.append(item)
             return item
 
+    # the indent/dedent part is BUGGY, to be fixed
     def raw_read(self):
         digits = '0123456789'
         self.indentation = 0
@@ -557,8 +425,8 @@ class lexical_analyzer(object):
             if self.raw_read() != '':
                 self.error('syntax_error: unexpected character after line continuation character')
             else:
-                self.eol = 0
                 self.items.pop()
+                self.eol = 0
                 item = self.read_line_joining()
                 return item
         if item == '' and self.multi_lines:
@@ -566,7 +434,6 @@ class lexical_analyzer(object):
             item = self.read()
         return item
 
-    # it just works
     def read_line_joining(self):
         last_string = self.string
         if len(sys.argv) > 1:
@@ -606,6 +473,11 @@ def is_id(item):
         return True
     return False
 
+def is_kw(item):
+    if item in keywords:
+        return True
+    return False
+
 def is_str(item):
     if type(item) != str:
         return False
@@ -632,136 +504,88 @@ def is_num(item):
         return True
     return False
 
-def is_int(item):
-    if not is_num(item):
-        return False
-    not_int = ['.', 'e', 'E', 'j', 'J', 'l', 'L']
-    return not any(i in item for i in not_int)
+def is_op(item):
+    if item in operators:
+        return True
+    return False
 
-def is_float(item):
-    if not is_num(item):
-        return False
-    _float = ['.', 'e', 'E']
-    return any(i in item for i in _float)
+def is_dot(item):
+    if item is '.':
+        return True
+    return False
 
-def is_imag(item):
-    if not is_num(item):
-        return False
-    _imag = ['j', 'J']
-    return any(i in item for i in _imag)
+def is_dl(item):
+    if item in delimiters:
+        return True
+    return False
 
-def is_long(item):
-    if not is_num(item):
-        return False
-    _long = ['l', 'L']
-    return any(i in item for i in _long)
 
 la = lexical_analyzer()
 
 def parse_atom():
     item = la.read()
-    if is_id(item):
-        return identifier(item)
-    elif is_int(item):
-        return integer(item)
-    elif is_float(item):
-        return floatnumber(item)
-    elif is_imag(item):
-        return imagnumber(item)
-    elif is_long(item):
-        return longinteger(item)
+    if is_id(item) or is_num(item):
+        return True
     if is_str(item):
-        first = True
         while is_str(item):
-            if first:
-                string_literal = stringliteral(item)
-                first = False
-            newstring_literal = stringliteral(item)
-            string_literal.value += newstring_literal.value
             item = la.read()
         la.rewind()
-        return string_literal
+        return True
     if item is '(':
         la.multi_lines += 1
         item = la.read()
         if item == ')':
             la.multi_lines -= 1
-            return parenth_form()
+            return True
         if item == 'yield':
-            expression_list = parse_expression_list(')')
-            item = la.read()
-            if item != ')':
-                la.syntax_error()
-            else:
-                la.multi_lines -= 1
-                return yield_expression(expression_list)
+            parse_expression_list(')')
         else:
             la.rewind()
-            expression = parse_expression()
+            parse_expression()
         item = la.read()
-        if item == ')':
-            la.multi_lines -= 1
-            # (3) == 3 != (3,)
-            return expression
         if item == ',':
-            expressionlist = expression_list(expression)
             item = la.read()
             if item == ')':
                 la.multi_lines -= 1
-                return parenth_form(expressionlist)
+                return True
             la.rewind()
-            expressionlist2 = parse_expressoin_list(')')
-            expressionlist.append(expressionlist2)
+            parse_expression_list(')')
             item = la.read()
-            if item != ')':
-                la.syntax_error()
-            else:
-                la.multi_lines -= 1
-                return parenth_form(expressionlist)
         elif item == 'for':
             la.rewind()
-            compfors, compifs = parse_comp_for()
+            parse_comp_for()
             item = la.read()
-            if item != ')':
-                la.syntax_error()
-            else:
-                la.multi_lines -= 1
-                return generator_expression(expression, compfors, compifs)
+        if item == ')':
+            la.multi_lines -= 1
+            return True
+        else:
+            la.syntax_error()
     if item is '[':
         la.multi_lines += 1
         item = la.read()
         if item == ']':
             la.multi_lines -= 1
-            return list_expr()
+            return True
         la.rewind()
-        expression = parse_expression()
-        expressionlist = expression_list(expression)
+        parse_expression()
         item = la.read()
-        if item == ']':
-            la.multi_lines -= 1
-            return list_expr(expressionlist)
-        if item == ',':
+        if item is ',':
             item = la.read()
             if item == ']':
                 la.multi_lines -= 1
-                return list_expr(expressionlist)
+                return True
             la.rewind()
-            expressionlist.append(parse_expression_list(']'))
+            parse_expression_list(']')
             item = la.read()
-            if item != ']':
-                la.syntax_error()
-            else:
-                la.multi_lines -= 1
-                return list_expr(expressionlist)
         elif item == 'for':
             la.rewind()
-            compfors, compifs = parse_comp_for()
+            parse_list_for(']')
             item = la.read()
-            if item != ']':
-                la.syntax_error()
-            else:
-                la.multi_lines -= 1
-                return list_comp(expression, compfors, compifs)
+        if item == ']':
+            la.multi_lines -= 1
+            return True
+        else:
+            la.syntax_error()
     if item is '{':
         la.multi_lines += 1
         item = la.read()
@@ -806,14 +630,13 @@ def parse_atom():
     la.syntax_error()
 
 def parse_primary():
-    primary = parse_atom()
+    parse_atom()
     while True:
         item = la.read()
         if item == '.':
             item = la.read()
             if not is_id(item):
                 la.syntax_error()
-            primary = attributeref(primary, item)
         elif item == '[':
             la.multi_lines += 1
             parse_slice_list(']')
@@ -866,9 +689,9 @@ def parse_primary():
             la.multi_lines -= 1
         else:
             la.rewind()
-            return primary
+            return True
 
-# Trailing commas like: f(*args, a, b,) are allowed,
+# Trailing commas like: f(*args, a, b) are allowed,
 # as is specified in the doc.
 def parse_argument_list():
     asterisk = 0
@@ -1195,110 +1018,55 @@ def parse_star_expr():
         la.rewind()
     parse_expression()
 
-def parse_slice_item(ending):
+# expression_list is a subset of slice_list
+# short_slice is a subset of slice_list
+# So, subscriptions and slicings are both parsed
+# by this single function.
+def parse_slice_list(ending):
     item = la.read()
     if item == '.':
         item = la.read()
         if item == '.':
             item = la.read()
             if item == '.':
-                return ellipsis
+                return True
         la.syntax_error()
-    if item == ':':
-        start = None
-        item = la.read()
-        if item == ':':
-            stop = None
-            item = la.read()
-            if item == ',' or item == ending:
-                la.rewind()
-                step = None
-                return slice_item(start, stop, step)
-            else:
-                la.rewind()
-                step = parse_expression()
-                return slice_item(start, stop, step)
-        else:
-            la.rewind()
-            stop = parse_expression()
-            item = la.read()
-            if item == ':':
-                item = la.read()
-                if item == ',' or item == ending:
-                    la.rewind()
-                    step = None
-                    return slice_item(start, stop, step)
-                else:
-                    la.rewind()
-                    step = parse_expression()
-                    return slice_item(start, stop, step)
-            elif item == ',' or item == ending:
-                la.rewind()
-                step = None
-                return slice_item(start, stop, step)
-            else:
-                la.syntax_error()
-    else:
-        expression = parse_expression()
-        item = la.read()
-        if item == ',' or item == ending:
-            la.rewind()
-            return expression
-        elif item != ':':
-            la.syntax_error()
-        else:
-            start = expression
-            item = la.read()
-            if item == ':':
-                stop = None
-                item = la.read()
-                if item == ',' or item == ending:
-                    la.rewind()
-                    step = None
-                    return slice_item(start, stop, step)
-                else:
-                    la.rewind()
-                    step = parse_expression()
-                    return slice_item(start, stop, step)
-            else:
-                la.rewind()
-                stop = parse_expression()
-                item = la.read()
-                if item == ':':
-                    item = la.read()
-                    if item == ',' or item == ending:
-                        la.rewind()
-                        step = None
-                        return slice_item(start, stop, step)
-                    else:
-                        la.rewind()
-                        step = parse_expression()
-                        return slice_item(start, stop, step)
-                elif item == ',' or item == ending:
-                    la.rewind()
-                    step = None
-                    return slice_item(start, stop, step)
-                else:
-                    la.syntax_error()
-
-def parse_slice_list(ending):
-    slice_item_list = []
-    slice_item = parse_slice_item
-    item = la.read()
-    if item == ending:
+    if item != ':':
         la.rewind()
-        return slice_item
-    elif item != ',':
-        la.syntax_error()
-    else:
-        slice_item_list.append(slice_item)
-        while True:
+        parse_expression()
+        item = la.read()
+        if item == ending:
+            la.rewind()
+            return True
+        elif item == ',':
             item = la.read()
+            la.rewind()
             if item == ending:
+                return True
+            else:
+                parse_slice_list(ending)
+    if item == ':':
+        item = la.read()
+        if item not in [':', ',', ending]:
+            la.rewind()
+            parse_expression()
+            item = la.read()
+        if item == ':':
+            item = la.read()
+            if item not in [',', ending]:
                 la.rewind()
-                return parenth_form(slice_item_list)
-            elif item != ',':
-                la.syntax_error()
+                parse_expression()
+                item = la.read()
+        if item == ',':
+            item = la.read()
+            la.rewind()
+            if item != ending:
+                parse_slice_list(ending)
+            else:
+                return True
+        if item == ending:
+            la.rewind()
+            return True
 
 def parse_key_datum_list(ending):
     parse_expression()
@@ -1318,51 +1086,79 @@ def parse_key_datum_list(ending):
         else:
             parse_key_datum_list(ending)
 
+def parse_list_for(ending):
+    item = la.read()
+    if item != 'for':
+        la.syntax_error()
+    parse_target_list('in')
+    item = la.read()
+    if item != 'in':
+        la.syntax_error()
+    parse_expression_nocond()
+    item = la.read()
+    if item == ',':
+        while True:
+            parse_expression_nocond()
+            item = la.read()
+            if item != ',':
+                break
+            item = la.read()
+            if item in ['for', 'if', ending]:
+                break
+            la.rewind()
+    la.rewind()
+    if item == 'for':
+        parse_list_for(ending)
+    elif item == 'if':
+        parse_list_if(ending)
+    else:
+        return True
+
+def parse_list_if(ending):
+    item = la.read()
+    if item != 'if':
+        la.syntax_error()
+    parse_expression_nocond()
+    item = la.read()
+    la.rewind()
+    if item == 'for':
+        parse_list_for(ending)
+    elif item == 'if':
+        parse_list_if(ending)
+    else:
+        return True
+
 def parse_comp_for():
     item = la.read()
     if item != 'for':
         la.syntax_error()
-    compfors = compifs = []
-    targetlist = parse_target_list('in')
+    parse_target_list('in')
     item = la.read()
     if item != 'in':
         la.syntax_error()
-    ortest = parse_or_test()
-    compfor = comp_for(targetlist, ortest)
-    compfors.append(compfor)
+    parse_or_test()
     item = la.read()
     la.rewind()
     if item == 'for':
-        cfs, cis = parse_comp_for()
-        compfors += cfs
-        compifs += cis
+        parse_comp_for()
     elif item == 'if':
-        cfs, cis = parse_comp_if()
-        compfors += cfs
-        compifs += cis
+        parse_comp_if()
     else:
-        return compfors, compifs
+        return True
 
 def parse_comp_if():
     item = la.read()
     if item != 'if':
         la.syntax_error()
-    compfors = compifs = []
-    expressionnocond = parse_expression_nocond()
-    compif = comp_if(expressionnocond)
-    compifs.append(compif)
+    parse_expression_nocond()
     item = la.read()
     la.rewind()
     if item == 'for':
-        cfs, cis = parse_comp_for()
-        compfors += cfs
-        compifs += cis
+        parse_comp_for()
     elif item == 'if':
-        cfs, cis = parse_comp_if()
-        compfors += cfs
-        compifs += cis
+        parse_comp_if()
     else:
-        return compfors, compifs
+        return True
 
 def parse_expression_list(*endings):
     while True:
@@ -1752,6 +1548,7 @@ def parse_decorators():
         if item != '@':
             return True
 
+# not allowing trailing comma: @f(a,) is illegal
 def parse_decorator():
     item = la.read()
     if item != '@':
@@ -1928,12 +1725,14 @@ def test():
             item = la.read()
             la.rewind()
             if item in compound_statement_starts:
+                print 'in BLOCK'
                 la.in_block = 1
             parse_statement()
             print la.items
             if la.in_block:
                 item = la.read()
                 if item != '':
+                    print 'item', item
                     la.syntax_error()
             la.in_block = 0
             la.line_number = 0
