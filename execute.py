@@ -60,12 +60,18 @@ class comp_for(object):
         pass
 
 class target_list(object):
-    def __init__(self, *targets):
+    def __init__(self, *expressions):
+        targets = [target(expression) for expression in expressions]
         self.targets = targets
     def evaluate(self):
         pass
 
 class target(object):
+    def __init__(self, expression):
+        if expression.type
+
+class attributeref(object):
+    def __init__(self, primary, )
 
 class assignment(object):
     def __init__(self, target_list, expression_list):
