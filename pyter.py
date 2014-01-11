@@ -833,15 +833,19 @@ def parse_primary():
         elif item == '(':
             la.multi_lines += 1
             item = la.read()
-            if item in ['*', '**']:
+            if item == ')':
+                primary = call()
+            elif item in ['*', '**']:
                 la.rewind()
-                parse_argument_list()
+                argumentlist = parse_argument_list()
                 item = la.read()
                 if item != ')':
                     la.syntax_error()
-            elif item != ')':
+                else:
+                    primary = call(argumentlist)
+            else:
                 la.rewind()
-                parse_expression()
+                expressionitem = parse_expression()
                 item = la.read()
                 if item == 'for':
                     la.rewind()
@@ -880,11 +884,14 @@ def parse_primary():
 # Trailing commas like: f(*args, a, b,) are allowed,
 # as is specified in the doc.
 def parse_argument_list():
+    arg_list = []
     asterisk = 0
     while True:
         item = la.read()
         if item == '*':
-            parse_expression()
+            expressionitem = parse_expression()
+            starexpr = star_expr(expressionitem)
+            arg_list.append(starexpr)
             asterisk = 1
             break
         if item == '**':
