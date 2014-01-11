@@ -671,16 +671,11 @@ def parse_atom():
     elif is_long(item):
         return longinteger(item)
     if is_str(item):
-        first = True
+        items = []
         while is_str(item):
-            if first:
-                string_literal = stringliteral(item)
-                first = False
-            newstring_literal = stringliteral(item)
-            string_literal.value += newstring_literal.value
-            item = la.read()
+            items.append(item)
         la.rewind()
-        return string_literal
+        return string_literal(*items)
     if item is '(':
         la.multi_lines += 1
         item = la.read()
