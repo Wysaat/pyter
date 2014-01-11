@@ -7,7 +7,12 @@ class environment(object):
         except:
             return exception('name_error')
     def store(self, identifier, value):
-        self.variables[identifier] = value
+        self.variables[identifier] = variable(value)
+
+class variable(object):
+    def __init__(self, value):
+        self.value = value
+        self.attributes = {}
 
 env = environment()
 
@@ -16,7 +21,7 @@ class identifier(object):
         self.identifier = identifier
     def evaluate(self):
         return env.load(self.identifier)
-    def store(self, value):
+    def assign(self, value):
         env.store(self.identifier, value)
 
 class pystr(object):
@@ -71,7 +76,11 @@ class target(object):
         if expression.type
 
 class attributeref(object):
-    def __init__(self, primary, )
+    def __init__(self, primary, identifer):
+        self.primary
+    def assign(self):
+        primary = self.primary.evaluate()
+        primary.find
 
 class assignment(object):
     def __init__(self, target_list, expression_list):
@@ -82,7 +91,7 @@ class assignment(object):
             return exception("value_error")
         pairs = zip(self.target_list, self.expression_list)
         for pair in pairs:
-            pair[0].store(pair[1].evaluate())
+            pair[0].assign(pair[1].evaluate())
 
 class exception(object):
     def __init__(self, type):
