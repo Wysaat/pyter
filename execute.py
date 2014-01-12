@@ -20,9 +20,11 @@ class identifier(object):
     def __init__(self, identifier):
         self.identifier = identifier
     def evaluate(self):
-        return env.load(self.identifier)
+        return env.load(self.identifier).value
     def assign(self, value):
         env.store(self.identifier, value)
+    def load(self):
+        return env.load(self.identifier)
 
 class pystr(object):
     def __init__(self, *items):
@@ -50,8 +52,13 @@ class pyfloat(object):
         return self.value
 
 class pylist(object):
-    def __init__(self, ):
-        pass
+    def __init__(self, *expressions):
+        self.expressions = expressions
+    def setitem(self, index, expression):
+        try:
+            self.expressions[index] = expression
+        except:
+            return exception('index_error')
 
 class comprehension(object):
     def __init__(self, expression, comp_for_list, comp_if_list):
@@ -66,21 +73,39 @@ class comp_for(object):
 
 class target_list(object):
     def __init__(self, *expressions):
-        targets = [target(expression) for expression in expressions]
-        self.targets = targets
+        self.expressions = expressions
     def evaluate(self):
-        pass
-
-class target(object):
-    def __init__(self, expression):
-        if expression.type
+        for expression in expressions:
+            if expression.type not in ['attributeref',]:
+                return exception('syntax_error')
+        targets = self.expressions
 
 class attributeref(object):
     def __init__(self, primary, identifer):
-        self.primary
-    def assign(self):
-        primary = self.primary.evaluate()
-        primary.find
+        self.primary = primary
+        self.identifier = identifier
+    def evaluate(self):
+        return self.load().value
+    def load(self):
+        try:
+            primary = self.primary.load()
+            return primary.attributes[self.identifier]
+        except:
+            return exception('name_error')
+    def assign(self, expression):
+        self.load().value = expression
+
+class subscription(object):
+    def __init__(self, primary, expression):
+        self.primary = primary
+        self.expression = expression
+    def assign(self, expression):
+        index = self.expression.evaluate()
+        primary = self.primary.load()
+        try:
+            primary.setitem(index, expression)
+        except:
+            return exception('type_error')
 
 class assignment(object):
     def __init__(self, target_list, expression_list):
@@ -91,7 +116,7 @@ class assignment(object):
             return exception("value_error")
         pairs = zip(self.target_list, self.expression_list)
         for pair in pairs:
-            pair[0].assign(pair[1].evaluate())
+            pair[0].assign(pair[1])
 
 class exception(object):
     def __init__(self, type):

@@ -2,6 +2,7 @@
 #             Python 3.3 languare reference
 from string import letters
 import sys
+from execute import *
 
 digits = '0123456789'
 oct_digits = '01234567'
@@ -663,9 +664,9 @@ def parse_atom():
     if is_id(item):
         return identifier(item)
     elif is_int(item):
-        return integer(item)
+        return pyint(item)
     elif is_float(item):
-        return floatnumber(item)
+        return pyfloat(item)
     elif is_imag(item):
         return imagnumber(item)
     elif is_long(item):
@@ -675,7 +676,7 @@ def parse_atom():
         while is_str(item):
             items.append(item)
         la.rewind()
-        return string_literal(*items)
+        return pystr(*items)
     if item is '(':
         la.multi_lines += 1
         item = la.read()
@@ -727,27 +728,26 @@ def parse_atom():
         item = la.read()
         if item == ']':
             la.multi_lines -= 1
-            return list_expr()
+            return pylist()
         la.rewind()
         expression = parse_expression()
-        expressionlist = expression_list(expression)
         item = la.read()
         if item == ']':
             la.multi_lines -= 1
-            return list_expr(expressionlist)
+            return pylist(expression)
         if item == ',':
             item = la.read()
             if item == ']':
                 la.multi_lines -= 1
-                return list_expr(expressionlist)
+                return pylist(expression)
             la.rewind()
-            expressionlist.append(parse_expression_list(']'))
+            expressions = [expression] + parse_expression_list(']')
             item = la.read()
             if item != ']':
                 la.syntax_error()
             else:
                 la.multi_lines -= 1
-                return list_expr(expressionlist)
+                return pylist(*expressions)
         elif item == 'for':
             la.rewind()
             compfors, compifs = parse_comp_for()
@@ -962,11 +962,11 @@ def parse_argument_list():
         parse_expression()
 
 def parse_power():
-    parse_primary()
+    primary = parse_primary()
     item = la.read()
     if item != '**':
         la.rewind()
-        return True
+        return primary
     parse_u_expr()
 
 def parse_u_expr():
@@ -977,66 +977,66 @@ def parse_u_expr():
         parse_u_expr()
     else:
         la.rewind()
-        parse_power()
+        return parse_power()
 
 def parse_m_expr():
-    parse_u_expr()
+    u_expr = parse_u_expr()
     while True:
         item = la.read()
         if item not in ['*', '//', '/', '%']:
             la.rewind()
-            return True
+            return u_expr
         parse_u_expr()
 
 def parse_a_expr():
-    parse_m_expr()
+    m_expr = parse_m_expr()
     while True:
         item = la.read()
         if item not in ['+', '-']:
             la.rewind()
-            return True
+            return m_expr
         parse_m_expr()
 
 def parse_shift_expr():
-    parse_a_expr()
+    a_expr = parse_a_expr()
     while True:
         item = la.read()
         if item not in ['<<', '>>']:
             la.rewind()
-            return True
+            return a_expr
         parse_a_expr()
 
 def parse_and_expr():
-    parse_shift_expr()
+    shift_expr = parse_shift_expr()
     while True:
         item = la.read()
         if item != '&':
             la.rewind()
-            return True
+            return shift_expr
         parse_shift_expr()
 
 def parse_xor_expr():
-    parse_and_expr()
+    and_expr = parse_and_expr()
     while True:
         item = la.read()
         if item != '^':
             la.rewind()
-            return True
+            return and_expr
         parse_and_expr()
 
 def parse_or_expr():
-    parse_xor_expr()
+    xor_expr = parse_xor_expr()
     while True:
         item = la.read()
         if item != '|':
             la.rewind()
-            return True
+            return xor_expr
         parse_xor_expr()
 
 comp_operators = ['<', '>', '==', '>=', '<=', '<>', '!=',]
 
 def parse_comparison():
-    parse_or_expr()
+    or_expr = parse_or_expr()
     while True:
         item = la.read()
         if item == 'is':
@@ -1055,7 +1055,7 @@ def parse_comparison():
             parse_or_expr()
         else:
             la.rewind()
-            return True
+            return or_expr
 
 def parse_not_test():
     item = la.read()
@@ -1063,32 +1063,32 @@ def parse_not_test():
         parse_not_test()
     else:
         la.rewind()
-        parse_comparison()
+        return parse_comparison()
 
 def parse_and_test():
-    parse_not_test()
+    not_test = parse_not_test()
     while True:
         item = la.read()
         if item != 'and':
             la.rewind()
-            return True
+            return not_test
         parse_not_test()
 
 def parse_or_test():
-    parse_and_test()
+    and_test = parse_and_test()
     while True:
         item = la.read()
         if item != 'or':
             la.rewind()
-            return True
+            return and_test
         parse_and_test()
 
 def parse_conditional_expression():
-    parse_or_test()
+    or_test = parse_or_test()
     item = la.read()
     if item != 'if':
         la.rewind()
-        return True
+        return or_test
     parse_or_test()
     item = la.read()
     if item != 'else':
@@ -1099,9 +1099,9 @@ def parse_expression():
     item = la.read()
     la.rewind()
     if item == 'lambda':
-        parse_lambda_expr()
+        return parse_lambda_expr()
     else:
-        parse_conditional_expression()
+        return parse_conditional_expression()
 
 def parse_expression_nocond():
     item = la.read()
@@ -1173,17 +1173,18 @@ def parse_lambda_parameter_list():
             la.syntax_error()
 
 def parse_star_expr_list(*endings):
+    star_expr_list = []
     while True:
-        parse_star_expr()
+        star_expr_list.append(parse_star_expr())
         item = la.read()
         if item == ',':
             item = la.read()
             la.rewind()
             if item in endings:
-                return True
+                return star_expr_list
         else:
             la.rewind()
-            return True
+            return star_expr_list
 
 def parse_target_list(*endings):
     while True:
@@ -1204,7 +1205,7 @@ def parse_star_expr():
     item = la.read()
     if item != '*':
         la.rewind()
-    parse_expression()
+    return parse_expression()
 
 def parse_slice_item(ending):
     item = la.read()
@@ -1380,17 +1381,18 @@ def parse_comp_if():
         return compfors, compifs
 
 def parse_expression_list(*endings):
+    expressions = []
     while True:
-        parse_expression()
+        expressions.append(parse_expression())
         item = la.read()
         if item == ',':
             item = la.read()
             la.rewind()
             if item in endings:
-                return True
+                return expressions
         else:
             la.rewind()
-            return True
+            return expressions
 
 ##############################################
 ########## PARSE SIMPLE STATEMENTS ###########
@@ -1517,7 +1519,7 @@ def parse_simple_stmt():
                 return True
     else:
         la.rewind()
-        parse_star_expr_list('=', '', ';', *aug_ops)
+        star_expr_list = parse_star_expr_list('=', '', ';', *aug_ops)
         item = la.read()
         if item == '=':
             item = la.read()
@@ -1535,7 +1537,7 @@ def parse_simple_stmt():
                 parse_expression_list('', ';')
         else:
             la.rewind()
-            return True
+            return star_expr_list
 
 def parse_module():
     while True:
@@ -1913,11 +1915,12 @@ def parse_statement():
     elif item in compound_statement_starts:
         parse_compound_statement()
     else:
-        parse_stmt_list_plus_newline()
+        return parse_stmt_list_plus_newline()
 
 def parse_stmt_list_plus_newline():
+    stmt_list = []
     while True:
-        parse_simple_stmt()
+        stmt_list.append(parse_simple_stmt())
         item = la.read()
         if item == ';':
             item = la.read()
@@ -1925,7 +1928,7 @@ def parse_stmt_list_plus_newline():
                 return True
             la.rewind()
         elif item == '':
-            return True
+            return stmt_list
         else:
             la.syntax_error()
 
@@ -1944,8 +1947,8 @@ def test():
             la.rewind()
             if item in compound_statement_starts:
                 la.in_block = 1
-            parse_statement()
-            print la.items
+            statement = parse_statement()
+            print statement[0][0].evaluate()
             if la.in_block:
                 item = la.read()
                 if item != '':
