@@ -167,6 +167,7 @@ class lexical_analyzer(object):
             while True:
                 if op_num == 3:
                     self.items.append(item)
+                    self.multi_lines -= 1
                     return item
                 if self.eof:
                     self.error('EOF while scanning triple-quoted string literal')  
@@ -245,9 +246,9 @@ class lexical_analyzer(object):
                             self.index += 1
                     else:
                         item += self.string[self.index]
-                        self.index += 1
-                        if item == op:
+                        if self.string[self.index] == op:
                             op_num += 1
+                        self.index += 1
         elif self.string[self.index] in ['"', "'"]:
             item += self.string[self.index]
             self.index += 1
@@ -324,10 +325,12 @@ class lexical_analyzer(object):
                         self.index = 0
                 else:
                     item += self.string[self.index]
-                    self.index += 1
-                    if item == op:
+                    if self.string[self.index] == op:
                         self.items.append(item)
+                        self.index += 1
                         return item
+                    self.index += 1
+            print 'hererer', self.items
             self.error('syntax_error: EOL while scanning string literal')
 
     def read_numeric_literal(self):
@@ -675,6 +678,7 @@ def parse_atom():
         items = []
         while is_str(item):
             items.append(item)
+            item = la.read()
         la.rewind()
         return pystr(*items)
     if item is '(':
