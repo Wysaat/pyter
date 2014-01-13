@@ -2,10 +2,7 @@ class environment(object):
     def __init__(self):
         self.variables = {}
     def load(self, identifier):
-        try:
-            return self.variables[identifier]
-        except:
-            return exception('name_error')
+        return self.variables[identifier]
     def store(self, identifier, value):
         self.variables[identifier] = variable(value)
 
@@ -20,11 +17,17 @@ class identifier(object):
     def __init__(self, identifier):
         self.identifier = identifier
     def evaluate(self):
-        return env.load(self.identifier).value
+        try:
+            return env.load(self.identifier).value.evaluate()
+        except:
+            return exception('name_error').evaluate()
     def assign(self, value):
         env.store(self.identifier, value)
     def load(self):
-        return env.load(self.identifier)
+        try:
+            return env.load(self.identifier)
+        except:
+            return exception('name_error')
 
 class pystr(object):
     def __init__(self, *items):
@@ -107,10 +110,20 @@ class subscription(object):
         except:
             return exception('type_error')
 
-class assignment(object):
-    def __init__(self, target_list, expression_list):
-        self.target_list = target_list
+class star_expr_list(object):
+    def __init__(self, *star_expr_list):
+        self.star_expr_list = star_expr_list
+    def evaluate(self):
+        return [expr.evaluate() for expr in self.star_expr_list]
+
+class expression_list(object):
+    def __init__(self, expression_list):
         self.expression_list = expression_list
+
+class assignment(object):
+    def __init__(self, star_expr_list, expression_list):
+        self.target_list = star_expr_list.star_expr_list
+        self.expression_list = expression_list.expression_list
     def evaluate(self):
         if len(self.target_list) != len(self.expression_list):
             return exception("value_error")

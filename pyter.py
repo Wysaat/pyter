@@ -1173,18 +1173,18 @@ def parse_lambda_parameter_list():
             la.syntax_error()
 
 def parse_star_expr_list(*endings):
-    star_expr_list = []
+    star_exprs = []
     while True:
-        star_expr_list.append(parse_star_expr())
+        star_exprs.append(parse_star_expr())
         item = la.read()
         if item == ',':
             item = la.read()
             la.rewind()
             if item in endings:
-                return star_expr_list
+                return star_expr_list(*star_exprs)
         else:
             la.rewind()
-            return star_expr_list
+            return star_expr_list(*star_exprs)
 
 def parse_target_list(*endings):
     while True:
@@ -1389,10 +1389,10 @@ def parse_expression_list(*endings):
             item = la.read()
             la.rewind()
             if item in endings:
-                return expressions
+                return expression_list(expressions)
         else:
             la.rewind()
-            return expressions
+            return expression_list(expressions)
 
 ##############################################
 ########## PARSE SIMPLE STATEMENTS ###########
@@ -1527,7 +1527,8 @@ def parse_simple_stmt():
                 parse_expression_list('', ';')
             else:
                 la.rewind()
-                parse_expression_list('', ';')
+                expression_list = parse_expression_list('', ';')
+                return assignment(star_expr_list, expression_list)
         elif item in aug_ops:
             item = la.read()
             if item == 'yield':
@@ -1918,9 +1919,9 @@ def parse_statement():
         return parse_stmt_list_plus_newline()
 
 def parse_stmt_list_plus_newline():
-    stmt_list = []
+    stmts = []
     while True:
-        stmt_list.append(parse_simple_stmt())
+        stmts.append(parse_simple_stmt())
         item = la.read()
         if item == ';':
             item = la.read()
@@ -1928,7 +1929,7 @@ def parse_stmt_list_plus_newline():
                 return True
             la.rewind()
         elif item == '':
-            return stmt_list
+            return stmts
         else:
             la.syntax_error()
 
@@ -1948,7 +1949,7 @@ def test():
             if item in compound_statement_starts:
                 la.in_block = 1
             statement = parse_statement()
-            print statement[0][0].evaluate()
+            print statement[0].evaluate()
             if la.in_block:
                 item = la.read()
                 if item != '':
