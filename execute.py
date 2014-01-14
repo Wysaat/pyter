@@ -62,6 +62,10 @@ class pylist(object):
             self.expressions[index] = expression
         except:
             return exception('index_error')
+    def getitem(self, index):
+        return self.expressions[index]
+    def evaluate(self):
+        return [expression.evaluate() for expression in self.expressions]
 
 class comprehension(object):
     def __init__(self, expression, comp_for_list, comp_if_list):
@@ -109,6 +113,58 @@ class subscription(object):
             primary.setitem(index, expression)
         except:
             return exception('type_error')
+
+class power(object):
+    def __init__(self, primary, u_expr):
+        self.primary = primary
+        self.u_expr = u_expr
+    def evaluate(self):
+        u_expr = self.u_expr.evaluate()
+        primary = self.primary.evaluate()
+        try:
+            return primary ** u_expr
+        except:
+            exception('type_error').evaluate()
+
+class u_expr(object):
+    def __init__(self, u_op, u_expr):
+        self.u_op = u_op
+        self.u_expr = u_expr
+    def evaluate(self):
+        u_expr = self.u_expr.evaluate()
+        try:
+            if self.u_op == '-': return -u_expr
+            if self.u_op == '+': return u_expr
+            if self.u_op == '~': return ~u_expr
+        except:
+            exception('type_error').evaluate()
+
+class m_expr(object):
+    def __init__(self, left, m_op, right):
+        self.left = left
+        self.m_op = m_op
+        self.right = right
+    def evaluate(self):
+        left = self.left.evaluate()
+        right = self.right.evaluate()
+        try:
+            if self.m_op == '*': return left * right
+            if self.m_op == '//': return left // right
+            if self.m_op == '/': return left / right
+            if self.m_op == '%': return left % right
+        except:
+            exception('type_error').evaluate()
+
+class a_expr(object):
+    def __init__(self, left, a_op, right):
+        self.left = left
+        self.a_op = a_op
+        self.right = right
+    def evaluate(self):
+        left = self.left.evaluate()
+        right = self.right.evaluate()
+        if self.a_op == '+': return left + right
+        if self.a_op == '-': return left - right
 
 class star_expr_list(object):
     def __init__(self, *star_expr_list):

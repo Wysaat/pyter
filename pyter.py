@@ -745,7 +745,7 @@ def parse_atom():
                 la.multi_lines -= 1
                 return pylist(expression)
             la.rewind()
-            expressions = [expression] + parse_expression_list(']')
+            expressions = [expression] + parse_expression_list(']').expression_list
             item = la.read()
             if item != ']':
                 la.syntax_error()
@@ -971,35 +971,37 @@ def parse_power():
     if item != '**':
         la.rewind()
         return primary
-    parse_u_expr()
+    u_expr = parse_u_expr()
+    return power(primary, u_expr)
 
 def parse_u_expr():
     item = la.read()
     # BUG: if item in '-+~'
     # REASON: '' in '-+~'
     if item in ['-', '+', '~']:
-        parse_u_expr()
+        expr = parse_u_expr()
+        return u_expr(item, expr)
     else:
         la.rewind()
         return parse_power()
 
 def parse_m_expr():
-    u_expr = parse_u_expr()
+    expr = parse_u_expr()
     while True:
         item = la.read()
         if item not in ['*', '//', '/', '%']:
             la.rewind()
-            return u_expr
-        parse_u_expr()
+            return expr
+        expr = m_expr(expr, item, parse_u_expr())
 
 def parse_a_expr():
-    m_expr = parse_m_expr()
+    expr = parse_m_expr()
     while True:
         item = la.read()
         if item not in ['+', '-']:
             la.rewind()
-            return m_expr
-        parse_m_expr()
+            return expr
+        expr = a_expr(expr, item, parse_m_expr())
 
 def parse_shift_expr():
     a_expr = parse_a_expr()
