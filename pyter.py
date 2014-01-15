@@ -992,7 +992,7 @@ def parse_m_expr():
         if item not in ['*', '//', '/', '%']:
             la.rewind()
             return expr
-        expr = m_expr(expr, item, parse_u_expr())
+        expr = b_expr(expr, item, parse_u_expr())
 
 def parse_a_expr():
     expr = parse_m_expr()
@@ -1001,67 +1001,78 @@ def parse_a_expr():
         if item not in ['+', '-']:
             la.rewind()
             return expr
-        expr = a_expr(expr, item, parse_m_expr())
+        expr = b_expr(expr, item, parse_m_expr())
 
 def parse_shift_expr():
-    a_expr = parse_a_expr()
+    expr = parse_a_expr()
     while True:
         item = la.read()
         if item not in ['<<', '>>']:
             la.rewind()
-            return a_expr
-        parse_a_expr()
+            return expr
+        expr = b_expr(expr, item, parse_a_expr())
 
 def parse_and_expr():
-    shift_expr = parse_shift_expr()
+    expr = parse_shift_expr()
     while True:
         item = la.read()
         if item != '&':
             la.rewind()
-            return shift_expr
-        parse_shift_expr()
+            return expr
+        expr = b_expr(expr, item, parse_shift_expr())
 
 def parse_xor_expr():
-    and_expr = parse_and_expr()
+    expr = parse_and_expr()
     while True:
         item = la.read()
         if item != '^':
             la.rewind()
-            return and_expr
-        parse_and_expr()
+            return expr
+        expr = b_expr(expr, item, parse_and_expr())
 
 def parse_or_expr():
-    xor_expr = parse_xor_expr()
+    expr = parse_xor_expr()
     while True:
         item = la.read()
         if item != '|':
             la.rewind()
-            return xor_expr
-        parse_xor_expr()
+            return expr
+        expr = b_expr(expr, item, parse_xor_expr())
 
 comp_operators = ['<', '>', '==', '>=', '<=', '<>', '!=',]
 
 def parse_comparison():
+    comparisions = []
     or_expr = parse_or_expr()
+    item = la.read()
+    la.rewind()
+    if item not in ['is', 'not', 'in'] + comp_operators:
+        return or_expr
+    left = or_expr
     while True:
         item = la.read()
         if item == 'is':
             item = la.read()
             if item != 'not':
                 la.rewind()
-            parse_or_expr()
+                op = 'is'
+            else:
+                op = 'is not'
         elif item == 'not':
             item = la.read()
             if item != 'in':
                 la.syntax_error()
-            parse_or_expr()
+            op = 'not in'
         elif item == 'in':
-            parse_or_expr()
+            op = 'in'
         elif item in comp_operators:
-            parse_or_expr()
+            op = item
         else:
             la.rewind()
-            return or_expr
+            return comparision(comparisions)
+        right = parse_or_expr()
+        comparisions.append(b_expr(left, op, right))
+        left = right
 
 def parse_not_test():
     item = la.read()
@@ -1625,14 +1636,15 @@ def parse_compound_statement():
         item = la.read()
         if item != ':':
             la.syntax_error()
-        parse_suite()
+        suite = parse_suite()
         item = la.read()
         if item == 'except':
+            handlers = []
             while True:
                 item = la.read()
                 if item != ':':
                     la.rewind()
-                    parse_expression()
+                    expression = parse_expression()
                     item = la.read()
                     if item == 'as':
                         parse_star_expr()
@@ -1641,7 +1653,7 @@ def parse_compound_statement():
                             la.syntax_error()
                     elif item != ':':
                         la.syntax_error()
-                parse_suite()
+                handlers.append(handler(parse_suite()))
                 item = la.read()
                 if item != 'except':
                     break
@@ -1659,7 +1671,7 @@ def parse_compound_statement():
                 return True
             else:
                 la.rewind()
-                return True
+                return try_except(suite, handlers)
         elif item == 'finally':
             item = la.read()
             if item != ':':
@@ -1899,15 +1911,16 @@ def parse_suite():
     item = la.read()
     if item != '':
         la.rewind()
-        parse_stmt_list_plus_newline()
+        return parse_stmt_list_plus_newline()
     else:
         item = la.read()
         if item == INDENT:
+            statements = []
             while True:
-                parse_statement()
+                statements.append(parse_statement())
                 item = la.read()
                 if item == DEDENT:
-                    return True
+                    return suite(*statements)
                 la.rewind()
         elif item == DEDENT:
             la.error('indentation_error: unindent does not match any outer indentation level')
@@ -1920,7 +1933,7 @@ def parse_statement():
     if item == INDENT:
         la.error("indentation_error: unexpected indent")
     elif item in compound_statement_starts:
-        parse_compound_statement()
+        return parse_compound_statement()
     else:
         return parse_stmt_list_plus_newline()
 
@@ -1935,7 +1948,7 @@ def parse_stmt_list_plus_newline():
                 return True
             la.rewind()
         elif item == '':
-            return stmts
+            return stmt_list(stmts)
         else:
             la.syntax_error()
 
@@ -1955,7 +1968,7 @@ def test():
             if item in compound_statement_starts:
                 la.in_block = 1
             statement = parse_statement()
-            print statement[0].evaluate()
+            print statement.evaluate()
             if la.in_block:
                 item = la.read()
                 if item != '':

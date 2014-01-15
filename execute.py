@@ -1,6 +1,13 @@
+bin_ops = ['*', '//', '/', '%',
+           '+', '-',
+           '<<', '>>',
+           '&', '^', '|',
+           ]
+
 class environment(object):
     def __init__(self):
         self.variables = {}
+        self.handlers = []
     def load(self, identifier):
         return self.variables[identifier]
     def store(self, identifier, value):
@@ -139,32 +146,48 @@ class u_expr(object):
         except:
             exception('type_error').evaluate()
 
-class m_expr(object):
-    def __init__(self, left, m_op, right):
+class b_expr(object):
+    def __init__(self, left, op, right):
         self.left = left
-        self.m_op = m_op
+        self.op = op
         self.right = right
     def evaluate(self):
         left = self.left.evaluate()
         right = self.right.evaluate()
         try:
-            if self.m_op == '*': return left * right
-            if self.m_op == '//': return left // right
-            if self.m_op == '/': return left / right
-            if self.m_op == '%': return left % right
+            if self.op == '*': return left * right
+            if self.op == '//': return left // right
+            if self.op == '/': return left / right
+            if self.op == '%': return left % right
+            if self.op == '+': return left + right
+            if self.op == '-': return left - right
+            if self.op == '<<': return left << right
+            if self.op == '>>': return left >> right
+            if self.op == '&': return left & right
+            if self.op == '^': return left ^ right
+            if self.op == '|': return left | right
+            if self.op == '<': return left < right
+            if self.op == '>': return left > right
+            if self.op == '==': return left == right
+            if self.op == '>=': return left >= right
+            if self.op == '<=': return left <= right
+            # if self.op == '<>': return left <> right
+            if self.op == '!=': return left != right
+            if self.op == 'is': return left is right
+            if self.op == 'is not': return left is not right
+            if self.op == 'in': return left in right
+            if self.op == 'not in': return left not in right
         except:
             exception('type_error').evaluate()
 
-class a_expr(object):
-    def __init__(self, left, a_op, right):
-        self.left = left
-        self.a_op = a_op
-        self.right = right
+class comparision(object):
+    def __init__(self, comparisions):
+        self.comparisions = comparisions
     def evaluate(self):
-        left = self.left.evaluate()
-        right = self.right.evaluate()
-        if self.a_op == '+': return left + right
-        if self.a_op == '-': return left - right
+        for comparision in self.comparisions:
+            if not comparision.evaluate():
+                return False
+        return True
 
 class star_expr_list(object):
     def __init__(self, *star_expr_list):
@@ -187,9 +210,39 @@ class assignment(object):
         for pair in pairs:
             pair[0].assign(pair[1])
 
+class try_except(object):
+    def __init__(self, suite, handlers):
+        self.suite = suite
+        self.handlers = handlers
+    def evaluate(self):
+        env.handlers += self.handlers
+        self.suite.evaluate()
+        env.handlers = []
+
+class handler(object):
+    def __init__(self, suite):
+        self.suite = suite
+    def evaluate(self):
+        return self.suite.evaluate()
+
+class stmt_list(object):
+    def __init__(self, stmt_list):
+        self.stmt_list = stmt_list
+    def evaluate(self):
+        return [stmt.evaluate() for stmt in self.stmt_list]
+
+class suite(object):
+    def __init__(self, *statements):
+        self.statements = statements
+    def evaluate(self):
+        return [statement.evaluate() for statement in self.statements]
+
 class exception(object):
     def __init__(self, type):
         self.type = type
     def evaluate(self):
-        print self.type
-        exit()
+        if not env.handlers:
+            print self.type
+            exit()
+        else:
+            return env.handlers[0].evaluate()
