@@ -815,20 +815,16 @@ def parse_primary():
             primary = attributeref(primary, item)
         elif item == '[':
             la.multi_lines += 1
-            slicelist = parse_slice_list(']')
+            slice_item = parse_slice_list(']')
             item = la.read()
             if item != ']':
                 la.syntax_error()
             la.multi_lines -= 1
-            if slicelist.type == 'expression':
-                expressionitem = slicelist
-                expressionlist = expression_list(expression)
-                primary = subscription(primary, expressionlist)
-            elif slicelist.type == 'expression_list':
-                expressionlist = slicelist
-                primary = subscription(primary, expressionlist)
+            if slice_item.type != 'slice_item':
+                expression = slice_item
+                return subscription(primary, expression)
             else:
-                primary = slice_list(primary, slicelist)
+                return slicing(primary, slice_item)
         elif item == '(':
             la.multi_lines += 1
             item = la.read()
@@ -1077,28 +1073,28 @@ def parse_comparison():
 def parse_not_test():
     item = la.read()
     if item == 'not':
-        parse_not_test()
+        return not_test(parse_not_test())
     else:
         la.rewind()
         return parse_comparison()
 
 def parse_and_test():
-    not_test = parse_not_test()
+    test = parse_not_test()
     while True:
         item = la.read()
         if item != 'and':
             la.rewind()
-            return not_test
-        parse_not_test()
+            return test
+        test = b_expr(test, item, parse_not_test())
 
 def parse_or_test():
-    and_test = parse_and_test()
+    test = parse_and_test()
     while True:
         item = la.read()
         if item != 'or':
             la.rewind()
-            return and_test
-        parse_and_test()
+            return test
+        test = b_expr(test, item, parse_and_test())
 
 def parse_conditional_expression():
     or_test = parse_or_test()
@@ -1268,6 +1264,7 @@ def parse_slice_item(ending):
             else:
                 la.syntax_error()
     else:
+        la.rewind()
         expression = parse_expression()
         item = la.read()
         if item == ',' or item == ending:
@@ -1312,7 +1309,7 @@ def parse_slice_item(ending):
 
 def parse_slice_list(ending):
     slice_item_list = []
-    slice_item = parse_slice_item
+    slice_item = parse_slice_item(ending)
     item = la.read()
     if item == ending:
         la.rewind()
@@ -1320,18 +1317,24 @@ def parse_slice_list(ending):
     elif item != ',':
         la.syntax_error()
     else:
+        item = la.read()
+        la.rewind()
+        if item == ending:
+            return slice_item
         slice_item_list.append(slice_item)
         while True:
+            slice_item_list.append(parse_slice_item(ending))
             item = la.read()
             if item == ending:
                 la.rewind()
-                if all(item.type == 'expression' for item in slice_item_list):
-                    expressionlist = expressionlist(slice_item_list)
-                    return expressionlist
-                else:
-                    return parenth_form(slice_item_list)
+                return slice_item_list
             elif item != ',':
                 la.syntax_error()
+            else:
+                item = la.read()
+                la.rewind()
+                if item == ending:
+                    return slice_item_list
 
 def parse_key_datum_list(ending):
     parse_expression()

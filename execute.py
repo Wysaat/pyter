@@ -121,6 +121,23 @@ class subscription(object):
         except:
             return exception('type_error')
 
+class slice_item(object):
+    def __init__(self, start, stop, step):
+        self.start = start
+        self.stop = stop
+        self.step = step
+        self.type = 'slice_item'
+    def evaluate(self):
+        start = self.start.evaluate() if start else None
+        stop = self.stop.evaluate() if stop else None
+        step = self.step.evaluate() if step else None
+        return [start, stop, step]
+
+class slicing(object):
+    def __init__(self, primary, slice_item):
+        self.primary = primary
+        self.slice_item = slice_item
+
 class power(object):
     def __init__(self, primary, u_expr):
         self.primary = primary
@@ -177,6 +194,8 @@ class b_expr(object):
             if self.op == 'is not': return left is not right
             if self.op == 'in': return left in right
             if self.op == 'not in': return left not in right
+            if self.op == 'and': return left and right
+            if self.op == 'or': return left or right
         except:
             exception('type_error').evaluate()
 
@@ -188,6 +207,12 @@ class comparision(object):
             if not comparision.evaluate():
                 return False
         return True
+
+class not_test(object):
+    def __init__(self, not_test):
+        self.not_test = not_test
+    def evaluate(self):
+        return not self.not_test.evaluate()
 
 class star_expr_list(object):
     def __init__(self, *star_expr_list):
