@@ -1243,6 +1243,11 @@ def parse_slice_item(ending):
                 la.rewind()
                 step = parse_expression()
                 return slice_item(start, stop, step)
+        elif item == ',' or item == ending:
+            la.rewind()
+            stop = None
+            step = None
+            return slice_item(start, stop, step)
         else:
             la.rewind()
             stop = parse_expression()
@@ -1286,6 +1291,11 @@ def parse_slice_item(ending):
                     la.rewind()
                     step = parse_expression()
                     return slice_item(start, stop, step)
+            elif item == ',' or item == ending:
+                la.rewind()
+                stop = None
+                step = None
+                return slice_item(start, stop, step)
             else:
                 la.rewind()
                 stop = parse_expression()
