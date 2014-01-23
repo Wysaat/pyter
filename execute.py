@@ -5,12 +5,7 @@ class environment(object):
     def load(self, identifier):
         return self.variables[identifier]
     def store(self, identifier, value):
-        self.variables[identifier] = variable(value)
-
-class variable(object):
-    def __init__(self, value):
-        self.value = value
-        self.attributes = {}
+        self.variables[identifier] = value
 
 env = environment()
 
@@ -20,34 +15,25 @@ class identifier(object):
         self.type = 'identifier'
     def evaluate(self):
         try:
-            return env.load(self.identifier).value.evaluate()
-        except:
+            return env.variables[self.identifier]
+        except KeyError:
             return exception('name_error').evaluate()
     def assign(self, value):
         env.store(self.identifier, value)
-    def load(self):
-        try:
-            return env.load(self.identifier)
-        except:
-            return exception('name_error')
-    def set_attr(self, attr, val):
-        env.variables[self.identifier].attributes[attr] = val
-    def get_attr(self):
-        return env.variables[self.identifier].attributes[attr]
 
 class pystr(object):
     def __init__(self, *items):
         self.type = 'pystr'
-        self.string = ''
+        self.value = ''
         for item in items:
             index = 0
             while item[index] not in ['"', "'"]: index += 1
             if item[index:index+3] in ['"""', "'''"]:
                 item = item[index+3:-3]
             else: item = item[index+1:-1]
-            self.string += item
+            self.value += item
     def evaluate(self):
-        return self.string
+        return self.value
 
 class pyint(object):
     def __init__(self, item):
@@ -70,41 +56,9 @@ class pylist(object):
     def evaluate(self):
         return [expression.evaluate() for expression in self.expressions]
 
-class comprehension(object):
-    def __init__(self, expression, comp_for_list, comp_if_list):
-        pass
-
-class comp_for(object):
-    def __init__(self, target_list, or_test):
-        self.target_list = target_list
-        self.or_test = or_test
-    def evaluate(self):
-        pass
-
 class target_list(object):
     def __init__(self, *expressions):
         self.expressions = list(expressions)
-    def evaluate(self):
-        for expression in expressions:
-            if expression.type not in ['attributeref',]:
-                return exception('syntax_error')
-        targets = self.expressions
-
-class attributeref(object):
-    def __init__(self, primary, identifer):
-        self.primary = primary
-        self.identifier = identifier
-        self.type = 'attributeref'
-    def evaluate(self):
-        return self.load().value
-    def load(self):
-        try:
-            primary = self.primary.load()
-            return primary.attributes[self.identifier]
-        except:
-            return exception('name_error')
-    def assign(self, expression):
-        self.primary.set_attr(self.identifier, expression)
 
 class subscription(object):
     def __init__(self, primary, expression):
@@ -115,10 +69,10 @@ class subscription(object):
         primary = self.primary.evaluate()
         index = self.expression.evaluate()
         return primary[index]
-    def assign(self, expression):
+    def assign(self, val):
         index = self.expression.evaluate()
-        value = self.primary.load().value
-        value.expressions[index] = expression
+        value = self.primary.evaluate()
+        value[index] = val
         self.primary.assign(value)
 
 class slice_item(object):
@@ -141,6 +95,10 @@ class slicing(object):
     def evaluate(self):
         primary = self.primary.evaluate()
         return primary.__getitem__(slice(*(self.slice_item.evaluate())))
+    def assign(self, val):
+        value = self.primary.evaluate()
+        value.__setitem__(slice(*(self.slice_item.evaluate())), val)
+        self.primary.assign(value)
 
 class power(object):
     def __init__(self, primary, u_expr):
@@ -242,7 +200,7 @@ class assignment(object):
             return exception("value_error")
         pairs = zip(self.target_list, self.expression_list)
         for pair in pairs:
-            pair[0].assign(pair[1])
+            pair[0].assign(pair[1].evaluate())
 
 class try_except(object):
     def __init__(self, suite, handlers):

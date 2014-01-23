@@ -1,1 +1,0 @@
-none = lambda expr: not any(expr)
