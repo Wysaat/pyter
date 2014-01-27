@@ -2,7 +2,7 @@ class environment(object):
     def __init__(self):
         self.variables = {}
         self.handlers = []
-        ret_flag = 0
+        self.ret_flag = 0
     def load(self, identifier):
         return self.variables[identifier]
     def store(self, identifier, value):
@@ -28,18 +28,9 @@ class identifier(object):
         print pairs
         for pair in pairs:
             env.store(pair[0], pair[1].evaluate())
-        for statement in function.suite.statements:
-            if isinstance(statement, stmt_list):
-                for stmt in statement.statements:
-                    retval = stmt.evaluate()
-                    if env.ret_flag:
-                        env.ret_flag = 0
-                        return retval
-            else:
-                retval = statement.evaluate()
-                if env.ret_flag:
-                    env.ret_flag = 0
-                    return retval
+        retval = function.suite.evaluate()
+        env.ret_flag = 0
+        return retval
 
 class pystr(object):
     def __init__(self, *items):
@@ -274,13 +265,23 @@ class stmt_list(object):
     def __init__(self, stmt_list):
         self.statements = stmt_list
     def evaluate(self):
-        return [stmt.evaluate() for stmt in self.statements]
+        retvals = []
+        for stmt in self.statements:
+            retvals.append(stmt.evaluate())
+            if env.ret_flag:
+                return retvals[-1]
+        return retvals
 
 class suite(object):
     def __init__(self, *statements):
         self.statements = list(statements)
     def evaluate(self):
-        return [statement.evaluate() for statement in self.statements]
+        retvals = []
+        for statement in self.statements:
+            retvals.append(statement.evaluate())
+            if env.ret_flag:
+                return retvals[-1]
+        return retvals
 
 class function(object):
     def __init__(self, identifier, parameter_list, suite):
@@ -325,9 +326,25 @@ class while_stmt(object):
         retvals = []
         while self.expression.evaluate():
             retvals.append(self.suite.evaluate())
+            if env.ret_flag:
+                return retvals[-1]
         if self.else_suite:
             retvals.append(self.else_suite.evaluate())
+            if env.ret_flag:
+                return retvals[-1]
         return retvals
+
+class for_stmt(object):
+    def __init__(self, target_list, expression_list, suite, else_suite=None):
+        self.target_list = target_list
+        self.expression_list = expression_list.expression_list
+        self.suite = suite
+        self.else_suite = else_suite
+    def evaluate(self):
+        if len(self.expression_list) == 1:
+            expressions = self.expression_list[0].evaluate()
+        else:
+            expressions = [expression.evaluate() for expression in self.expression_list]
 
 class exception(object):
     def __init__(self, type):

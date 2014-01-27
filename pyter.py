@@ -1634,25 +1634,25 @@ def parse_compound_statement():
             la.rewind()
             return while_stmt(expression, suite)
     elif item == 'for':
-        parse_target_list('in')
+        target_list = parse_target_list('in')
         item = la.read()
         if item != 'in':
             la.syntax_error()
-        parse_expression_list(':')
+        expression_list = parse_expression_list(':')
         item = la.read()
         if item != ':':
             la.syntax_error()
-        parse_suite()
+        suite = parse_suite()
         item = la.read()
         if item == 'else':
             item = la.read()
             if item != ':':
                 la.syntax_error()
-            parse_suite()
-            return True
+            else_suite = parse_suite()
+            return for_stmt(target_list, expression_list, suite, else_suite)
         else:
             la.rewind()
-            return True
+            return for_stmt(target_list, expression_list, suite)
     elif item == 'try':
         item = la.read()
         if item != ':':
