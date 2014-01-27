@@ -2,6 +2,7 @@ class environment(object):
     def __init__(self):
         self.variables = {}
         self.handlers = []
+        ret_flag = 0
     def load(self, identifier):
         return self.variables[identifier]
     def store(self, identifier, value):
@@ -20,6 +21,25 @@ class identifier(object):
             return exception('name_error').evaluate()
     def assign(self, value):
         env.store(self.identifier, value)
+    def call(self, argument_list):
+        function = env.load(self.identifier)
+        print function
+        pairs = zip(function.parameter_list, argument_list)
+        print pairs
+        for pair in pairs:
+            env.store(pair[0], pair[1].evaluate())
+        for statement in function.suite.statements:
+            if isinstance(statement, stmt_list):
+                for stmt in statement.statements:
+                    retval = stmt.evaluate()
+                    if env.ret_flag:
+                        env.ret_flag = 0
+                        return retval
+            else:
+                retval = statement.evaluate()
+                if env.ret_flag:
+                    env.ret_flag = 0
+                    return retval
 
 class pystr(object):
     def __init__(self, *items):
@@ -55,6 +75,32 @@ class pylist(object):
         self.type = 'pylist'
     def evaluate(self):
         return [expression.evaluate() for expression in self.expressions]
+
+class comp_for(object):
+    def __init__(self, target_list, or_test):
+        self.target_list = target_list
+        self.or_test = or_test
+
+class comp_if(object):
+    def __init__(self, expression_nocond):
+        self.expression_nocond = expression_nocond
+
+class list_comp(object):
+    def __init__(self, expression, comp_for_list, comp_if_list):
+        self.expression = expression
+        self.comp_for_list = comp_for_list
+        self.comp_if_list = comp_if_list
+    def evaluate(self):
+        value = []
+        comp_for = self.comp_for_list[0]
+        comp_if = self.comp_if_list[0] if self.comp_if_list else None
+        target = comp_for.target_list[0]
+        or_test = comp_for.or_test.evaluate()
+        for val in or_test:
+            target.assign(val)
+            if not comp_if or comp_if and comp_if.expression_nocond.evaluate():
+                value.append(self.expression.evaluate())
+        return value
 
 class target_list(object):
     def __init__(self, *expressions):
@@ -99,6 +145,13 @@ class slicing(object):
         value = self.primary.evaluate()
         value.__setitem__(slice(*(self.slice_item.evaluate())), val)
         self.primary.assign(value)
+
+class call(object):
+    def __init__(self, primary, argument_list):
+        self.primary = primary
+        self.argument_list = argument_list
+    def evaluate(self):
+        return self.primary.call(self.argument_list)
 
 class power(object):
     def __init__(self, primary, u_expr):
@@ -219,15 +272,62 @@ class handler(object):
 
 class stmt_list(object):
     def __init__(self, stmt_list):
-        self.stmt_list = stmt_list
+        self.statements = stmt_list
     def evaluate(self):
-        return [stmt.evaluate() for stmt in self.stmt_list]
+        return [stmt.evaluate() for stmt in self.statements]
 
 class suite(object):
     def __init__(self, *statements):
         self.statements = list(statements)
     def evaluate(self):
         return [statement.evaluate() for statement in self.statements]
+
+class function(object):
+    def __init__(self, identifier, parameter_list, suite):
+        self.identifier = identifier
+        self.parameter_list = parameter_list
+        self.suite = suite
+    def evaluate(self):
+        env.store(self.identifier, self)
+
+class return_stmt(object):
+    def __init__(self, expression_list=None):
+        self.expression_list = expression_list.expression_list
+    def evaluate(self):
+        env.ret_flag = 1
+        if self.expression_list:
+            return [expression.evaluate() for expression in self.expression_list]
+        return
+
+class if_stmt(object):
+    def __init__(self, if_expression, if_suite, elif_list, else_suite=None):
+        self.if_expression = if_expression
+        self.if_suite = if_suite
+        self.elif_list = elif_list
+        self.else_suite = else_suite
+    def evaluate(self):
+        if self.if_expression.evaluate():
+            return self.if_suite.evaluate()
+        elif self.elif_list != []:
+            for self.elif_p in self.elif_list:
+                if self.elif_p[0].evaluate():
+                    return self.elif_p[1].evaluate()
+        elif self.else_suite:
+            return self.else_suite.evaluate()
+        else: return
+
+class while_stmt(object):
+    def __init__(self, expression, suite, else_suite=None):
+        self.expression = expression
+        self.suite = suite
+        self.else_suite = else_suite
+    def evaluate(self):
+        retvals = []
+        while self.expression.evaluate():
+            retvals.append(self.suite.evaluate())
+        if self.else_suite:
+            retvals.append(self.else_suite.evaluate())
+        return retvals
 
 class exception(object):
     def __init__(self, type):

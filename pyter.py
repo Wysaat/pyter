@@ -822,9 +822,9 @@ def parse_primary():
             la.multi_lines -= 1
             if slice_item.type != 'slice_item':
                 expression = slice_item
-                return subscription(primary, expression)
+                primary = subscription(primary, expression)
             else:
-                return slicing(primary, slice_item)
+                primary = slicing(primary, slice_item)
         elif item == '(':
             la.multi_lines += 1
             item = la.read()
@@ -840,22 +840,27 @@ def parse_primary():
                     primary = call(argumentlist)
             else:
                 la.rewind()
-                expressionitem = parse_expression()
+                expression = parse_expression()
                 item = la.read()
-                if item == 'for':
+                if item == ')':
+                    arguments = [expression]
+                    primary = call(primary, arguments)
+                elif item == 'for':
                     la.rewind()
-                    parse_comp_for()
+                    comp_for_list, comp_if_list = parse_comp_for()
                     item = la.read()
                     if item != ')':
                         la.syntax_error()
                 elif item == ',':
                     item = la.read()
+                    arguments = [expression]
                     if item != ')':
                         la.rewind()
-                        parse_argument_list()
+                        arguments += parse_argument_list()
                         item = la.read()
                         if item != ')':
                             la.syntax_error()
+                    primary = call(primary, arguments)
                 elif item == '=':
                     parse_expression()
                     item = la.read()
@@ -869,7 +874,7 @@ def parse_primary():
                                 la.syntax_error()
                     elif item != ')':
                        la.syntax_error()
-                elif item != ')':
+                else:
                     la.syntax_error()
             la.multi_lines -= 1
         else:
@@ -879,7 +884,7 @@ def parse_primary():
 # Trailing commas like: f(*args, a, b,) are allowed,
 # as is specified in the doc.
 def parse_argument_list():
-    arg_list = []
+    arguments = []
     asterisk = 0
     while True:
         item = la.read()
@@ -896,19 +901,19 @@ def parse_argument_list():
                 la.rewind()
             return True
         la.rewind()
-        parse_expression()
+        arguments.append(parse_expression())
         item = la.read()
         if item == '=':
             parse_expression()
             break
         elif item != ',':
             la.rewind()
-            return True
+            return arguments
         else:
             item = la.read()
             la.rewind()
             if item == ')':
-                return True
+                return arguments
     while True:
         item = la.read()
         if item != ',':
@@ -1120,9 +1125,9 @@ def parse_expression_nocond():
     item = la.read()
     la.rewind()
     if item == 'lambda':
-        parse_lambda_expr()
+        return parse_lambda_expr()
     else:
-        parse_or_test()
+        return parse_or_test()
 
 # lambda expressions cannot contain annotations(Python 3) or statements
 def parse_lambda_expr():
@@ -1200,19 +1205,20 @@ def parse_star_expr_list(*endings):
             return star_expr_list(*star_exprs)
 
 def parse_target_list(*endings):
+    target_list = []
     while True:
         item = la.read()
         if item != '*':
             la.rewind()
-        parse_primary()
+        target_list.append(parse_primary())
         item = la.read()
         if item != ',':
             la.rewind()
-            return True
+            return target_list
         item = la.read()
         la.rewind()
         if item in endings:
-            return True
+            return target_list
 
 def parse_star_expr():
     item = la.read()
@@ -1368,7 +1374,8 @@ def parse_comp_for():
     item = la.read()
     if item != 'for':
         la.syntax_error()
-    compfors = compifs = []
+    compfors = []
+    compifs = []
     targetlist = parse_target_list('in')
     item = la.read()
     if item != 'in':
@@ -1386,14 +1393,14 @@ def parse_comp_for():
         cfs, cis = parse_comp_if()
         compfors += cfs
         compifs += cis
-    else:
-        return compfors, compifs
+    return compfors, compifs
 
 def parse_comp_if():
     item = la.read()
     if item != 'if':
         la.syntax_error()
-    compfors = compifs = []
+    compfors = []
+    compifs = []
     expressionnocond = parse_expression_nocond()
     compif = comp_if(expressionnocond)
     compifs.append(compif)
@@ -1407,8 +1414,7 @@ def parse_comp_if():
         cfs, cis = parse_comp_if()
         compfors += cfs
         compifs += cis
-    else:
-        return compfors, compifs
+    return compfors, compifs
 
 def parse_expression_list(*endings):
     expressions = []
@@ -1436,12 +1442,12 @@ def parse_simple_stmt():
         return True
     elif item == 'del':
         parse_expression_list('', ';')
-    elif item == 'return' or item == 'print':
+    elif item == 'return':
         item = la.read()
         la.rewind()
         if item in ['', ';']:
-            return True
-        parse_expression_list('', ';')
+            return return_stmt()
+        return return_stmt(parse_expression_list('', ';'))
     elif item == 'yield':
         parse_expression_list('', ';')
     elif item == 'raise':
@@ -1587,44 +1593,46 @@ def parse_module():
 def parse_compound_statement():
     item = la.read()
     if item == 'if':
-        parse_expression()
+        if_expression = parse_expression()
         item = la.read()
         if item != ':':
             la.syntax_error()
-        parse_suite()
+        if_suite = parse_suite()
+        elifs = []
         while True:
             item = la.read()
             if item == 'elif':
-                parse_expression()
+                expression = parse_expression()
                 item = la.read()
                 if item != ':':
                     la.syntax_error()
-                parse_suite()
+                suite = parse_suite()
+                elifs.append([expression, suite])
             elif item == 'else':
                 item = la.read()
                 if item != ':':
                     la.syntax_error()
-                parse_suite()
-                return True
+                else_suite = parse_suite()
+                return if_stmt(if_expression, if_suite, elifs, else_suite)
             else:
                 la.rewind()
-                return True
+                return if_stmt(if_expression, if_suite, elifs)
     elif item == 'while':
-        parse_expression()
+        expression = parse_expression()
         item = la.read()
         if item != ':':
             la.syntax_error()
-        parse_suite()
+        suite = parse_suite()
         item = la.read()
         if item == 'else':
             item = la.read()
             if item != ':':
                 la.syntax_error()
-            parse_suite()
-            return True
+            else_suite = parse_suite()
+            return while_stmt(expression, suite, else_suite)
         else:
             la.rewind()
-            return True
+            return while_stmt(expression, suite)
     elif item == 'for':
         parse_target_list('in')
         item = la.read()
@@ -1720,7 +1728,7 @@ def parse_compound_statement():
             la.syntax_error()
     elif item == 'def':
         la.rewind()
-        parse_funcdef()
+        return parse_funcdef()
     elif item == 'class':
         la.rewind()
         parse_classdef()
@@ -1735,6 +1743,7 @@ def parse_funcdef():
     item = la.read()
     if not is_id(item):
         la.syntax_error()
+    ident = item
     item = la.read()
     if item != '(':
         la.syntax_error()
@@ -1742,7 +1751,7 @@ def parse_funcdef():
     item = la.read()
     if item != ')':
         la.rewind()
-        parse_parameter_list(')')
+        parameter_list = parse_parameter_list(')')
         item = la.read()
         if item != ')':
             la.syntax_error()
@@ -1756,7 +1765,8 @@ def parse_funcdef():
         item = la.read()
     if item != ':':
         la.syntax_error()
-    parse_suite()
+    suite = parse_suite()
+    return function(ident, parameter_list, suite)
 
 def parse_classdef():
     item = la.read()
@@ -1843,6 +1853,7 @@ def parse_dotted_name():
 # truly BUGGY!!!
 def parse_parameter_list(ending):
     asterisk = 0
+    parameters = []
     while True:
         item = la.read()
         if item == '**':
@@ -1860,16 +1871,16 @@ def parse_parameter_list(ending):
             break
         else:
             la.rewind()
-            parse_defparameter()
+            parameters.append(parse_defparameter())
         item = la.read()
         if item == ending:
             la.rewind()
-            return True
+            return parameters
         elif item == ',':
             item = la.read()
             la.rewind()
             if item == ending:
-                return True
+                return parameters
     item = la.read()
     if item != ',':
         la.rewind()
@@ -1901,24 +1912,27 @@ def parse_parameter_list(ending):
                         return True
 
 def parse_defparameter():
-    parse_parameter()
+    parameter = parse_parameter()
     item = la.read()
     if item != '=':
         la.rewind()
+        return parameter
     else:
         parse_expression()
-    return True
+        return True
 
 def parse_parameter():
     item = la.read()
     if not is_id(item):
         la.syntax_error()
+    ident = item
     item = la.read()
     if item == ':':
         parse_expression()
+        return True
     else:
         la.rewind()
-    return True
+        return ident
 
 def parse_suite():
     item = la.read()
