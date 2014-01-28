@@ -1,14 +1,30 @@
 class environment(object):
-    def __init__(self):
+    def __init__(self, outer_scope=None):
+        self.outer_scope = outer_scope
         self.variables = {}
         self.handlers = []
         self.ret_flag = 0
+    def find(self, identifier):
+        if identifier in self.variables:
+            return True
+        return False
     def load(self, identifier):
         return self.variables[identifier]
     def store(self, identifier, value):
         self.variables[identifier] = value
 
-env = environment()
+global_scope = environment()
+global_scope.in_function = 0
+current_scope = global_scope
+
+def load(identifier):
+    scope = current_scope
+    while not scope.find(identifier):
+        scope = scope.outer_scope
+    return scope.load(identifier)
+
+def store(identifier, value):
+    current_scope.store(identifier, value)
 
 class identifier(object):
     def __init__(self, identifier):
@@ -16,20 +32,25 @@ class identifier(object):
         self.type = 'identifier'
     def evaluate(self):
         try:
-            return env.variables[self.identifier]
+            return load(self.identifier)
         except KeyError:
             return exception('name_error').evaluate()
     def assign(self, value):
-        env.store(self.identifier, value)
+        store(self.identifier, value)
     def call(self, argument_list):
-        function = env.load(self.identifier)
+        function = load(self.identifier)
+        global current_scope
+        current_scope = environment(current_scope)
+        global_scope.in_function = 1
         print function
         pairs = zip(function.parameter_list, argument_list)
         print pairs
         for pair in pairs:
-            env.store(pair[0], pair[1].evaluate())
+            store(pair[0], pair[1].evaluate())
         retval = function.suite.evaluate()
-        env.ret_flag = 0
+        current_scope.ret_flag = 0
+        global_scope.in_function = 0
+        current_scope = current_scope.outer_scope
         return retval
 
 class pystr(object):
@@ -251,9 +272,9 @@ class try_except(object):
         self.suite = suite
         self.handlers = handlers
     def evaluate(self):
-        env.handlers += self.handlers
+        current_scope.handlers += self.handlers
         self.suite.evaluate()
-        env.handlers = []
+        current_scope.handlers = []
 
 class handler(object):
     def __init__(self, suite):
@@ -268,7 +289,7 @@ class stmt_list(object):
         retvals = []
         for stmt in self.statements:
             retvals.append(stmt.evaluate())
-            if env.ret_flag:
+            if current_scope.ret_flag:
                 return retvals[-1]
         return retvals
 
@@ -279,7 +300,7 @@ class suite(object):
         retvals = []
         for statement in self.statements:
             retvals.append(statement.evaluate())
-            if env.ret_flag:
+            if current_scope.ret_flag:
                 return retvals[-1]
         return retvals
 
@@ -289,16 +310,18 @@ class function(object):
         self.parameter_list = parameter_list
         self.suite = suite
     def evaluate(self):
-        env.store(self.identifier, self)
+        store(self.identifier, self)
 
 class return_stmt(object):
     def __init__(self, expression_list=None):
         self.expression_list = expression_list.expression_list
     def evaluate(self):
-        env.ret_flag = 1
-        if self.expression_list:
-            return [expression.evaluate() for expression in self.expression_list]
-        return
+        if global_scope.in_function:
+            current_scope.ret_flag = 1
+            if self.expression_list:
+                return [expression.evaluate() for expression in self.expression_list]
+            return
+        return exception('syntax_error', "'return' outside function")
 
 class if_stmt(object):
     def __init__(self, if_expression, if_suite, elif_list, else_suite=None):
@@ -326,11 +349,11 @@ class while_stmt(object):
         retvals = []
         while self.expression.evaluate():
             retvals.append(self.suite.evaluate())
-            if env.ret_flag:
+            if current_scope.ret_flag:
                 return retvals[-1]
         if self.else_suite:
             retvals.append(self.else_suite.evaluate())
-            if env.ret_flag:
+            if current_scope.ret_flag:
                 return retvals[-1]
         return retvals
 
@@ -341,17 +364,36 @@ class for_stmt(object):
         self.suite = suite
         self.else_suite = else_suite
     def evaluate(self):
+        retvals = []
         if len(self.expression_list) == 1:
             expressions = self.expression_list[0].evaluate()
         else:
             expressions = [expression.evaluate() for expression in self.expression_list]
+        for expression in expressions:
+            if len(self.target_list) == 1:
+                self.target_list[0].assign(expression)
+            else:
+                pairs = zip(self.target_list, expression)
+                for pair in pairs:
+                    pair[0].assign(pair[1])
+            retvals.append(self.suite.evaluate())
+            if current_scope.ret_flag:
+                return retvals[-1]
+        if self.else_suite:
+            retvals.append(self.else_suite.evaluate())
+            if current_scope.ret_flag:
+                return retvals[-1]
+        return retvals
 
 class exception(object):
-    def __init__(self, type):
+    def __init__(self, type, message=None):
         self.type = type
     def evaluate(self):
-        if not env.handlers:
-            print self.type
+        if not current_scope.handlers:
+            if message:
+                print self.type + ':' + self.message
+            else:
+                print self.type
             exit()
         else:
-            return env.handlers[0].evaluate()
+            return current_scope.handlers[0].evaluate()
