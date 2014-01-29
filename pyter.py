@@ -1731,7 +1731,7 @@ def parse_compound_statement():
         return parse_funcdef()
     elif item == 'class':
         la.rewind()
-        parse_classdef()
+        return parse_classdef()
     else:
         la.syntax_error()
 
@@ -1775,6 +1775,7 @@ def parse_classdef():
     item = la.read()
     if not is_id(item):
         la.syntax_error()
+    ident = item
     item = la.read()
     if item == '(':
         la.rewind()
@@ -1784,7 +1785,8 @@ def parse_classdef():
         item = la.read()
     if item != ':':
         la.syntax_error()
-    parse_suite()
+    suite = parse_suite()
+    return pyclass(ident, suite)
 
 # CAUTION: the Python 3.3 language reference here is wrong,
 # the inheritance should be an expression_list not a parameter_list.

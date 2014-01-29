@@ -38,20 +38,8 @@ class identifier(object):
     def assign(self, value):
         store(self.identifier, value)
     def call(self, argument_list):
-        function = load(self.identifier)
-        global current_scope
-        current_scope = environment(current_scope)
-        global_scope.in_function = 1
-        print function
-        pairs = zip(function.parameter_list, argument_list)
-        print pairs
-        for pair in pairs:
-            store(pair[0], pair[1].evaluate())
-        retval = function.suite.evaluate()
-        current_scope.ret_flag = 0
-        global_scope.in_function = 0
-        current_scope = current_scope.outer_scope
-        return retval
+        obj = load(self.identifier)
+        return obj.call(argument_list)
 
 class pystr(object):
     def __init__(self, *items):
@@ -311,6 +299,33 @@ class function(object):
         self.suite = suite
     def evaluate(self):
         store(self.identifier, self)
+    def call(self, argument_list):
+        global current_scope
+        current_scope = environment(current_scope)
+        global_scope.in_function = 1
+        pairs = zip(self.parameter_list, argument_list)
+        print pairs
+        for pair in pairs:
+            store(pair[0], pair[1].evaluate())
+        retval = self.suite.evaluate()
+        current_scope.ret_flag = 0
+        global_scope.in_function = 0
+        current_scope = current_scope.outer_scope
+        return retval
+
+class pyclass(object):
+    def __init__(self, identifier, suite):
+        self.identifier = identifier
+        self.suite = suite
+    def evaluate(self):
+        global current_scope, global_scope
+        current_scope = environment()
+        self.suite.evaluate()
+        self.scope = current_scope
+        current_scope = global_scope
+        store(self.identifier, self.scope)
+    def call(self, argument_list):
+        return load(self.identifier)
 
 class return_stmt(object):
     def __init__(self, expression_list=None):
