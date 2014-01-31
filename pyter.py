@@ -829,7 +829,7 @@ def parse_primary():
             la.multi_lines += 1
             item = la.read()
             if item == ')':
-                primary = call()
+                primary = call(primary)
             elif item in ['*', '**']:
                 la.rewind()
                 argumentlist = parse_argument_list()

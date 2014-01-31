@@ -1,9 +1,11 @@
 class environment(object):
-    def __init__(self, outer_scope=None):
+    def __init__(self, identifier=None, outer_scope=None):
+        self.identifier = identifier
         self.outer_scope = outer_scope
         self.variables = {}
         self.handlers = []
         self.ret_flag = 0
+        self.scope = self
     def find(self, identifier):
         if identifier in self.variables:
             return True
@@ -12,6 +14,16 @@ class environment(object):
         return self.variables[identifier]
     def store(self, identifier, value):
         self.variables[identifier] = value
+    def call(self, argument_list):
+        return variable(self.identifier)
+
+class variable(object):
+    def __init__(self, _class):
+        self._class = _class
+        print 'self._class:', self._class
+        self.outer_scope = load(self._class)
+        print 'self.outer_scope:', self.outer_scope
+        self.scope = environment(outer_scope=self.outer_scope)
 
 global_scope = environment()
 global_scope.in_function = 0
@@ -37,9 +49,9 @@ class identifier(object):
             return exception('name_error').evaluate()
     def assign(self, value):
         store(self.identifier, value)
-    def call(self, argument_list):
-        obj = load(self.identifier)
-        return obj.call(argument_list)
+    # def call(self, argument_list):
+    #     obj = load(self.identifier)
+    #     return obj.call(argument_list)
 
 class pystr(object):
     def __init__(self, *items):
@@ -106,6 +118,28 @@ class target_list(object):
     def __init__(self, *expressions):
         self.expressions = list(expressions)
 
+class attributeref(object):
+    def __init__(self, primary, identifier):
+        self.primary = primary
+        self.identifier = identifier
+    def evaluate(self):
+        global current_scope
+        old_scope = current_scope
+        primary = self.primary.evaluate()
+        current_scope = primary.scope
+        retval = load(self.identifier)
+        current_scope = old_scope
+        if isinstance(primary, variable) and isinstance(retval, function):
+            retval.arg0 = primary
+        return retval
+    def assign(self, value):
+        global current_scope
+        old_scope = current_scope
+        primary = self.primary.evaluate()
+        current_scope = primary.scope
+        store(self.identifier, value)
+        current_scope = old_scope
+
 class subscription(object):
     def __init__(self, primary, expression):
         self.primary = primary
@@ -147,11 +181,12 @@ class slicing(object):
         self.primary.assign(value)
 
 class call(object):
-    def __init__(self, primary, argument_list):
+    def __init__(self, primary, argument_list=None):
         self.primary = primary
         self.argument_list = argument_list
     def evaluate(self):
-        return self.primary.call(self.argument_list)
+        primary = self.primary.evaluate()
+        return primary.call(self.argument_list)
 
 class power(object):
     def __init__(self, primary, u_expr):
@@ -275,6 +310,7 @@ class stmt_list(object):
         self.statements = stmt_list
     def evaluate(self):
         retvals = []
+        print self.statements
         for stmt in self.statements:
             retvals.append(stmt.evaluate())
             if current_scope.ret_flag:
@@ -297,16 +333,21 @@ class function(object):
         self.identifier = identifier
         self.parameter_list = parameter_list
         self.suite = suite
+        self.arg0 = None
     def evaluate(self):
         store(self.identifier, self)
     def call(self, argument_list):
         global current_scope
-        current_scope = environment(current_scope)
+        current_scope = environment(outer_scope=current_scope)
         global_scope.in_function = 1
+        argument_list = [argument.evaluate() for argument in argument_list]
+        if self.arg0:
+            argument_list = [self.arg0] + argument_list
+            a = [self.arg0] + argument_list
         pairs = zip(self.parameter_list, argument_list)
         print pairs
         for pair in pairs:
-            store(pair[0], pair[1].evaluate())
+            store(pair[0], pair[1])
         retval = self.suite.evaluate()
         current_scope.ret_flag = 0
         global_scope.in_function = 0
@@ -319,13 +360,12 @@ class pyclass(object):
         self.suite = suite
     def evaluate(self):
         global current_scope, global_scope
-        current_scope = environment()
+        current_scope = environment(identifier=self.identifier,
+                                    outer_scope=global_scope)
         self.suite.evaluate()
         self.scope = current_scope
         current_scope = global_scope
         store(self.identifier, self.scope)
-    def call(self, argument_list):
-        return load(self.identifier)
 
 class return_stmt(object):
     def __init__(self, expression_list=None):
