@@ -2,6 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define ITEMSIZE 1024
+#define STRINGSIZE 1024
+
 /* "<>" is deprecated in Python 3 */
 char tokens[100][4] = { "+", "-", "*", "**", "/", "//", "%",
                         "<<", ">>", "&", "|", "^", "~",
@@ -19,12 +22,12 @@ char tokens[100][4] = { "+", "-", "*", "**", "/", "//", "%",
 char stringprefixes[10][2] = { "r", "u", "R", "U", " " };
 
 struct item {
-    char content[1024];
+    char content[ITEMSIZE];
     struct item *next;
 };
 
 struct {
-    char string[1024];
+    char string[STRINGSIZE];
     int index;
     int line_number;
     struct item items_head;
@@ -59,82 +62,116 @@ void interactive_get_line() {
     global.index = 0;
 }
 
-void read_numerical_literal(char *item) {
+void read_numeric_literal(char *item) {
+    int i = 0, dot_count = 0;
+    while ((global.string[global.index] >= '0' && global.string[global.index] <= '9') ||
+                (global.string[global.index] == '.' && !dot_count)) {
+        if (global.string[global.index] == '.')
+            dot_count++;
+        item[i++] = global.string[global.index++];
+    }
+    add_item(item);
+    return;
 }
 
 void read_string_literal(char *item) {
+    int i = 1;
+    char op = global.string[global.index];
+    item[0] = op;
+    while (global.string[global.index] != op)
+        item[i++] = global.string[global.index++];
+    item[i] = global.string[global.index++];
+    add_item(item);
+    return;
 }
 
 void raw_read(char *item) {
     int i, j, k = 0;
 
-    while (global.string[global.index] == ' ' || global.string[global.index] == '\t') {
-        global.index++;
-    }
-    for (j = 3; j > 0; j--) {
-        for (i = 0; strcmp(tokens[i], " ") != 0; i++) {
-            if (strncmp(global.string+global.index, tokens[i], j) == 0) {
-                strncpy(item, global.string+global.index, j);
-                item[j] = 0;
+    if (global.index < strlen(global.string)) {
+        while (global.string[global.index] == ' ' || global.string[global.index] == '\t') {
+            global.index++;
+        }
+        for (j = 3; j > 0; j--) {
+            for (i = 0; strcmp(tokens[i], " ") != 0; i++) {
+                if (strncmp(global.string+global.index, tokens[i], j) == 0) {
+                    strncpy(item, global.string+global.index, j);
+                    item[j] = 0;
+                    add_item(item);
+                    global.index += j;
+                    return;
+                }
+            }
+        }
+        if (global.string[global.index] == '.') {
+            if (global.string[global.index+1] >= '0' && global.string[global.index+1] <= '9') {
+                read_numeric_literal(item);
+                return;
+            }
+            else {
+                strncpy(item, global.string+global.index, 1);
+                item[1] = 0;
                 add_item(item);
-                global.index += j;
+                global.index++;
+                return;
+            }
+        }
+        if (global.string[global.index] >= '0' && global.string[global.index] <= '9') {
+            read_numeric_literal(item);
+            return;
+        }
+        if (global.string[global.index] == '"' || global.string[global.index] == '\'') {
+            read_string_literal(item);
+            return;
+        }
+        while ((global.string[global.index] >= 'a' && global.string[global.index] <= 'z') ||
+               (global.string[global.index] >= 'A' && global.string[global.index] <= 'Z') ||
+               (global.string[global.index] == '_')) {
+            item[k++] = global.string[global.index++];
+        }
+        for (i = 0; strcmp(stringprefixes[i], " ") != 0; i++) {
+            if ((strcmp(stringprefixes[i], item) == 0) && 
+                     (global.string[global.index == '"' || global.string[global.index == '\'']])) {
+                read_string_literal(item+strlen(item));
+                add_item(item);
+                return;
+            }
+            else {
+                add_item(item);
                 return;
             }
         }
     }
-    if (global.string[global.index] == '.') {
-        if (global.string[global.index+1] >= '0' && global.string[global.index+1] <= '9') {
-            read_numerical_literal(item);
-            return;
-        }
-        else {
-            strncpy(item, global.string+global.index, 1);
-            item[1] = 0;
-            add_item(item);
-            global.index++;
-            return;
-        }
-    }
-    if (global.string[global.index] == '"' || global.string[global.index] == '\'') {
-        read_string_literal(item);
-        return;
-    }
-    while ((global.string[global.index] >= 'a' && global.string[global.index] <= 'z') ||
-           (global.string[global.index] >= 'A' && global.string[global.index] <= 'Z') ||
-           (global.string[global.index] == '_')) {
-        item[k++] = global.string[global.index++];
-    }
-    if (!global.string[global.index]) {
+    else {
         add_item(item);
         return;
     }
-    for (i = 0; strcmp(stringprefixes[i], " ") != 0; i++) {
-        if (strcmp(stringprefixes[i], item) == 0) {
-            read_string_literal(item+strlen(item));
-            return;
+}
+
+void parse_atom() {
+}
+
+int test()
+{
+    char item[ITEMSIZE];
+    bzero(item, ITEMSIZE);
+    do {
+        interactive_get_line();
+        puts(global.string);
+        printf("[");
+        while (global.index < strlen(global.string)) {
+            raw_read(item);
+            printf("'%s', ", item);
+            bzero(item, ITEMSIZE);
         }
-        else {
-            add_item(item);
-            return;
-        }
-    }
+        printf("]\n");
+    } while (strcmp(global.string, "exit") != 0);
+
+    return 0;
 }
 
 int main()
 {
-    char item[1024];
-    bzero(item, 1024);
-    do {
-        interactive_get_line();
-        puts(global.string);
-        while (global.index < strlen(global.string)) {
-            raw_read(item);
-            printf("item: %s\n", item);
-            bzero(item, 1024);
-        }
-        puts("global.items:");
-        show_items();
-    } while (strcmp(global.string, "exit") != 0);
-
+    test();
     return 0;
 }
