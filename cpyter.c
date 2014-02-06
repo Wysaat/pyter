@@ -21,6 +21,16 @@ char tokens[100][4] = { "+", "-", "*", "**", "/", "//", "%",
 
 char stringprefixes[10][2] = { "r", "u", "R", "U", " " };
 
+typedef struct {
+    char identifier[ITEMSIZE];
+} identifier;
+
+identifier *IDENTIFIER(char *item) {
+    identifier *retval = (identifier *)malloc(sizeof(identifier));
+    strcpy(retval->identifier, item);
+    return retval;
+}
+
 struct item {
     char content[ITEMSIZE];
     struct item *next;
@@ -169,7 +179,7 @@ int is_id(char *item) {
     if (!(is_alpha(item[0]) || item[0] == '_'))
         return 0;
     while (item[++i] != 0) {
-        if (!(is_alpha(item[i] || item[i] == '_' || is_digit(item[i]))))
+        if (!(is_alpha(item[i]) || item[i] == '_' || is_digit(item[i])))
             return 0;
     }
     return 1;
@@ -180,6 +190,15 @@ void *parse_atom() {
     raw_read(item);
     if (is_id(item))
         return IDENTIFIER(item);
+}
+
+int test1()
+{
+    interactive_get_line();
+    identifier *a = parse_atom();
+    printf("identifier: %s\n", a->identifier);
+
+    return 0;
 }
 
 int test()
@@ -201,6 +220,6 @@ int test()
 
 int main()
 {
-    test();
+    test1();
     return 0;
 }
