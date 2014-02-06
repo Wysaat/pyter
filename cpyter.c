@@ -2,8 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define ITEMSIZE 1024
-#define STRINGSIZE 1024
+#include "cpyter.h"
 
 /* "<>" is deprecated in Python 3 */
 char tokens[100][4] = { "+", "-", "*", "**", "/", "//", "%",
@@ -21,16 +20,6 @@ char tokens[100][4] = { "+", "-", "*", "**", "/", "//", "%",
 
 char stringprefixes[10][2] = { "r", "u", "R", "U", " " };
 
-typedef struct {
-    char identifier[ITEMSIZE];
-} identifier;
-
-identifier *IDENTIFIER(char *item) {
-    identifier *retval = (identifier *)malloc(sizeof(identifier));
-    strcpy(retval->identifier, item);
-    return retval;
-}
-
 struct item {
     char content[ITEMSIZE];
     struct item *next;
@@ -41,11 +30,13 @@ struct {
     int index;
     int line_number;
     struct item items_head;
+    int multi_lines;
 } global = {
     .string = "",
     .index = 0,
     .line_number = 0,
     .items_head = { " ", 0 },
+    .multi_lines = 0;
 };
 
 void add_item(char *word) {
@@ -138,6 +129,7 @@ void raw_read(char *item) {
         }
         while ((global.string[global.index] >= 'a' && global.string[global.index] <= 'z') ||
                (global.string[global.index] >= 'A' && global.string[global.index] <= 'Z') ||
+               (global.string[global.index] >= '0' && global.string[global.index] <= '9') ||
                (global.string[global.index] == '_')) {
             item[k++] = global.string[global.index++];
         }
@@ -160,6 +152,10 @@ void raw_read(char *item) {
         add_item(item);
         return;
     }
+}
+
+void read(char *item) {
+    raw_read(item);
 }
 
 int is_digit(char ch) {
@@ -185,11 +181,43 @@ int is_id(char *item) {
     return 1;
 }
 
+int is_int(char *item) {
+    int i;
+    for (i = 0; item[i]; i++) {
+        if (!is_digit(item[i]))
+            return 0;
+    }
+    return 1;
+}
+
+int is_str(char *item) {
+    int i;
+    if (item[0] == '\'' || item[0] == '"')
+        return 1;
+    return 0;
+}
+
 void *parse_atom() {
     char item[ITEMSIZE];
-    raw_read(item);
+    read(item);
     if (is_id(item))
         return IDENTIFIER(item);
+    if (is_int(item))
+        return PYINT(item);
+    if (is_str(item))
+        return PYSTR(item);
+    if (strcmp(item, "(") == 0) {
+        global.multi_lines++;
+        read(item);
+        if (strcmp(item, ")") == 0)
+            return TUPLE();
+        else {
+            expression expr = parse_expression();
+            read(item);
+            if (match(item, ")"))
+                return TUPLE(expr_list);
+        }
+    }
 }
 
 int test1()
@@ -209,7 +237,7 @@ int test()
         puts(global.string);
         printf("[");
         while (global.index < strlen(global.string)) {
-            raw_read(item);
+            read(item);
             printf("'%s', ", item);
         }
         printf("]\n");
