@@ -70,17 +70,19 @@ void read_numeric_literal(char *item) {
             dot_count++;
         item[i++] = global.string[global.index++];
     }
+    item[i] = 0;
     add_item(item);
     return;
 }
 
 void read_string_literal(char *item) {
     int i = 1;
-    char op = global.string[global.index];
+    char op = global.string[global.index++];
     item[0] = op;
     while (global.string[global.index] != op)
         item[i++] = global.string[global.index++];
-    item[i] = global.string[global.index++];
+    item[i++] = global.string[global.index++];
+    item[i] = 0;
     add_item(item);
     return;
 }
@@ -137,24 +139,52 @@ void raw_read(char *item) {
                 return;
             }
             else {
+                item[k] = 0;
                 add_item(item);
                 return;
             }
         }
     }
     else {
+        item[0] = 0;
         add_item(item);
         return;
     }
 }
 
-void parse_atom() {
+int is_digit(char ch) {
+    if (ch >= '0' && ch <= '9')
+        return 1;
+    return 0;
+}
+
+int is_alpha(char ch) {
+    if ((ch >= 'a' && ch <= 'z') || ch >= 'A' && ch <= 'Z')
+        return 1;
+    return 0;
+}
+
+int is_id(char *item) {
+    int i = 0;
+    if (!(is_alpha(item[0]) || item[0] == '_'))
+        return 0;
+    while (item[++i] != 0) {
+        if (!(is_alpha(item[i] || item[i] == '_' || is_digit(item[i]))))
+            return 0;
+    }
+    return 1;
+}
+
+void *parse_atom() {
+    char item[ITEMSIZE];
+    raw_read(item);
+    if (is_id(item))
+        return IDENTIFIER(item);
 }
 
 int test()
 {
     char item[ITEMSIZE];
-    bzero(item, ITEMSIZE);
     do {
         interactive_get_line();
         puts(global.string);
@@ -162,7 +192,6 @@ int test()
         while (global.index < strlen(global.string)) {
             raw_read(item);
             printf("'%s', ", item);
-            bzero(item, ITEMSIZE);
         }
         printf("]\n");
     } while (strcmp(global.string, "exit") != 0);
