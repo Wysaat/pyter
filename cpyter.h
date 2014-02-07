@@ -35,3 +35,8 @@ pystr *PYSTR(char *item) {
 
 typedef struct {
 } tuple;
+
+typedef struct expr_list {
+	expression expr;
+	struct expr_list *next;
+};

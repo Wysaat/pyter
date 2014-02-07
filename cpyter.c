@@ -206,18 +206,80 @@ void *parse_atom() {
         return PYINT(item);
     if (is_str(item))
         return PYSTR(item);
-    if (strcmp(item, "(") == 0) {
+    if (match(item, ")")) {
         global.multi_lines++;
         read(item);
-        if (strcmp(item, ")") == 0)
+        if (match(item, ")"))
             return TUPLE();
         else {
             expression expr = parse_expression();
+            expr_lsit expr_head = { expr, 0 };
             read(item);
-            if (match(item, ")"))
-                return TUPLE(expr_list);
+            if (match(item, ")")) {
+                global.multi_lines--;
+                return TUPLE(expr_head);
+            }
+            else if (match(item, ",")) {
+                expr_lsit exprs = parse_expression_list();
+                expr_head.next = &exprs;
+                read(item);
+                if (match(item, ")")) {
+                    global.multi_lines--;
+                    return TUPLE(expr_head);
+                }
+            }
         }
     }
+    else if (match(item, "[")) {
+        global.multi_lines++;
+        expr_list expr_head = parse_expression_list();
+        read(item);
+        if (match(item, "]")) {
+            global.multi_lines--;
+            return LIST(expr_head);
+        }
+    }
+}
+
+void *parse_primary() {
+    char item[ITEMSIZE];
+    void *primary = parse_atom();
+    while (1) {
+        read(item);
+        if (match(item, ".")) {
+            read(item);
+            if (is_id(item)) {
+                return ATTRIBUTEREF(primary, item);
+            }
+        }
+        else {
+            remonter();
+            return primary;
+        }
+    }
+}
+
+void *parse_power() {
+    char item[ITEMSIZE];
+    void *primary = parse_primary();
+    read(item);
+    if (!match(item, "**")) {
+        remonter();
+        return primary;
+    }
+    void *u_expr = parse_u_expr();
+    return POWER(primary, u_expr);
+}
+
+void *parse_u_expr() {
+    char item[ITEMSIZE];
+    read(item);
+    if (match(item, "+") || match(item, "-") || match(item, "~")) {
+        void *expr = parse_u_expr();
+        return U_EXPR(item, expr);
+    }
+    remonter();
+    return parse_power();
 }
 
 int test1()
