@@ -36,7 +36,7 @@ struct {
     .index = 0,
     .line_number = 0,
     .items_head = { " ", 0 },
-    .multi_lines = 0;
+    .multi_lines = 0,
 };
 
 void add_item(char *word) {
@@ -200,63 +200,18 @@ int is_str(char *item) {
 void *parse_atom() {
     char item[ITEMSIZE];
     read(item);
-    if (is_id(item))
-        return IDENTIFIER(item);
-    if (is_int(item))
-        return PYINT(item);
-    if (is_str(item))
-        return PYSTR(item);
-    if (match(item, ")")) {
-        global.multi_lines++;
-        read(item);
-        if (match(item, ")"))
-            return TUPLE();
-        else {
-            expression expr = parse_expression();
-            expr_lsit expr_head = { expr, 0 };
-            read(item);
-            if (match(item, ")")) {
-                global.multi_lines--;
-                return TUPLE(expr_head);
-            }
-            else if (match(item, ",")) {
-                expr_lsit exprs = parse_expression_list();
-                expr_head.next = &exprs;
-                read(item);
-                if (match(item, ")")) {
-                    global.multi_lines--;
-                    return TUPLE(expr_head);
-                }
-            }
-        }
-    }
-    else if (match(item, "[")) {
-        global.multi_lines++;
-        expr_list expr_head = parse_expression_list();
-        read(item);
-        if (match(item, "]")) {
-            global.multi_lines--;
-            return LIST(expr_head);
-        }
+    if (is_int(item)) {
+        pyint *retval = (pyint *)malloc(sizeof(pyint));
+        retval->type = pyInt;
+        strcpy(retval->value, item);
+        return retval;
     }
 }
 
 void *parse_primary() {
     char item[ITEMSIZE];
     void *primary = parse_atom();
-    while (1) {
-        read(item);
-        if (match(item, ".")) {
-            read(item);
-            if (is_id(item)) {
-                return ATTRIBUTEREF(primary, item);
-            }
-        }
-        else {
-            remonter();
-            return primary;
-        }
-    }
+    return primary;
 }
 
 void *parse_power() {
@@ -271,22 +226,75 @@ void *parse_power() {
     return POWER(primary, u_expr);
 }
 
-void *parse_u_expr() {
-    char item[ITEMSIZE];
-    read(item);
-    if (match(item, "+") || match(item, "-") || match(item, "~")) {
-        void *expr = parse_u_expr();
-        return U_EXPR(item, expr);
-    }
-    remonter();
-    return parse_power();
+// void *parse_u_expr() {
+//     char item[ITEMSIZE];
+//     read(item);
+//     if (match(item, "+") || match(item, "-") || match(item, "~")) {
+//         void *expr = parse_u_expr();
+//         return U_EXPR(item, expr);
+//     }
+//     remonter();
+//     return parse_power();
+// }
+
+// void *parse_m_expr() {
+//     char item[ITEMSIZE];
+//     void *expr = pares_u_expr();
+//     while (1) {
+//         read(item);
+//         if (!(match(item, "*") || match(item, "//") ||
+//               match(item, "/") || match(item, "%"))) {
+//             remonter();
+//             return expr;
+//         }
+//         expr = B_EXPR(expr, item, parse_u_expr());
+//     }
+// }
+
+// void *parse_a_expr() {
+//     char item[ITEMSIZE];
+//     void *expr = parse_m_expr();
+//     while (1) {
+//         read(item);
+//         if (!(match(item, "+") || match(item, "-"))) {
+//             remonter();
+//             return expr;
+//         }
+//         expr = B_EXPR(expr, item, pares_a_expr());
+//     }
+// }
+
+// void *parse_shift_expr() {
+//     char item[ITEMSIZE];
+//     void *expr = parse_a_expr();
+//     while (1) {
+//         read(item);
+//         if (!(match(item, "<<") || match(item, ">>"))) {
+//             remonter();
+//             return expr;
+//         }
+//         expr = B_EXPR(expr, item, parse_shift_expr());
+//     }
+// }
+
+void *parse_expression() {
+    return parse_primary();
 }
+
+// void *parse_expression_list() {
+//     expr_list expr_head;
+//     while (1) {
+//         void *expression = parse_expression();
+//     }
+// }
 
 int test1()
 {
+    char item[ITEMSIZE];
     interactive_get_line();
-    identifier *a = parse_atom();
-    printf("identifier: %s\n", a->identifier);
+    pyint *expr = parse_expression();
+    void *retval = evaluate(expr);
+    printf("%d\n", *(int *)retval);
 
     return 0;
 }
