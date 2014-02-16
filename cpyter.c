@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "cpyter.h"
 
@@ -219,23 +220,31 @@ void *parse_power() {
     void *primary = parse_primary();
     read(item);
     if (!match(item, "**")) {
-        remonter();
+        // remonter();
         return primary;
     }
     void *u_expr = parse_u_expr();
-    return POWER(primary, u_expr);
+    power *retval = (power *)malloc(sizeof(power));
+    retval->type = pyPower;
+    retval->primary = primary;
+    retval->u_expr = u_expr;
+    return retval;
 }
 
-// void *parse_u_expr() {
-//     char item[ITEMSIZE];
-//     read(item);
-//     if (match(item, "+") || match(item, "-") || match(item, "~")) {
-//         void *expr = parse_u_expr();
-//         return U_EXPR(item, expr);
-//     }
-//     remonter();
-//     return parse_power();
-// }
+void *parse_u_expr() {
+    char item[ITEMSIZE];
+    read(item);
+    if (match(item, "+") || match(item, "-") || match(item, "~")) {
+        void *expr = parse_u_expr();
+        u_expr *retval = (u_expr *)malloc(sizeof(u_expr));
+        retval->type = pyU_expr;
+        retval->u_op = item[0];
+        retval->expr = expr;
+        return retval;
+    }
+    // remonter();
+    return parse_power();
+}
 
 // void *parse_m_expr() {
 //     char item[ITEMSIZE];
@@ -292,7 +301,7 @@ int test1()
 {
     char item[ITEMSIZE];
     interactive_get_line();
-    pyint *expr = parse_expression();
+    void *expr = parse_power();
     void *retval = evaluate(expr);
     printf("%d\n", *(int *)retval);
 
