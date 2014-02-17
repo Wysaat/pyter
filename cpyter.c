@@ -45,14 +45,9 @@ struct {
 };
 
 void remonter() {
-    puts("in remonter");
     global.rewind = 1;
-    puts("111");
-    char *item = last_item();
-    puts("222");
-    printf("item: %s\n", item);
+    char *item = pop_item();
     strcpy(global.last_item, item);
-    puts("leave remonter");
 }
 
 void add_item(char *word) {
@@ -65,18 +60,32 @@ void add_item(char *word) {
     ptr->next = new_item;
 }
 
-void show_items() {
+char *pop_item() {
     struct item *ptr = &global.items_head;
+    struct item *last;
     while (ptr->next != 0) {
-        puts(ptr->next->content);
+        last = ptr;
         ptr = ptr->next;
     }
+    last->next = 0;
+    return ptr;
+}
+
+void show_items() {
+    struct item *ptr = &global.items_head;
+    printf("[");
+    while (ptr->next != 0) {
+        printf("'%s', ", ptr->next->content);
+        ptr = ptr->next;
+    }
+    printf("]\n");
 }
 
 char *last_item() {
+    puts("in last_item");
     struct item *ptr = &global.items_head;
     while (ptr->next != 0)
-        ;
+        ptr = ptr->next;
     return ptr;
 }
 
@@ -181,12 +190,10 @@ void read(char *item) {
     if (global.rewind) {
         global.rewind = 0;
         item = global.last_item;
-        printf("item: %s\n", item);
         add_item(global.last_item);
         return;
     }
     raw_read(item);
-    printf("item: %s\n", item);
 }
 
 int is_digit(char ch) {
@@ -218,6 +225,8 @@ int is_int(char *item) {
         if (!is_digit(item[i]))
             return 0;
     }
+    if (i == 0)
+        return 0;
     return 1;
 }
 
@@ -231,6 +240,7 @@ int is_str(char *item) {
 void *parse_atom() {
     char item[ITEMSIZE];
     read(item);
+    // printf("in parse_atom: item: %s\n", item);
     if (is_int(item)) {
         pyint *retval = (pyint *)malloc(sizeof(pyint));
         retval->type = pyInt;
@@ -240,14 +250,14 @@ void *parse_atom() {
 }
 
 void *parse_primary() {
-    char item[ITEMSIZE];
     void *primary = parse_atom();
     return primary;
 }
 
 void *parse_power() {
-    char item[ITEMSIZE];
+    printf("in parse_power\n");
     void *primary = parse_primary();
+    char item[ITEMSIZE];
     read(item);
     if (!match(item, "**")) {
         remonter();
