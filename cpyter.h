@@ -25,15 +25,19 @@ typedef struct u_expr {
     void *expr;
 } u_expr;
 
+char *last_item();
 void *parse_u_expr();
 void *evaluate(void *);
 
 int *pyintEvaluate(pyint *structure) {
+    printf("in pyintEvaluate\n");
     int retval = atoi(structure->value);
+    printf("retval is %d\n", retval);
     return &retval;
 }
 
 int *powerEvaluate(power *structure) {
+    printf("structure->primary->value: %s\n", ((pyint *)structure->primary)->value);
     int *primary = evaluate(structure->primary);
     int *u_expr = evaluate(structure->u_expr);
     int retval = pow(*primary, *u_expr);

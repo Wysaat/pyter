@@ -32,13 +32,28 @@ struct {
     int line_number;
     struct item items_head;
     int multi_lines;
+    int rewind;
+    char last_item[ITEMSIZE];
 } global = {
     .string = "",
     .index = 0,
     .line_number = 0,
     .items_head = { " ", 0 },
     .multi_lines = 0,
+    .rewind = 0,
+    .last_item = "",
 };
+
+void remonter() {
+    puts("in remonter");
+    global.rewind = 1;
+    puts("111");
+    char *item = last_item();
+    puts("222");
+    printf("item: %s\n", item);
+    strcpy(global.last_item, item);
+    puts("leave remonter");
+}
 
 void add_item(char *word) {
     struct item *ptr = &global.items_head;
@@ -56,6 +71,13 @@ void show_items() {
         puts(ptr->next->content);
         ptr = ptr->next;
     }
+}
+
+char *last_item() {
+    struct item *ptr = &global.items_head;
+    while (ptr->next != 0)
+        ;
+    return ptr;
 }
 
 void interactive_get_line() {
@@ -156,7 +178,15 @@ void raw_read(char *item) {
 }
 
 void read(char *item) {
+    if (global.rewind) {
+        global.rewind = 0;
+        item = global.last_item;
+        printf("item: %s\n", item);
+        add_item(global.last_item);
+        return;
+    }
     raw_read(item);
+    printf("item: %s\n", item);
 }
 
 int is_digit(char ch) {
@@ -220,7 +250,7 @@ void *parse_power() {
     void *primary = parse_primary();
     read(item);
     if (!match(item, "**")) {
-        // remonter();
+        remonter();
         return primary;
     }
     void *u_expr = parse_u_expr();
@@ -242,7 +272,7 @@ void *parse_u_expr() {
         retval->expr = expr;
         return retval;
     }
-    // remonter();
+    remonter();
     return parse_power();
 }
 
