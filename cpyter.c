@@ -82,7 +82,6 @@ void show_items() {
 }
 
 char *last_item() {
-    puts("in last_item");
     struct item *ptr = &global.items_head;
     while (ptr->next != 0)
         ptr = ptr->next;
@@ -189,7 +188,7 @@ void raw_read(char *item) {
 void read(char *item) {
     if (global.rewind) {
         global.rewind = 0;
-        item = global.last_item;
+        strcpy(item, global.last_item);
         add_item(global.last_item);
         return;
     }
@@ -240,7 +239,6 @@ int is_str(char *item) {
 void *parse_atom() {
     char item[ITEMSIZE];
     read(item);
-    // printf("in parse_atom: item: %s\n", item);
     if (is_int(item)) {
         pyint *retval = (pyint *)malloc(sizeof(pyint));
         retval->type = pyInt;
@@ -255,9 +253,8 @@ void *parse_primary() {
 }
 
 void *parse_power() {
-    printf("in parse_power\n");
-    void *primary = parse_primary();
     char item[ITEMSIZE];
+    void *primary = parse_primary();
     read(item);
     if (!match(item, "**")) {
         remonter();
@@ -275,30 +272,35 @@ void *parse_u_expr() {
     char item[ITEMSIZE];
     read(item);
     if (match(item, "+") || match(item, "-") || match(item, "~")) {
-        void *expr = parse_u_expr();
+        // void *expr = parse_u_expr();
         u_expr *retval = (u_expr *)malloc(sizeof(u_expr));
         retval->type = pyU_expr;
         retval->u_op = item[0];
-        retval->expr = expr;
+        retval->expr = parse_u_expr();
         return retval;
     }
     remonter();
     return parse_power();
 }
 
-// void *parse_m_expr() {
-//     char item[ITEMSIZE];
-//     void *expr = pares_u_expr();
-//     while (1) {
-//         read(item);
-//         if (!(match(item, "*") || match(item, "//") ||
-//               match(item, "/") || match(item, "%"))) {
-//             remonter();
-//             return expr;
-//         }
-//         expr = B_EXPR(expr, item, parse_u_expr());
-//     }
-// }
+void *parse_m_expr() {
+    char item[ITEMSIZE];
+    void *expr = pares_u_expr();
+    while (1) {
+        read(item);
+        if (!(match(item, "*") || match(item, "//") ||
+              match(item, "/") || match(item, "%"))) {
+            remonter();
+            return expr;
+        }
+        b_expr *retval = (b_expr *)malloc(sizeof(b_expr));
+        retval->type = pyB_expr;
+        strcpy(retval->op, item);
+        retval->left = expr;
+        retval->right = parse_u_expr();
+        return retval;
+    }
+}
 
 // void *parse_a_expr() {
 //     char item[ITEMSIZE];
@@ -341,7 +343,7 @@ int test1()
 {
     char item[ITEMSIZE];
     interactive_get_line();
-    void *expr = parse_power();
+    void *expr = parse_u_expr();
     void *retval = evaluate(expr);
     printf("%d\n", *(int *)retval);
 

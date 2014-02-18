@@ -4,7 +4,7 @@
 #define STRINGSIZE 1024
 
 enum types { pyId, pyInt, pyStr, pyTuple, 
-             pyPower, pyU_expr };
+             pyPower, pyU_expr, pyB_expr, };
 
 #define match(x, y) !strcmp(x, y)
 
@@ -25,6 +25,13 @@ typedef struct u_expr {
     void *expr;
 } u_expr;
 
+typedef struct b_expr {
+    int type;
+    char op[10];
+    void *left;
+    void *right;
+};
+
 char *last_item();
 char *pop_item();
 void *parse_u_expr();
@@ -32,14 +39,19 @@ void *evaluate(void *);
 
 int *pyintEvaluate(pyint *structure) {
     int retval = atoi(structure->value);
-    return &retval;
+    // return &retval;
+    int *retptr = (int *)malloc(sizeof(int));
+    *retptr = retval;
+    return retptr;
 }
 
 int *powerEvaluate(power *structure) {
-    // printf("structure->primary->value: %s\n", ((pyint *)structure->primary)->value);
-    // printf("structure->u_expr->value: %s\n", ((pyint *)structure->u_expr)->value);
     int *primary = evaluate(structure->primary);
     int *u_expr = evaluate(structure->u_expr);
+    // int *primary = (int *)malloc(sizeof(int));
+    // int *u_expr = (int *)malloc(sizeof(int));
+    // memcpy(primary, evaluate(structure->primary), sizeof(int));
+    // memcpy(u_expr, evaluate(structure->u_expr), sizeof(int));
     int retval = pow(*primary, *u_expr);
     return &retval;
 }
@@ -61,14 +73,29 @@ int *u_exprEvaluate(u_expr *structure) {
     return &retval;
 }
 
+int *b_exprEvaluate(b_expr *structure) {
+    int retval;
+    int *retptr = (int *)malloc(sizeof(int));
+    int *left = evaluate(structure->left);
+    int *right = evaluate(structure->right);
+    if (match(structure->op, "*"))
+        retval = *left * *right;
+    else if (match(structure->op, "/"))
+        retval = *left / *right;
+    *retptr = retval;
+    return retptr;
+}
+
 void *evaluate(void *structure) {
     switch (*(int *)structure) {
         case pyInt:
-            return (void *)pyintEvaluate((pyint *)structure);
+            return pyintEvaluate((pyint *)structure);
         case pyPower:
-            return (void *)powerEvaluate((power *)structure);
+            return powerEvaluate((power *)structure);
         case pyU_expr:
-            return (void *)u_exprEvaluate((u_expr *)structure);
+            return u_exprEvaluate((u_expr *)structure);
+        case pyB_expr:
+            return b_exprEvaluate((b_expr *)structure);
     }
     // if (*(int *)structure == pyInt)
     //     return pyintEvaluate(structure);
