@@ -285,7 +285,7 @@ void *parse_u_expr() {
 
 void *parse_m_expr() {
     char item[ITEMSIZE];
-    void *expr = pares_u_expr();
+    void *expr = parse_u_expr();
     while (1) {
         read(item);
         if (!(match(item, "*") || match(item, "//") ||
@@ -293,27 +293,38 @@ void *parse_m_expr() {
             remonter();
             return expr;
         }
-        b_expr *retval = (b_expr *)malloc(sizeof(b_expr));
-        retval->type = pyB_expr;
-        strcpy(retval->op, item);
-        retval->left = expr;
-        retval->right = parse_u_expr();
-        return retval;
+        b_expr *new_expr = (b_expr *)malloc(sizeof(b_expr));
+        new_expr->type = pyB_expr;
+        strcpy(new_expr->op, item);
+        new_expr->left = expr;
+        new_expr->right = parse_u_expr();
+        expr = new_expr;
     }
 }
 
-// void *parse_a_expr() {
-//     char item[ITEMSIZE];
-//     void *expr = parse_m_expr();
-//     while (1) {
-//         read(item);
-//         if (!(match(item, "+") || match(item, "-"))) {
-//             remonter();
-//             return expr;
-//         }
-//         expr = B_EXPR(expr, item, pares_a_expr());
-//     }
-// }
+void *parse_a_expr() {
+    char item[ITEMSIZE];
+    void *expr = parse_m_expr();
+    int *val = evaluate(expr);
+    printf("in parse_a_expr, first m_expr is: %d\n", *val);
+    while (1) {
+        read(item);
+        if (!(match(item, "+") || match(item, "-"))) {
+            remonter();
+            int *val2 = evaluate(((b_expr *)expr)->left);
+            int *val3 = evaluate(((b_expr *)expr)->right);
+            printf("in parse_a_expr, before returning, first m_expr is: %d\n", *val2);
+            printf("in parse_a_expr, before returning, second m_expr is: %d\n", *val3);
+            return expr;
+        }
+        b_expr *new_expr = (b_expr *)malloc(sizeof(b_expr));
+        new_expr->type = pyB_expr;
+        strcpy(new_expr->op, item);
+        new_expr->left = expr;
+        new_expr->right = parse_m_expr();
+        expr = new_expr;
+    }
+}
 
 // void *parse_shift_expr() {
 //     char item[ITEMSIZE];
@@ -343,7 +354,7 @@ int test1()
 {
     char item[ITEMSIZE];
     interactive_get_line();
-    void *expr = parse_u_expr();
+    void *expr = parse_a_expr();
     void *retval = evaluate(expr);
     printf("%d\n", *(int *)retval);
 

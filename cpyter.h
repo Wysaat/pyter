@@ -30,12 +30,21 @@ typedef struct b_expr {
     char op[10];
     void *left;
     void *right;
-};
+} b_expr;
 
 char *last_item();
 char *pop_item();
 void *parse_u_expr();
 void *evaluate(void *);
+
+void *B_EXPR(void *left, char *op, void *right) {
+    b_expr *expr = (b_expr *)malloc(sizeof(b_expr));
+    expr->type = pyB_expr;
+    strcpy(expr->op, op);
+    expr->left = left;
+    expr->right = right;
+    return expr;
+}
 
 int *pyintEvaluate(pyint *structure) {
     int retval = atoi(structure->value);
@@ -52,13 +61,16 @@ int *powerEvaluate(power *structure) {
     // int *u_expr = (int *)malloc(sizeof(int));
     // memcpy(primary, evaluate(structure->primary), sizeof(int));
     // memcpy(u_expr, evaluate(structure->u_expr), sizeof(int));
+    int *retptr = (int *)malloc(sizeof(int));
     int retval = pow(*primary, *u_expr);
-    return &retval;
+    *retptr = retval;
+    return retptr;
 }
 
 int *u_exprEvaluate(u_expr *structure) {
     int *expr = evaluate(structure->expr);
     int retval;
+    int *retptr = (int *)malloc(sizeof(int));
     switch (structure->u_op) {
       case '+':
         retval = *expr;
@@ -70,7 +82,8 @@ int *u_exprEvaluate(u_expr *structure) {
         retval = ~(*expr);
         break;
     }
-    return &retval;
+    *retptr = retval;
+    return retptr;
 }
 
 int *b_exprEvaluate(b_expr *structure) {
@@ -80,8 +93,16 @@ int *b_exprEvaluate(b_expr *structure) {
     int *right = evaluate(structure->right);
     if (match(structure->op, "*"))
         retval = *left * *right;
+    else if (match(structure->op, "//"))
+        retval = *left / *right;
     else if (match(structure->op, "/"))
         retval = *left / *right;
+    else if (match(structure->op, "%"))
+        retval = *left % *right;
+    else if (match(structure->op, "+"))
+        retval = *left + *right;
+    else if (match(structure->op, "-"))
+        retval = *left - *right;
     *retptr = retval;
     return retptr;
 }
