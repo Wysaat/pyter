@@ -21,6 +21,8 @@ char tokens[100][4] = { "+", "-", "*", "**", "/", "//", "%",
 
 char stringprefixes[10][2] = { "r", "u", "R", "U", " " };
 
+char comp_operators[10][3] = { "<", ">", "==", ">=", "<=", "<>", "!=", " " };
+
 struct item {
     char content[ITEMSIZE];
     struct item *next;
@@ -293,12 +295,7 @@ void *parse_m_expr() {
             remonter();
             return expr;
         }
-        b_expr *new_expr = (b_expr *)malloc(sizeof(b_expr));
-        new_expr->type = pyB_expr;
-        strcpy(new_expr->op, item);
-        new_expr->left = expr;
-        new_expr->right = parse_u_expr();
-        expr = new_expr;
+        expr = B_EXPR(expr, item, parse_u_expr());
     }
 }
 
@@ -306,38 +303,137 @@ void *parse_a_expr() {
     char item[ITEMSIZE];
     void *expr = parse_m_expr();
     int *val = evaluate(expr);
-    printf("in parse_a_expr, first m_expr is: %d\n", *val);
     while (1) {
         read(item);
         if (!(match(item, "+") || match(item, "-"))) {
             remonter();
-            int *val2 = evaluate(((b_expr *)expr)->left);
-            int *val3 = evaluate(((b_expr *)expr)->right);
-            printf("in parse_a_expr, before returning, first m_expr is: %d\n", *val2);
-            printf("in parse_a_expr, before returning, second m_expr is: %d\n", *val3);
             return expr;
         }
-        b_expr *new_expr = (b_expr *)malloc(sizeof(b_expr));
-        new_expr->type = pyB_expr;
-        strcpy(new_expr->op, item);
-        new_expr->left = expr;
-        new_expr->right = parse_m_expr();
-        expr = new_expr;
+        expr = B_EXPR(expr, item, parse_m_expr());
     }
 }
 
-// void *parse_shift_expr() {
-//     char item[ITEMSIZE];
-//     void *expr = parse_a_expr();
-//     while (1) {
-//         read(item);
-//         if (!(match(item, "<<") || match(item, ">>"))) {
-//             remonter();
-//             return expr;
-//         }
-//         expr = B_EXPR(expr, item, parse_shift_expr());
-//     }
-// }
+void *parse_shift_expr() {
+    char item[ITEMSIZE];
+    void *expr = parse_a_expr();
+    while (1) {
+        read(item);
+        if (!(match(item, "<<") || match(item, ">>"))) {
+            remonter();
+            return expr;
+        }
+        expr = B_EXPR(expr, item, parse_a_expr());
+    }
+}
+
+void *parse_and_expr() {
+    char item[ITEMSIZE];
+    void *expr = parse_shift_expr();
+    while (1) {
+        read(item);
+        if (!(match(item, "&"))) {
+            remonter();
+            return expr;
+        }
+        expr = B_EXPR(expr, item, parse_shift_expr());
+    }
+}
+
+void *parse_xor_expr() {
+    char item[ITEMSIZE];
+    void *expr = parse_and_expr();
+    while (1) {
+        read(item);
+        if (!(match(item, "^"))) {
+            remonter();
+            return expr;
+        }
+        expr = B_EXPR(expr, item, parse_and_expr());
+    }
+}
+
+void *parse_or_expr() {
+    char item[ITEMSIZE];
+    void *expr = parse_xor_expr();
+    while (1) {
+        read(item);
+        if (!(match(item, "|"))) {
+            remonter();
+            return expr;
+        }
+        expr = B_EXPR(expr, item, parse_xor_expr());
+    }
+}
+
+int in_comp_operator(char *item) {
+    if (match(item, "is") || match(item, "not") || match(item, "in"))
+        return 1;
+    int i = 0;
+    for (i = 0; !match(comp_operators[i], " "); i++) {
+        if (match(item, comp_operators[i]))
+            return 1;
+    }
+    return 0;
+}
+
+void *parse_comparison() {
+    char item[ITEMSIZE];
+    char *op;
+    void *or_expr = parse_or_expr();
+    read(item);
+    remonter();
+    if (!in_comp_operator(item))
+        return or_expr;
+    void *left = or_expr;
+    void *right;
+    b_expr_list *comparisons = (b_expr_list *)malloc(sizeof(b_expr_list));
+    bzero(comparisons, sizeof(b_expr_list));
+    comparison *comp_expr = (comparison *)malloc(sizeof(comparison));
+    comp_expr->type = pyComparison;
+    while (1) {
+        read(item);
+        if (match(item, "is")) {
+            read(item);
+            if (match(item, "not"))
+                op = "is not";
+            else {
+                remonter();
+                op = "is";
+            }
+        }
+        else if (match(item, "not")) {
+            read(item);
+            if (match(item, "in"))
+                op = "not in";
+        }
+        else if (match(item, "in"))
+            op = "in";
+        else if (in_comp_operator(item))
+            op = item;
+        else {
+            remonter();
+            comp_expr->comparisons = comparisons;
+            return comp_expr;
+        }
+        right = parse_or_expr();
+        b_expr_list_append(comparisons, B_EXPR(left, op, right));
+        left = right;
+    }
+}
+
+void *parse_not_test() {
+    char item[ITEMSIZE];
+    read(item);
+    puts("in parse_not_test()");
+    if (match(item, "not")) {
+        not_test *test = (not_test *)malloc(sizeof(not_test));
+        test->type = pyNot_test;
+        test->expr = parse_not_test();
+        return test;
+    }
+    remonter();
+    return parse_comparison();
+}
 
 void *parse_expression() {
     return parse_primary();
@@ -354,7 +450,7 @@ int test1()
 {
     char item[ITEMSIZE];
     interactive_get_line();
-    void *expr = parse_a_expr();
+    void *expr = parse_not_test();
     void *retval = evaluate(expr);
     printf("%d\n", *(int *)retval);
 

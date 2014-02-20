@@ -4,9 +4,24 @@
 #define STRINGSIZE 1024
 
 enum types { pyId, pyInt, pyStr, pyTuple, 
-             pyPower, pyU_expr, pyB_expr, };
+             pyPower, pyU_expr, pyB_expr, pyComparison, 
+             pyNot_test, };
 
 #define match(x, y) !strcmp(x, y)
+
+/* items ends with " " */
+// int in(char *item, char **items) {
+//     int i;
+//     puts("in function in()");
+//     printf("**items, %p\n", *items);
+//     for (i = 0; !match(items[i], " "); i++) {
+//         if (match(item, items[i]))
+//             return 1;
+//     }
+//     return 0;
+// }
+
+typedef struct b_expr_list b_expr_list;
 
 typedef struct pyint {
     int type;
@@ -31,6 +46,32 @@ typedef struct b_expr {
     void *left;
     void *right;
 } b_expr;
+
+typedef struct comparison {
+    int type;
+    b_expr_list *comparisons;
+} comparison;
+
+typedef struct not_test {
+    int type;
+    char op[10];
+    void *expr;
+} not_test;
+
+typedef struct b_expr_list {
+    void *expr;
+    struct b_expr_list *next;
+} b_expr_list;
+
+void b_expr_list_append(b_expr_list *head, b_expr *expr) {
+    b_expr_list *node = (b_expr_list *)malloc(sizeof(b_expr_list));
+    node->expr = expr;
+    node->next = 0;
+    b_expr_list *ptr;
+    for (ptr = head; ptr->next != 0; ptr = ptr->next)
+        ;
+    ptr->next = node;
+}
 
 char *last_item();
 char *pop_item();
@@ -103,7 +144,50 @@ int *b_exprEvaluate(b_expr *structure) {
         retval = *left + *right;
     else if (match(structure->op, "-"))
         retval = *left - *right;
+    else if (match(structure->op, "<<"))
+        retval = *left << *right;
+    else if (match(structure->op, ">>"))
+        retval = *left >> *right;
+    else if (match(structure->op, "&"))
+        retval = *left & *right;
+    else if (match(structure->op, "^"))
+        retval = *left ^ *right;
+    else if (match(structure->op, "|"))
+        retval = *left | *right;
+    else if (match(structure->op, "<"))
+        retval = *left < *right;
+    else if (match(structure->op, ">"))
+        retval = *left > *right;
+    else if (match(structure->op, "=="))
+        retval = *left == *right;
+    else if (match(structure->op, "<="))
+        retval = *left <= *right;
+    else if (match(structure->op, ">="))
+        retval = *left >= *right;
+    else if (match(structure->op, "<>"))
+        retval = *left != *right;
+    else if (match(structure->op, "!="))
+        retval = *left != *right;
     *retptr = retval;
+    return retptr;
+}
+
+int *not_testEvaluate(not_test *structure) {
+    int *ptr = evaluate(structure->expr);
+    int retval = !(*ptr);
+    int *retptr = (int *)malloc(sizeof(int));
+    *retptr = retval;
+    return retptr;
+}
+
+void *comparisonEvaluate(comparison *structure) {
+    b_expr_list *ptr;
+    int *retptr = (int *)malloc(sizeof(int));
+    for (ptr = structure->comparisons; ptr->next != 0; ptr = ptr->next) {
+        retptr = evaluate(ptr->next->expr);
+        if (!(*retptr))
+            return retptr;
+    }
     return retptr;
 }
 
@@ -117,6 +201,10 @@ void *evaluate(void *structure) {
             return u_exprEvaluate((u_expr *)structure);
         case pyB_expr:
             return b_exprEvaluate((b_expr *)structure);
+        case pyComparison:
+            return comparisonEvaluate((comparison *)structure);
+        case pyNot_test:
+            return not_testEvaluate((not_test *)structure);
     }
     // if (*(int *)structure == pyInt)
     //     return pyintEvaluate(structure);
