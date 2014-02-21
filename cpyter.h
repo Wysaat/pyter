@@ -5,7 +5,8 @@
 
 enum types { pyId, pyInt, pyStr, pyTuple, 
              pyPower, pyU_expr, pyB_expr, pyComparison, 
-             pyNot_test, };
+             pyNot_test, pyConditional_expression,
+             pyExpression_list, };
 
 #define match(x, y) !strcmp(x, y)
 
@@ -21,7 +22,7 @@ enum types { pyId, pyInt, pyStr, pyTuple,
 //     return 0;
 // }
 
-typedef struct b_expr_list b_expr_list;
+typedef struct list list;
 
 typedef struct pyint {
     int type;
@@ -49,7 +50,7 @@ typedef struct b_expr {
 
 typedef struct comparison {
     int type;
-    b_expr_list *comparisons;
+    list *comparisons;
 } comparison;
 
 typedef struct not_test {
@@ -58,16 +59,28 @@ typedef struct not_test {
     void *expr;
 } not_test;
 
-typedef struct b_expr_list {
+typedef struct conditional_expression {
+    int type;
+    void *or_test;
+    void *or_test2;
     void *expr;
-    struct b_expr_list *next;
-} b_expr_list;
+} conditional_expression;
 
-void b_expr_list_append(b_expr_list *head, b_expr *expr) {
-    b_expr_list *node = (b_expr_list *)malloc(sizeof(b_expr_list));
-    node->expr = expr;
+typedef struct expression_list {
+    int type;
+    list *expr_head;
+} expression_list;
+
+typedef struct list {
+    void *content;
+    struct list *next;
+} list;
+
+void list_append(list *head, void *content) {
+    list *node = (list *)malloc(sizeof(list));
+    node->content = content;
     node->next = 0;
-    b_expr_list *ptr;
+    list *ptr;
     for (ptr = head; ptr->next != 0; ptr = ptr->next)
         ;
     ptr->next = node;
@@ -77,6 +90,7 @@ char *last_item();
 char *pop_item();
 void *parse_u_expr();
 void *evaluate(void *);
+void *parse_expression();
 
 void *B_EXPR(void *left, char *op, void *right) {
     b_expr *expr = (b_expr *)malloc(sizeof(b_expr));
@@ -168,6 +182,10 @@ int *b_exprEvaluate(b_expr *structure) {
         retval = *left != *right;
     else if (match(structure->op, "!="))
         retval = *left != *right;
+    else if (match(structure->op, "and"))
+        retval = *left && *right;
+    else if (match(structure->op, "or"))
+        retval = *left || *right;
     *retptr = retval;
     return retptr;
 }
@@ -181,14 +199,35 @@ int *not_testEvaluate(not_test *structure) {
 }
 
 void *comparisonEvaluate(comparison *structure) {
-    b_expr_list *ptr;
+    list *ptr;
     int *retptr = (int *)malloc(sizeof(int));
     for (ptr = structure->comparisons; ptr->next != 0; ptr = ptr->next) {
-        retptr = evaluate(ptr->next->expr);
+        retptr = evaluate(ptr->next->content);
         if (!(*retptr))
             return retptr;
     }
     return retptr;
+}
+
+void *conditional_expressionEvaluate(conditional_expression *structure) {
+    int *retptr = (int *)malloc(sizeof(int));
+    int *condptr = (int *)malloc(sizeof(int));
+    retptr = evaluate(structure->or_test);
+    condptr = evaluate(structure->or_test2);
+    if (*condptr)
+        return retptr;
+    retptr = evaluate(structure->expr);
+    return retptr;
+}
+
+void *expression_listEvaluate(expression_list *structure) {
+    list *expr_ptr;
+    list *value_list = (list *)malloc(sizeof(list));
+    bzero(value_list, sizeof(list));
+    for (expr_ptr = structure->expr_head; expr_ptr->next != 0; expr_ptr = expr_ptr->next) {
+        list_append(value_list, evaluate(expr_ptr->next));
+    }
+    return value_list;
 }
 
 void *evaluate(void *structure) {
@@ -205,6 +244,10 @@ void *evaluate(void *structure) {
             return comparisonEvaluate((comparison *)structure);
         case pyNot_test:
             return not_testEvaluate((not_test *)structure);
+        case pyConditional_expression:
+            return conditional_expressionEvaluate((conditional_expression *)structure);
+        case pyExpression_list:
+            return expression_listEvaluate((expression_list *)structure);
     }
     // if (*(int *)structure == pyInt)
     //     return pyintEvaluate(structure);

@@ -70,7 +70,7 @@ char *pop_item() {
         ptr = ptr->next;
     }
     last->next = 0;
-    return ptr;
+    return ptr->content;
 }
 
 void show_items() {
@@ -87,7 +87,7 @@ char *last_item() {
     struct item *ptr = &global.items_head;
     while (ptr->next != 0)
         ptr = ptr->next;
-    return ptr;
+    return ptr->content;
 }
 
 void interactive_get_line() {
@@ -386,8 +386,8 @@ void *parse_comparison() {
         return or_expr;
     void *left = or_expr;
     void *right;
-    b_expr_list *comparisons = (b_expr_list *)malloc(sizeof(b_expr_list));
-    bzero(comparisons, sizeof(b_expr_list));
+    list *comparisons = (list *)malloc(sizeof(list));
+    bzero(comparisons, sizeof(list));
     comparison *comp_expr = (comparison *)malloc(sizeof(comparison));
     comp_expr->type = pyComparison;
     while (1) {
@@ -416,7 +416,7 @@ void *parse_comparison() {
             return comp_expr;
         }
         right = parse_or_expr();
-        b_expr_list_append(comparisons, B_EXPR(left, op, right));
+        list_append(comparisons, B_EXPR(left, op, right));
         left = right;
     }
 }
@@ -424,7 +424,6 @@ void *parse_comparison() {
 void *parse_not_test() {
     char item[ITEMSIZE];
     read(item);
-    puts("in parse_not_test()");
     if (match(item, "not")) {
         not_test *test = (not_test *)malloc(sizeof(not_test));
         test->type = pyNot_test;
@@ -435,22 +434,92 @@ void *parse_not_test() {
     return parse_comparison();
 }
 
-void *parse_expression() {
-    return parse_primary();
+void *parse_and_test() {
+    char item[ITEMSIZE];
+    void *test = parse_not_test();
+    while (1) {
+        read(item);
+        if (!match(item, "and")) {
+            remonter();
+            return test;
+        }
+        test = B_EXPR(test, item, parse_not_test());
+    }
 }
 
-// void *parse_expression_list() {
-//     expr_list expr_head;
-//     while (1) {
-//         void *expression = parse_expression();
-//     }
-// }
+void *parse_or_test() {
+    char item[ITEMSIZE];
+    void *test = parse_and_test();
+    while (1) {
+        read(item);
+        if (!match(item, "or")) {
+            remonter();
+            return test;
+        }
+        test = B_EXPR(test, item, parse_and_test());
+    }
+}
+
+void *parse_conditional_expression() {
+    char item[ITEMSIZE];
+    void *or_test = parse_or_test();
+    read(item);
+    if (!match(item, "if")) {
+        remonter();
+        return or_test;
+    }
+    void *or_test2 = parse_or_test();
+    read(item);
+    if (match(item, "else")) {
+        void *expr = parse_expression();
+        conditional_expression *expression = (conditional_expression *)malloc(sizeof(conditional_expression));
+        expression->type = pyConditional_expression;
+        expression->or_test = or_test;
+        expression->or_test2 = or_test2;
+        expression->expr = expr;
+        return expression;
+    }
+}
+
+/* no lambda expression support */
+void *parse_expression() {
+    return parse_conditional_expression();
+}
+
+/* no lambda expression support */
+void *parse_expression_nocond() {
+    return parse_or_test();
+}
+
+void *parse_expression_list(char *ending) {
+    char item[ITEMSIZE];
+    list *expr_head = (list *)malloc(sizeof(list));
+    expression_list *retptr = (expression_list *)malloc(sizeof(expression_list));
+    retptr->type = pyExpression_list;
+    while (1) {
+        list_append(expr_head, parse_expression());
+        read(item);
+        if (match(item, ",")) {
+            read(item);
+            remonter();
+            if (match(item, ending)) {
+                retptr->expr_head = expr_head;
+                return retptr;
+            }
+        }
+        else {
+            remonter();
+            retptr->expr_head = expr_head;
+            return retptr;
+        }
+    }
+}
 
 int test1()
 {
     char item[ITEMSIZE];
     interactive_get_line();
-    void *expr = parse_not_test();
+    void *expr = parse_expression();
     void *retval = evaluate(expr);
     printf("%d\n", *(int *)retval);
 
