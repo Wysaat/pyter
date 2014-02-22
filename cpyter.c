@@ -242,8 +242,14 @@ void *parse_atom() {
     char item[ITEMSIZE];
     read(item);
     if (is_int(item)) {
-        pyint *retval = (pyint *)malloc(sizeof(pyint));
-        retval->type = pyInt;
+        int_expr *retval = (int_expr *)malloc(sizeof(int_expr));
+        retval->type = int_expr_t;
+        strcpy(retval->value, item);
+        return retval;
+    }
+    else if (is_str(item)) {
+        str_expr *retval = (str_expr *)malloc(sizeof(str_expr));
+        retval->type = str_expr_t;
         strcpy(retval->value, item);
         return retval;
     }
@@ -263,11 +269,11 @@ void *parse_power() {
         return primary;
     }
     void *u_expr = parse_u_expr();
-    power *retval = (power *)malloc(sizeof(power));
-    retval->type = pyPower;
-    retval->primary = primary;
-    retval->u_expr = u_expr;
-    return retval;
+    power *retptr = (power *)malloc(sizeof(power));
+    retptr->type = power_t;
+    retptr->primary = primary;
+    retptr->u_expr = u_expr;
+    return retptr;
 }
 
 void *parse_u_expr() {
@@ -275,11 +281,11 @@ void *parse_u_expr() {
     read(item);
     if (match(item, "+") || match(item, "-") || match(item, "~")) {
         // void *expr = parse_u_expr();
-        u_expr *retval = (u_expr *)malloc(sizeof(u_expr));
-        retval->type = pyU_expr;
-        retval->u_op = item[0];
-        retval->expr = parse_u_expr();
-        return retval;
+        u_expr *retptr = (u_expr *)malloc(sizeof(u_expr));
+        retptr->type = u_expr_t;
+        retptr->u_op = item[0];
+        retptr->expr = parse_u_expr();
+        return retptr;
     }
     remonter();
     return parse_power();
@@ -389,7 +395,7 @@ void *parse_comparison() {
     list *comparisons = (list *)malloc(sizeof(list));
     bzero(comparisons, sizeof(list));
     comparison *comp_expr = (comparison *)malloc(sizeof(comparison));
-    comp_expr->type = pyComparison;
+    comp_expr->type = comparison_t;
     while (1) {
         read(item);
         if (match(item, "is")) {
@@ -426,7 +432,7 @@ void *parse_not_test() {
     read(item);
     if (match(item, "not")) {
         not_test *test = (not_test *)malloc(sizeof(not_test));
-        test->type = pyNot_test;
+        test->type = not_test_t;
         test->expr = parse_not_test();
         return test;
     }
@@ -473,7 +479,7 @@ void *parse_conditional_expression() {
     if (match(item, "else")) {
         void *expr = parse_expression();
         conditional_expression *expression = (conditional_expression *)malloc(sizeof(conditional_expression));
-        expression->type = pyConditional_expression;
+        expression->type = conditional_expression_t;
         expression->or_test = or_test;
         expression->or_test2 = or_test2;
         expression->expr = expr;
@@ -495,7 +501,7 @@ void *parse_expression_list(char *ending) {
     char item[ITEMSIZE];
     list *expr_head = (list *)malloc(sizeof(list));
     expression_list *retptr = (expression_list *)malloc(sizeof(expression_list));
-    retptr->type = pyExpression_list;
+    retptr->type = expression_list_t;
     while (1) {
         list_append(expr_head, parse_expression());
         read(item);
@@ -521,8 +527,7 @@ int test1()
     interactive_get_line();
     void *expr = parse_expression();
     void *retval = evaluate(expr);
-    printf("%d\n", *(int *)retval);
-
+    print(retval);
     return 0;
 }
 

@@ -3,10 +3,11 @@
 #define ITEMSIZE 1024
 #define STRINGSIZE 1024
 
-enum types { pyId, pyInt, pyStr, pyTuple, 
-             pyPower, pyU_expr, pyB_expr, pyComparison, 
-             pyNot_test, pyConditional_expression,
-             pyExpression_list, };
+enum types { int_expr_t, str_expr_t,
+             power_t, u_expr_t, b_expr_t, comparison_t, 
+             not_test_t, conditional_expression_t,
+             expression_list_t, 
+             pyint_t, pystr_t, };
 
 #define match(x, y) !strcmp(x, y)
 
@@ -24,10 +25,15 @@ enum types { pyId, pyInt, pyStr, pyTuple,
 
 typedef struct list list;
 
-typedef struct pyint {
+typedef struct int_expr {
     int type;
     char value[ITEMSIZE];
-} pyint;
+} int_expr;
+
+typedef struct str_expr {
+    int type;
+    char value[ITEMSIZE];
+} str_expr;
 
 typedef struct power {
     int type;
@@ -86,127 +92,151 @@ void list_append(list *head, void *content) {
     ptr->next = node;
 }
 
+typedef struct pyint {
+    int type;
+    int value;
+} pyint;
+
+typedef struct pystr {
+    int type;
+    char value[ITEMSIZE];
+} pystr;
+
 char *last_item();
 char *pop_item();
 void *parse_u_expr();
 void *evaluate(void *);
 void *parse_expression();
+pystr *str__mul__(pystr *, pyint *);
 
 void *B_EXPR(void *left, char *op, void *right) {
     b_expr *expr = (b_expr *)malloc(sizeof(b_expr));
-    expr->type = pyB_expr;
+    expr->type = b_expr_t;
     strcpy(expr->op, op);
     expr->left = left;
     expr->right = right;
     return expr;
 }
 
-int *pyintEvaluate(pyint *structure) {
-    int retval = atoi(structure->value);
-    // return &retval;
-    int *retptr = (int *)malloc(sizeof(int));
-    *retptr = retval;
+void *PYINT(int value) {
+    pyint *retptr = (pyint *)malloc(sizeof(pyint));
+    retptr->type = pyint_t;
+    retptr->value = value;
     return retptr;
 }
 
-int *powerEvaluate(power *structure) {
-    int *primary = evaluate(structure->primary);
-    int *u_expr = evaluate(structure->u_expr);
-    // int *primary = (int *)malloc(sizeof(int));
-    // int *u_expr = (int *)malloc(sizeof(int));
-    // memcpy(primary, evaluate(structure->primary), sizeof(int));
-    // memcpy(u_expr, evaluate(structure->u_expr), sizeof(int));
-    int *retptr = (int *)malloc(sizeof(int));
-    int retval = pow(*primary, *u_expr);
-    *retptr = retval;
+void *int_exprEvaluate(int_expr *structure) {
+    pyint *retptr = (pyint *)malloc(sizeof(pyint));
+    retptr->type = pyint_t;
+    retptr->value = atoi(structure->value);
     return retptr;
 }
 
-int *u_exprEvaluate(u_expr *structure) {
-    int *expr = evaluate(structure->expr);
-    int retval;
-    int *retptr = (int *)malloc(sizeof(int));
-    switch (structure->u_op) {
-      case '+':
-        retval = *expr;
-        break;
-      case '-':
-        retval = -(*expr);
-        break;
-      case '~':
-        retval = ~(*expr);
-        break;
+void *str_exprEvaluate(str_expr *structure) {
+    pystr *retptr = (pystr *)malloc(sizeof(pystr));
+    retptr->type = pystr_t;
+    strcpy(retptr->value, structure->value+1);
+    retptr->value[strlen(retptr->value)-1] = 0;
+    return retptr;
+}
+
+void *powerEvaluate(power *structure) {
+    void *primary_val = evaluate(structure->primary);
+    void *u_expr_val = evaluate(structure->u_expr);
+    if (*(int *)primary_val == pyint_t && *(int *)u_expr_val == pyint_t) {
+        return PYINT(pow(((pyint *)primary_val)->value, ((pyint *)u_expr_val)->value));
     }
-    *retptr = retval;
-    return retptr;
 }
 
-int *b_exprEvaluate(b_expr *structure) {
-    int retval;
-    int *retptr = (int *)malloc(sizeof(int));
-    int *left = evaluate(structure->left);
-    int *right = evaluate(structure->right);
-    if (match(structure->op, "*"))
-        retval = *left * *right;
-    else if (match(structure->op, "//"))
-        retval = *left / *right;
-    else if (match(structure->op, "/"))
-        retval = *left / *right;
-    else if (match(structure->op, "%"))
-        retval = *left % *right;
-    else if (match(structure->op, "+"))
-        retval = *left + *right;
-    else if (match(structure->op, "-"))
-        retval = *left - *right;
-    else if (match(structure->op, "<<"))
-        retval = *left << *right;
-    else if (match(structure->op, ">>"))
-        retval = *left >> *right;
-    else if (match(structure->op, "&"))
-        retval = *left & *right;
-    else if (match(structure->op, "^"))
-        retval = *left ^ *right;
-    else if (match(structure->op, "|"))
-        retval = *left | *right;
-    else if (match(structure->op, "<"))
-        retval = *left < *right;
-    else if (match(structure->op, ">"))
-        retval = *left > *right;
-    else if (match(structure->op, "=="))
-        retval = *left == *right;
-    else if (match(structure->op, "<="))
-        retval = *left <= *right;
-    else if (match(structure->op, ">="))
-        retval = *left >= *right;
-    else if (match(structure->op, "<>"))
-        retval = *left != *right;
-    else if (match(structure->op, "!="))
-        retval = *left != *right;
-    else if (match(structure->op, "and"))
-        retval = *left && *right;
-    else if (match(structure->op, "or"))
-        retval = *left || *right;
-    *retptr = retval;
-    return retptr;
+void *u_exprEvaluate(u_expr *structure) {
+    void *expr_val = evaluate(structure->expr);
+    if (*(int *)expr_val == pyint_t) {
+        pyint *val = expr_val;
+        switch(structure->u_op) {
+            case '+':
+                return val;
+            case '-':
+                val->value = -val->value;
+                return val;
+            case '~':
+                val->value = ~val->value;
+                return val;
+        }
+    }
 }
 
-int *not_testEvaluate(not_test *structure) {
-    int *ptr = evaluate(structure->expr);
-    int retval = !(*ptr);
-    int *retptr = (int *)malloc(sizeof(int));
-    *retptr = retval;
-    return retptr;
+void *b_exprEvaluate(b_expr *structure) {
+    int *left_val = evaluate(structure->left);
+    int *right_val = evaluate(structure->right);
+    if (*left_val == pyint_t && *right_val == pyint_t) {
+        int left = ((pyint *)left_val)->value;
+        int right = ((pyint *)right_val)->value;
+        if (match(structure->op, "*"))
+            return PYINT(left * right);
+        else if (match(structure->op, "//"))
+            return PYINT(left / right);
+        else if (match(structure->op, "/"))
+            return PYINT(left / right);
+        else if (match(structure->op, "%"))
+            return PYINT(left % right);
+        else if (match(structure->op, "+"))
+            return PYINT(left + right);
+        else if (match(structure->op, "-"))
+            return PYINT(left - right);
+        else if (match(structure->op, "<<"))
+            return PYINT(left << right);
+        else if (match(structure->op, ">>"))
+            return PYINT(left >> right);
+        else if (match(structure->op, "&"))
+            return PYINT(left & right);
+        else if (match(structure->op, "^"))
+            return PYINT(left ^ right);
+        else if (match(structure->op, "|"))
+            return PYINT(left | right);
+        else if (match(structure->op, "<"))
+            return PYINT(left < right);
+        else if (match(structure->op, ">"))
+            return PYINT(left > right);
+        else if (match(structure->op, "=="))
+            return PYINT(left == right);
+        else if (match(structure->op, "<="))
+            return PYINT(left <= right);
+        else if (match(structure->op, ">="))
+            return PYINT(left >= right);
+        else if (match(structure->op, "<>"))
+            return PYINT(left != right);
+        else if (match(structure->op, "!="))
+            return PYINT(left != right);
+        else if (match(structure->op, "and"))
+            return PYINT(left && right);
+        else if (match(structure->op, "or"))
+            return PYINT(left || right);
+    }
+    else if (*left_val == pystr_t && *right_val == pyint_t) {
+        if (match(structure->op, "*")) {
+            return str__mul__((pystr *)left_val, (pyint *)right_val);
+        }
+    }
+}
+
+void *not_testEvaluate(not_test *structure) {
+    int *expr_val = evaluate(structure->expr);
+    if (*expr_val == pyint_t) {
+        pyint *val = (pyint *)expr_val;
+        val->value = !val->value;
+        return val;
+    }
 }
 
 void *comparisonEvaluate(comparison *structure) {
     list *ptr;
-    int *retptr = (int *)malloc(sizeof(int));
+    int *val;
     for (ptr = structure->comparisons; ptr->next != 0; ptr = ptr->next) {
-        retptr = evaluate(ptr->next->content);
-        if (!(*retptr))
-            return retptr;
+        val = evaluate(ptr->next->content);
+        if (*val == pyint_t && ((pyint *)val)->value == 0)
+            return val;
     }
-    return retptr;
+    return val;
 }
 
 void *conditional_expressionEvaluate(conditional_expression *structure) {
@@ -232,27 +262,44 @@ void *expression_listEvaluate(expression_list *structure) {
 
 void *evaluate(void *structure) {
     switch (*(int *)structure) {
-        case pyInt:
-            return pyintEvaluate((pyint *)structure);
-        case pyPower:
+        case int_expr_t:
+            return int_exprEvaluate((int_expr *)structure);
+        case str_expr_t:
+            return str_exprEvaluate((str_expr *)structure);
+        case power_t:
             return powerEvaluate((power *)structure);
-        case pyU_expr:
+        case u_expr_t:
             return u_exprEvaluate((u_expr *)structure);
-        case pyB_expr:
+        case b_expr_t:
             return b_exprEvaluate((b_expr *)structure);
-        case pyComparison:
+        case comparison_t:
             return comparisonEvaluate((comparison *)structure);
-        case pyNot_test:
+        case not_test_t:
             return not_testEvaluate((not_test *)structure);
-        case pyConditional_expression:
+        case conditional_expression_t:
             return conditional_expressionEvaluate((conditional_expression *)structure);
-        case pyExpression_list:
+        case expression_list_t:
             return expression_listEvaluate((expression_list *)structure);
     }
-    // if (*(int *)structure == pyInt)
-    //     return pyintEvaluate(structure);
-    // else if (*(int *)structure == pyPower)
-    //     return powerEvaluate(structure);
-    // else if (*(int *)structure == pyU_expr)
-    //     return u_exprEvaluate(structure);
+}
+
+void print(void *structure) {
+    switch (*(int *)structure) {
+        case pyint_t:
+            printf("%d\n", ((pyint *)structure)->value);
+            break;
+        case pystr_t:
+            printf("%s\n", ((pystr *)structure)->value);
+            break;
+    }
+}
+
+pystr *str__mul__(pystr *left, pyint *right) {
+    int offset = strlen(left->value), i;
+    char *dest = left->value;
+    for (i = 0; i < right->value; i++) {
+        dest += offset;
+        strncpy(dest, left->value, offset);
+    }
+    return left;
 }
