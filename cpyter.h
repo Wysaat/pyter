@@ -4,10 +4,12 @@
 #define STRINGSIZE 1024
 
 enum types { int_expr_t, str_expr_t,
+             parenth_form_t,
              power_t, u_expr_t, b_expr_t, comparison_t, 
              not_test_t, conditional_expression_t,
              expression_list_t, 
-             pyint_t, pystr_t, };
+             pyint_t, pystr_t, pybool_t,
+             pytuple_t, };
 
 #define match(x, y) !strcmp(x, y)
 
@@ -34,6 +36,11 @@ typedef struct str_expr {
     int type;
     char value[ITEMSIZE];
 } str_expr;
+
+typedef struct *parenth_form {
+    int type;
+    list *expr_head;
+} parenth_form;
 
 typedef struct power {
     int type;
@@ -92,6 +99,14 @@ void list_append(list *head, void *content) {
     ptr->next = node;
 }
 
+void list_add(list *list1, list *list2) {
+    list *ptr;
+    for (ptr = list1; ptr->next != 0; ptr = ptr->next)
+        ;
+    ptr->next = list2->next;
+    free(list2);
+}
+
 typedef struct pyint {
     int type;
     int value;
@@ -102,12 +117,18 @@ typedef struct pystr {
     char value[ITEMSIZE];
 } pystr;
 
+typedef struct pybool {
+    int type;
+    int value;
+} pybool;
+
 char *last_item();
 char *pop_item();
 void *parse_u_expr();
 void *evaluate(void *);
 void *parse_expression();
 pystr *str__mul__(pystr *, pyint *);
+pystr *str__add__(pystr *, pystr *);
 
 void *B_EXPR(void *left, char *op, void *right) {
     b_expr *expr = (b_expr *)malloc(sizeof(b_expr));
@@ -122,6 +143,27 @@ void *PYINT(int value) {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
     retptr->type = pyint_t;
     retptr->value = value;
+    return retptr;
+}
+
+void *PYSTR(char *value) {
+    pystr *retptr = (pystr *)malloc(sizeof(pystr));
+    retptr->type = pystr_t;
+    strcpy(retptr->value, value);
+    return retptr;
+}
+
+void *PYBOOL(int value) {
+    pybool *retptr = (pybool *)malloc(sizeof(pybool));
+    retptr->type = pybool_t;
+    retptr->value = value;
+    return retptr;
+}
+
+void *PARENTH_FORM(list *expr_head) {
+    parenth_form *retptr = (parenth_form *)malloc(sizeof(parenth_form));
+    retptr->type = parenth_form_t;
+    retptr->expr_head = expr_head;
     return retptr;
 }
 
@@ -194,27 +236,45 @@ void *b_exprEvaluate(b_expr *structure) {
         else if (match(structure->op, "|"))
             return PYINT(left | right);
         else if (match(structure->op, "<"))
-            return PYINT(left < right);
+            return PYBOOL(left < right);
         else if (match(structure->op, ">"))
-            return PYINT(left > right);
+            return PYBOOL(left > right);
         else if (match(structure->op, "=="))
-            return PYINT(left == right);
+            return PYBOOL(left == right);
         else if (match(structure->op, "<="))
-            return PYINT(left <= right);
+            return PYBOOL(left <= right);
         else if (match(structure->op, ">="))
-            return PYINT(left >= right);
+            return PYBOOL(left >= right);
         else if (match(structure->op, "<>"))
-            return PYINT(left != right);
+            return PYBOOL(left != right);
         else if (match(structure->op, "!="))
-            return PYINT(left != right);
-        else if (match(structure->op, "and"))
-            return PYINT(left && right);
-        else if (match(structure->op, "or"))
-            return PYINT(left || right);
+            return PYBOOL(left != right);
+        else if (match(structure->op, "and")) {
+            if (left && right)
+                return PYINT(right);
+            return PYINT(0);
+        }
+        else if (match(structure->op, "or")) {
+            if (left)
+                return PYINT(left);
+            else if (right)
+                return PYINT(right);
+            return PYINT(0);
+        }
     }
     else if (*left_val == pystr_t && *right_val == pyint_t) {
         if (match(structure->op, "*")) {
             return str__mul__((pystr *)left_val, (pyint *)right_val);
+        }
+    }
+    else if (*left_val == pyint_t && *right_val == pystr_t) {
+        if (match(structure->op, "*")) {
+            return str__mul__((pystr *)right_val, (pyint *)left_val);
+        }
+    }
+    else if (*left_val == pystr_t && *right_val == pystr_t) {
+        if (match(structure->op, "+")) {
+            return str__add__((pystr *)left_val, (pystr *)right_val);
         }
     }
 }
@@ -223,8 +283,10 @@ void *not_testEvaluate(not_test *structure) {
     int *expr_val = evaluate(structure->expr);
     if (*expr_val == pyint_t) {
         pyint *val = (pyint *)expr_val;
-        val->value = !val->value;
-        return val;
+        return PYBOOL(!val->value);
+    }
+    else if (*expr_val == pystr_t) {
+        return PYBOOL(0);
     }
 }
 
@@ -234,9 +296,9 @@ void *comparisonEvaluate(comparison *structure) {
     for (ptr = structure->comparisons; ptr->next != 0; ptr = ptr->next) {
         val = evaluate(ptr->next->content);
         if (*val == pyint_t && ((pyint *)val)->value == 0)
-            return val;
+            return PYBOOL(0);
     }
-    return val;
+    return PYBOOL(((pyint *)val)->value);
 }
 
 void *conditional_expressionEvaluate(conditional_expression *structure) {
@@ -289,17 +351,33 @@ void print(void *structure) {
             printf("%d\n", ((pyint *)structure)->value);
             break;
         case pystr_t:
-            printf("%s\n", ((pystr *)structure)->value);
+            printf("'%s'\n", ((pystr *)structure)->value);
+            break;
+        case pybool_t:
+            if (((pybool *)structure)->value)
+                puts("True");
+            else
+                puts("False");
             break;
     }
 }
 
 pystr *str__mul__(pystr *left, pyint *right) {
     int offset = strlen(left->value), i;
-    char *dest = left->value;
+    char value[ITEMSIZE];
+    char *dest = value;
     for (i = 0; i < right->value; i++) {
-        dest += offset;
         strncpy(dest, left->value, offset);
+        dest += offset;
     }
-    return left;
+    *dest = 0;
+    return PYSTR(value);
+}
+
+pystr *str__add__(pystr *left, pystr *right) {
+    char value[ITEMSIZE];
+    int offset = strlen(left->value);
+    strcpy(value, left->value);
+    strcpy(value+offset, right->value);
+    return PYSTR(value);
 }

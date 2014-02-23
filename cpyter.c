@@ -242,16 +242,39 @@ void *parse_atom() {
     char item[ITEMSIZE];
     read(item);
     if (is_int(item)) {
-        int_expr *retval = (int_expr *)malloc(sizeof(int_expr));
-        retval->type = int_expr_t;
-        strcpy(retval->value, item);
-        return retval;
+        int_expr *retptr = (int_expr *)malloc(sizeof(int_expr));
+        retptr->type = int_expr_t;
+        strcpy(retptr->value, item);
+        return retptr;
     }
     else if (is_str(item)) {
-        str_expr *retval = (str_expr *)malloc(sizeof(str_expr));
-        retval->type = str_expr_t;
-        strcpy(retval->value, item);
-        return retval;
+        str_expr *retptr = (str_expr *)malloc(sizeof(str_expr));
+        retptr->type = str_expr_t;
+        strcpy(retptr->value, item);
+        return retptr;
+    }
+    else if (match(item, "(")) {
+        read(item);
+        if (match(item, ")"))
+            return PARENTH_FORM();
+        remonter();
+        void *expression = parse_expression();
+        read(item);
+        if (match(item, ")"))
+            return expression;
+        else if(match(item, ",")) {
+            list *expr_head = (list *)malloc(sizeof(list));
+            list_append(expr_head, expression);
+            read(item);
+            if (match(item, ")"))
+                return PARENTH_FORM(expr_head);
+            remonter();
+            list_add(expr_head, pa_exprs(")"));
+            void *retptr = PARENTH_FORM(expr_head);
+            read(item);
+            if (match(item, ")"))
+                return retptr;
+        }
     }
 }
 
@@ -497,28 +520,31 @@ void *parse_expression_nocond() {
     return parse_or_test();
 }
 
-void *parse_expression_list(char *ending) {
+list *pa_exprs(char *ending) {
     char item[ITEMSIZE];
     list *expr_head = (list *)malloc(sizeof(list));
-    expression_list *retptr = (expression_list *)malloc(sizeof(expression_list));
-    retptr->type = expression_list_t;
     while (1) {
         list_append(expr_head, parse_expression());
         read(item);
         if (match(item, ",")) {
             read(item);
             remonter();
-            if (match(item, ending)) {
-                retptr->expr_head = expr_head;
-                return retptr;
-            }
+            if (match(item, ending))
+                return expr_head;
         }
         else {
             remonter();
-            retptr->expr_head = expr_head;
-            return retptr;
+            return expr_head;
         }
     }
+}
+
+void *parse_expression_list(char *ending) {
+    char item[ITEMSIZE];
+    expression_list *retptr = (expression_list *)malloc(sizeof(expression_list));
+    retptr->type = expression_list_t;
+    retptr->expr_head = pa_exprs();
+    return retptr;
 }
 
 int test1()
