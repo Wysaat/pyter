@@ -29,7 +29,8 @@ struct item {
 };
 
 struct {
-    char string[STRINGSIZE];
+    mem_block *string;
+    int string_sz;
     int index;
     int line_number;
     struct item items_head;
@@ -37,7 +38,8 @@ struct {
     int rewind;
     char last_item[ITEMSIZE];
 } global = {
-    .string = "",
+    .string = 0,
+    .string_sz = 0,
     .index = 0,
     .line_number = 0,
     .items_head = { " ", 0 },
@@ -92,17 +94,24 @@ char *last_item() {
 
 void interactive_get_line() {
     printf(">>> ");
-    gets(global.string);
+    char *dest = (global.string)->mem;
+    while (fgets(dest, MEM_BLOCK_SZ, stdin) > 0) {
+        global.string_sz += strlen(dest);
+        mem_block *new_block = (mem_block *)malloc(sizeof(mem_block));
+        new_block->prev = global.string;
+        new_block->next = 0;
+        dest = new_block->mem;
+    }
     global.index = 0;
 }
 
 void read_numeric_literal(char *item) {
     int i = 0, dot_count = 0;
-    while ((global.string[global.index] >= '0' && global.string[global.index] <= '9') ||
-                (global.string[global.index] == '.' && !dot_count)) {
-        if (global.string[global.index] == '.')
+    while ((mem_subscription(global.string, global.index) >= '0' && mem_subscription(global.string, global.index) <= '9') ||
+                (mem_subscription(global.string, global.index) == '.' && !dot_count)) {
+        if (mem_subscription(global.string, global.index) == '.')
             dot_count++;
-        item[i++] = global.string[global.index++];
+        item[i++] = mem_subscription(global.string, global.index++);
     }
     item[i] = 0;
     add_item(item);
@@ -111,11 +120,11 @@ void read_numeric_literal(char *item) {
 
 void read_string_literal(char *item) {
     int i = 1;
-    char op = global.string[global.index++];
+    char op = mem_subscription(global.string, global.index++);
     item[0] = op;
-    while (global.string[global.index] != op)
-        item[i++] = global.string[global.index++];
-    item[i++] = global.string[global.index++];
+    while (mem_subscription(global.string, global.index) != op)
+        item[i++] = mem_subscription(global.string, global.index++);
+    item[i++] = mem_subscription(global.string, global.index++);
     item[i] = 0;
     add_item(item);
     return;
@@ -124,14 +133,14 @@ void read_string_literal(char *item) {
 void raw_read(char *item) {
     int i, j, k = 0;
 
-    if (global.index < strlen(global.string)) {
-        while (global.string[global.index] == ' ' || global.string[global.index] == '\t') {
+    if (global.index < global.string_sz) {
+        while (mem_subscription(global.string, global.index) == ' ' || mem_subscription(global.string, global.index) == '\t') {
             global.index++;
         }
         for (j = 3; j > 0; j--) {
             for (i = 0; strcmp(tokens[i], " ") != 0; i++) {
                 if (strncmp(global.string+global.index, tokens[i], j) == 0) {
-                    strncpy(item, global.string+global.index, j);
+                    mem_ncpy_out(item, global.string, global.index, j);
                     item[j] = 0;
                     add_item(item);
                     global.index += j;
@@ -139,7 +148,7 @@ void raw_read(char *item) {
                 }
             }
         }
-        if (global.string[global.index] == '.') {
+        if (mem_subscription(global.string, global.index) == '.') {
             if (global.string[global.index+1] >= '0' && global.string[global.index+1] <= '9') {
                 read_numeric_literal(item);
                 return;
@@ -152,18 +161,18 @@ void raw_read(char *item) {
                 return;
             }
         }
-        if (global.string[global.index] >= '0' && global.string[global.index] <= '9') {
+        if (mem_subscription(global.string, global.index) >= '0' && mem_subscription(global.string, global.index) <= '9') {
             read_numeric_literal(item);
             return;
         }
-        if (global.string[global.index] == '"' || global.string[global.index] == '\'') {
+        if (mem_subscription(global.string, global.index) == '"' || mem_subscription(global.string, global.index) == '\'') {
             read_string_literal(item);
             return;
         }
-        while ((global.string[global.index] >= 'a' && global.string[global.index] <= 'z') ||
-               (global.string[global.index] >= 'A' && global.string[global.index] <= 'Z') ||
-               (global.string[global.index] >= '0' && global.string[global.index] <= '9') ||
-               (global.string[global.index] == '_')) {
+        while ((mem_subscription(global.string, global.index) >= 'a' && mem_subscription(global.string, global.index) <= 'z') ||
+               (mem_subscription(global.string, global.index) >= 'A' && mem_subscription(global.string, global.index) <= 'Z') ||
+               (mem_subscription(global.string, global.index) >= '0' && mem_subscription(global.string, global.index) <= '9') ||
+               (mem_subscription(global.string, global.index) == '_')) {
             item[k++] = global.string[global.index++];
         }
         for (i = 0; strcmp(stringprefixes[i], " ") != 0; i++) {
@@ -254,16 +263,16 @@ void *parse_atom() {
         return retptr;
     }
     else if (match(item, "(")) {
+        list *expr_head = (list *)malloc(sizeof(list));
         read(item);
         if (match(item, ")"))
-            return PARENTH_FORM();
+            return PARENTH_FORM(expr_head);
         remonter();
         void *expression = parse_expression();
         read(item);
         if (match(item, ")"))
             return expression;
         else if(match(item, ",")) {
-            list *expr_head = (list *)malloc(sizeof(list));
             list_append(expr_head, expression);
             read(item);
             if (match(item, ")"))
@@ -543,8 +552,15 @@ void *parse_expression_list(char *ending) {
     char item[ITEMSIZE];
     expression_list *retptr = (expression_list *)malloc(sizeof(expression_list));
     retptr->type = expression_list_t;
-    retptr->expr_head = pa_exprs();
+    retptr->expr_head = pa_exprs(ending);
     return retptr;
+}
+
+int test2()
+{
+    interactive_get_line();
+    mem_print(global.string);
+    return 0;
 }
 
 int test1()
@@ -576,6 +592,6 @@ int test()
 
 int main()
 {
-    test1();
+    test2();
     return 0;
 }

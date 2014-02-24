@@ -1,7 +1,18 @@
 #include <math.h>
 
 #define ITEMSIZE 1024
-#define STRINGSIZE 1024
+#define STRINGSIZE 10
+#define MEM_BLOCK_SZ 10
+
+typedef struct mem_block {
+    char mem[MEM_BLOCK_SZ];
+    struct mem_block *prev;
+    struct mem_block *next;
+} mem_block;
+
+void mem_print(mem_block *block);
+mem_block *mem_head();
+char mem_subscription(mem_block *, int );
 
 enum types { int_expr_t, str_expr_t,
              parenth_form_t,
@@ -37,7 +48,7 @@ typedef struct str_expr {
     char value[ITEMSIZE];
 } str_expr;
 
-typedef struct *parenth_form {
+typedef struct parenth_form {
     int type;
     list *expr_head;
 } parenth_form;
@@ -127,6 +138,7 @@ char *pop_item();
 void *parse_u_expr();
 void *evaluate(void *);
 void *parse_expression();
+list *pa_exprs(char *);
 pystr *str__mul__(pystr *, pyint *);
 pystr *str__add__(pystr *, pystr *);
 
