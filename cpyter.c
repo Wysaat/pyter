@@ -94,13 +94,25 @@ char *last_item() {
 
 void interactive_get_line() {
     printf(">>> ");
+    global.string = mem_head();
     char *dest = (global.string)->mem;
-    while (fgets(dest, MEM_BLOCK_SZ, stdin) > 0) {
+    mem_block *last_block = global.string;
+    while (fgets(dest, MEM_BLOCK_SZ, stdin)) {
+        int i;
+        for (i = 0; i < MEM_BLOCK_SZ; i++) {
+            if (dest[i] == '\n') {
+                global.string_sz += strlen(dest);
+                global.index = 0;
+                return;
+            }
+        }
         global.string_sz += strlen(dest);
         mem_block *new_block = (mem_block *)malloc(sizeof(mem_block));
-        new_block->prev = global.string;
+        new_block->prev = last_block;
+        last_block->next = new_block;
         new_block->next = 0;
         dest = new_block->mem;
+        last_block = new_block;
     }
     global.index = 0;
 }
@@ -133,13 +145,13 @@ void read_string_literal(char *item) {
 void raw_read(char *item) {
     int i, j, k = 0;
 
-    if (global.index < global.string_sz) {
+    if (global.index < global.string_sz - 1) {
         while (mem_subscription(global.string, global.index) == ' ' || mem_subscription(global.string, global.index) == '\t') {
             global.index++;
         }
         for (j = 3; j > 0; j--) {
             for (i = 0; strcmp(tokens[i], " ") != 0; i++) {
-                if (strncmp(global.string+global.index, tokens[i], j) == 0) {
+                if (mem_ncmp(tokens[i], global.string, global.index, j) == 0) {
                     mem_ncpy_out(item, global.string, global.index, j);
                     item[j] = 0;
                     add_item(item);
@@ -149,12 +161,12 @@ void raw_read(char *item) {
             }
         }
         if (mem_subscription(global.string, global.index) == '.') {
-            if (global.string[global.index+1] >= '0' && global.string[global.index+1] <= '9') {
+            if (mem_subscription(global.string, global.index+1) >= '0' && mem_subscription(global.string, global.index+1) <= '9') {
                 read_numeric_literal(item);
                 return;
             }
             else {
-                strncpy(item, global.string+global.index, 1);
+                mem_ncpy_out(item, global.string, global.index, 1);
                 item[1] = 0;
                 add_item(item);
                 global.index++;
@@ -173,11 +185,11 @@ void raw_read(char *item) {
                (mem_subscription(global.string, global.index) >= 'A' && mem_subscription(global.string, global.index) <= 'Z') ||
                (mem_subscription(global.string, global.index) >= '0' && mem_subscription(global.string, global.index) <= '9') ||
                (mem_subscription(global.string, global.index) == '_')) {
-            item[k++] = global.string[global.index++];
+            item[k++] = mem_subscription(global.string, global.index++);
         }
-        for (i = 0; strcmp(stringprefixes[i], " ") != 0; i++) {
-            if ((strcmp(stringprefixes[i], item) == 0) && 
-                     (global.string[global.index == '"' || global.string[global.index == '\'']])) {
+        for (i = 0; !match(stringprefixes[i], " "); i++) {
+            if ((match(stringprefixes[i], item)) &&
+                     (mem_subscription(global.string, global.index) == '"' || mem_subscription(global.string, global.index) == '\'')) {
                 read_string_literal(item+strlen(item));
                 add_item(item);
                 return;
@@ -578,20 +590,20 @@ int test()
     char item[ITEMSIZE];
     do {
         interactive_get_line();
-        puts(global.string);
+        mem_print(global.string);
         printf("[");
-        while (global.index < strlen(global.string)) {
+        while (global.index < global.string_sz - 1) {
             read(item);
             printf("'%s', ", item);
         }
         printf("]\n");
-    } while (strcmp(global.string, "exit") != 0);
+    } while (mem_ncmp("exit", global.string, 0, 4) != 0);
 
     return 0;
 }
 
 int main()
 {
-    test2();
+    test1();
     return 0;
 }
