@@ -1,8 +1,7 @@
 #ifndef CPYTER_H
 #define CPYTER_H
 
-#define ITEMSIZE 1024
-#define STRINGSIZE 10
+#define ITEMSIZE 10
 #define MEM_BLOCK_SZ 10
 
 #define match(x, y) !strcmp(x, y)
@@ -121,7 +120,6 @@ void *expression_listEvaluate(expression_list *);
 void *evaluate(void *);
 void print(void *);
 
-char *last_item();
 char *pop_item();
 void *parse_u_expr();
 void *parse_expression();

@@ -47,7 +47,6 @@ void mem_ncpy_out(char *dest, mem_block *block, int offset, int size) {
                 strncpy(dest, ptr->mem+sz-to_read, size);
                 return;
             }
-            size -= to_read;
             strncpy(dest, ptr->mem+sz-to_read, to_read);
             dest += to_read;
             count += to_read;
@@ -66,6 +65,8 @@ void mem_ncpy_out(char *dest, mem_block *block, int offset, int size) {
         count += sz;
         dest += sz;
         ptr = ptr->next;
+        if (ptr == 0)
+            break;
     }
 }
 

@@ -24,7 +24,7 @@ char stringprefixes[10][2] = { "r", "u", "R", "U", " " };
 char comp_operators[10][3] = { "<", ">", "==", ">=", "<=", "<>", "!=", " " };
 
 struct item {
-    char content[ITEMSIZE];
+    mem_block *content;
     struct item *next;
 };
 
@@ -36,7 +36,7 @@ struct {
     struct item items_head;
     int multi_lines;
     int rewind;
-    char last_item[ITEMSIZE];
+    mem_block *last_item;
 } global = {
     .string = 0,
     .string_sz = 0,
@@ -45,26 +45,25 @@ struct {
     .items_head = { " ", 0 },
     .multi_lines = 0,
     .rewind = 0,
-    .last_item = "",
+    .last_item = 0,
 };
 
 void remonter() {
     global.rewind = 1;
-    char *item = pop_item();
-    strcpy(global.last_item, item);
+    global.last_item = pop_item();
 }
 
-void add_item(char *word) {
+void add_item(mem_block *content) {
     struct item *ptr = &global.items_head;
     struct item *new_item = (struct item *)malloc(sizeof(struct item));
-    strcpy(new_item->content, word);
+    new_item->content = content;
     new_item->next = 0;
     while (ptr->next != 0)
         ptr = ptr->next;
     ptr->next = new_item;
 }
 
-char *pop_item() {
+mem_block *pop_item {
     struct item *ptr = &global.items_head;
     struct item *last;
     while (ptr->next != 0) {
@@ -79,17 +78,12 @@ void show_items() {
     struct item *ptr = &global.items_head;
     printf("[");
     while (ptr->next != 0) {
-        printf("'%s', ", ptr->next->content);
+        printf("'");
+        mem_print(ptr->next->content);
+        printf("', ");
         ptr = ptr->next;
     }
     printf("]\n");
-}
-
-char *last_item() {
-    struct item *ptr = &global.items_head;
-    while (ptr->next != 0)
-        ptr = ptr->next;
-    return ptr->content;
 }
 
 void interactive_get_line() {
@@ -117,7 +111,7 @@ void interactive_get_line() {
     global.index = 0;
 }
 
-void read_numeric_literal(char *item) {
+void read_numeric_literal(mem_block *item) {
     int i = 0, dot_count = 0;
     while ((mem_subscription(global.string, global.index) >= '0' && mem_subscription(global.string, global.index) <= '9') ||
                 (mem_subscription(global.string, global.index) == '.' && !dot_count)) {
@@ -130,7 +124,7 @@ void read_numeric_literal(char *item) {
     return;
 }
 
-void read_string_literal(char *item) {
+void read_string_literal(mem_block *item) {
     int i = 1;
     char op = mem_subscription(global.string, global.index++);
     item[0] = op;
@@ -142,10 +136,10 @@ void read_string_literal(char *item) {
     return;
 }
 
-void raw_read(char *item) {
+void raw_read(mem_block *item) {
     int i, j, k = 0;
 
-    if (global.index < global.string_sz - 1) {
+    if (global.index < global.string_sz-1) {
         while (mem_subscription(global.string, global.index) == ' ' || mem_subscription(global.string, global.index) == '\t') {
             global.index++;
         }
@@ -208,10 +202,10 @@ void raw_read(char *item) {
     }
 }
 
-void read(char *item) {
+void read(mem_block *item) {
     if (global.rewind) {
         global.rewind = 0;
-        strcpy(item, global.last_item);
+        item = global.last_item;
         add_item(global.last_item);
         return;
     }
@@ -230,21 +224,23 @@ int is_alpha(char ch) {
     return 0;
 }
 
-int is_id(char *item) {
+int is_id(mem_block *item){
     int i = 0;
-    if (!(is_alpha(item[0]) || item[0] == '_'))
+    if (!(is_alpha(mem_subscription(item, 0)) || 
+          mem_subscription(item, 0) == '_'))
         return 0;
-    while (item[++i] != 0) {
-        if (!(is_alpha(item[i]) || item[i] == '_' || is_digit(item[i])))
+    while (mem_subscription(item, ++i) != 0) {
+        if (!(is_alpha(mem_subscription(item, 0)) ||
+            is_digit(mem_subscription(item, i))))
             return 0;
     }
     return 1;
 }
 
-int is_int(char *item) {
+int is_int(mem_block *item) {
     int i;
-    for (i = 0; item[i]; i++) {
-        if (!is_digit(item[i]))
+    for (i = 0; mem_subscription(item, i); i++) {
+        if (!is_digit(mem_subscription(item, i)))
             return 0;
     }
     if (i == 0)
@@ -252,15 +248,16 @@ int is_int(char *item) {
     return 1;
 }
 
-int is_str(char *item) {
+int is_str(mem_block *item) {
     int i;
-    if (item[0] == '\'' || item[0] == '"')
+    if (mem_subscription(item, 0) == '\'' ||
+        mem_subscription(item, 0) == '"')
         return 1;
     return 0;
 }
 
 void *parse_atom() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     read(item);
     if (is_int(item)) {
         int_expr *retptr = (int_expr *)malloc(sizeof(int_expr));
@@ -305,7 +302,7 @@ void *parse_primary() {
 }
 
 void *parse_power() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     void *primary = parse_primary();
     read(item);
     if (!match(item, "**")) {
@@ -321,7 +318,7 @@ void *parse_power() {
 }
 
 void *parse_u_expr() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     read(item);
     if (match(item, "+") || match(item, "-") || match(item, "~")) {
         // void *expr = parse_u_expr();
@@ -336,7 +333,7 @@ void *parse_u_expr() {
 }
 
 void *parse_m_expr() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     void *expr = parse_u_expr();
     while (1) {
         read(item);
@@ -350,7 +347,7 @@ void *parse_m_expr() {
 }
 
 void *parse_a_expr() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     void *expr = parse_m_expr();
     int *val = evaluate(expr);
     while (1) {
@@ -364,7 +361,7 @@ void *parse_a_expr() {
 }
 
 void *parse_shift_expr() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     void *expr = parse_a_expr();
     while (1) {
         read(item);
@@ -377,7 +374,7 @@ void *parse_shift_expr() {
 }
 
 void *parse_and_expr() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     void *expr = parse_shift_expr();
     while (1) {
         read(item);
@@ -390,7 +387,7 @@ void *parse_and_expr() {
 }
 
 void *parse_xor_expr() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     void *expr = parse_and_expr();
     while (1) {
         read(item);
@@ -403,7 +400,7 @@ void *parse_xor_expr() {
 }
 
 void *parse_or_expr() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     void *expr = parse_xor_expr();
     while (1) {
         read(item);
@@ -427,7 +424,7 @@ int in_comp_operator(char *item) {
 }
 
 void *parse_comparison() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     char *op;
     void *or_expr = parse_or_expr();
     read(item);
@@ -472,7 +469,7 @@ void *parse_comparison() {
 }
 
 void *parse_not_test() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     read(item);
     if (match(item, "not")) {
         not_test *test = (not_test *)malloc(sizeof(not_test));
@@ -485,7 +482,7 @@ void *parse_not_test() {
 }
 
 void *parse_and_test() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     void *test = parse_not_test();
     while (1) {
         read(item);
@@ -498,7 +495,7 @@ void *parse_and_test() {
 }
 
 void *parse_or_test() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     void *test = parse_and_test();
     while (1) {
         read(item);
@@ -511,7 +508,7 @@ void *parse_or_test() {
 }
 
 void *parse_conditional_expression() {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     void *or_test = parse_or_test();
     read(item);
     if (!match(item, "if")) {
@@ -542,7 +539,7 @@ void *parse_expression_nocond() {
 }
 
 list *pa_exprs(char *ending) {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     list *expr_head = (list *)malloc(sizeof(list));
     while (1) {
         list_append(expr_head, parse_expression());
@@ -561,7 +558,7 @@ list *pa_exprs(char *ending) {
 }
 
 void *parse_expression_list(char *ending) {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     expression_list *retptr = (expression_list *)malloc(sizeof(expression_list));
     retptr->type = expression_list_t;
     retptr->expr_head = pa_exprs(ending);
@@ -577,7 +574,7 @@ int test2()
 
 int test1()
 {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     interactive_get_line();
     void *expr = parse_expression();
     void *retval = evaluate(expr);
