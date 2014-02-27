@@ -63,15 +63,15 @@ void *PARENTH_FORM(list *expr_head) {
 void *int_exprEvaluate(int_expr *structure) {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
     retptr->type = pyint_t;
-    retptr->value = atoi(structure->value);
+    mem_cpy(retptr->value, structure->value);
     return retptr;
 }
 
 void *str_exprEvaluate(str_expr *structure) {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->type = pystr_t;
-    strcpy(retptr->value, structure->value+1);
-    retptr->value[strlen(retptr->value)-1] = 0;
+    mem_cpy(retptr->value, structure->value+1);
+    mem_set(retptr->value, mem_size(retptr->value)-1, 0);
     return retptr;
 }
 

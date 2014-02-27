@@ -33,6 +33,47 @@ char mem_subscription(mem_block *block, int index) {
     }
 }
 
+char *mem_get(mem_block *block, int index) {
+    mem_block *ptr;
+    int count = 0;
+    for (ptr = block; ptr != 0; ptr = ptr->next) {
+        int sz = index - count;
+        if (sz < strlen(ptr->mem)) {
+            return ptr->mem + sz;
+        }
+        count += strlen(ptr->mem);
+    }
+}
+
+void mem_set(mem_block *block, int index, char val) {
+    mem_block *ptr = block;
+    int count = 0, sz;
+    while (1) {
+        sz = index - count;
+        if (sz < strlen(ptr->mem)) {
+            ptr->mem[sz] = val;
+            return;
+        }
+        count += strlen(ptr->mem);
+        if (ptr->next == 0) {
+            mem_block *new_block = (mem_block *)malloc(sizeof(mem_block));
+            new_block->prev = ptr;
+            new_block->next = 0;
+            ptr->next = new_block;
+        }
+        ptr = ptr->next;
+    }
+}
+
+int mem_size(mem_block *block) {
+    mem_block *ptr;
+    int retval;
+    for (ptr = block; ptr != 0; ptr = ptr->next) {
+        retval += strlen(ptr->mem);
+    }
+    return retval;
+}
+
 void mem_ncpy_out(char *dest, mem_block *block, int offset, int size) {
     mem_block *ptr;
     int count = 0;
@@ -68,6 +109,18 @@ void mem_ncpy_out(char *dest, mem_block *block, int offset, int size) {
         if (ptr == 0)
             break;
     }
+}
+
+void mem_ncpy(mem_block *dest, mem_block *src, int dest_off, int src_off, int size) {
+    int d, s ,cnt;
+    for (d = dest_off, s = src_off, cnt = 0; cnt <= size; d++, s++, cnt++) {
+        char val = mem_subscription(src, s);
+        mem_set(dest, d, val);
+    }
+}
+
+void mem_cpy(mem_block *dest, mem_block *src) {
+    mem_ncpy(dest, src, 0, 0, mem_size(src));
 }
 
 int mem_ncmp(char *dest, mem_block *block, int offset, int size) {

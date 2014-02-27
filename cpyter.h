@@ -15,15 +15,16 @@ enum types { int_expr_t, str_expr_t,
              pytuple_t, };
 
 typedef struct list list;
+typedef struct mem_block mem_block;
 
 typedef struct int_expr {
     int type;
-    char value[ITEMSIZE];
+    mem_block *value;
 } int_expr;
 
 typedef struct str_expr {
     int type;
-    char value[ITEMSIZE];
+    mem_block *value;
 } str_expr;
 
 typedef struct parenth_form {
@@ -80,12 +81,12 @@ typedef struct list {
 
 typedef struct pyint {
     int type;
-    int value;
+    mem_block *value;
 } pyint;
 
 typedef struct pystr {
     int type;
-    char value[ITEMSIZE];
+    mem_block *value;
 } pystr;
 
 typedef struct pybool {
@@ -120,7 +121,7 @@ void *expression_listEvaluate(expression_list *);
 void *evaluate(void *);
 void print(void *);
 
-char *pop_item();
+mem_block *pop_item();
 void *parse_u_expr();
 void *parse_expression();
 list *pa_exprs(char *);
@@ -131,7 +132,12 @@ pystr *str__add__(pystr *, pystr *);
 void mem_print(mem_block *block);
 mem_block *mem_head();
 char mem_subscription(mem_block *, int );
+char *mem_get(mem_block *, int );
+void mem_set(mem_block *, int ,char);
+int mem_size(mem_block *);
 void mem_ncpy_out(char *, mem_block *, int, int);
 int mem_ncmp(char *, mem_block *, int, int);
+void mem_ncpy(mem_block *, mem_block *, int, int, int);
+void mem_cpy(mem_block *, mem_block *);
 
 #endif /* CPYTER_H */

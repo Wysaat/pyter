@@ -42,7 +42,7 @@ struct {
     .string_sz = 0,
     .index = 0,
     .line_number = 0,
-    .items_head = { " ", 0 },
+    .items_head = { 0, 0 },
     .multi_lines = 0,
     .rewind = 0,
     .last_item = 0,
@@ -63,7 +63,7 @@ void add_item(mem_block *content) {
     ptr->next = new_item;
 }
 
-mem_block *pop_item {
+mem_block *pop_item() {
     struct item *ptr = &global.items_head;
     struct item *last;
     while (ptr->next != 0) {
@@ -89,6 +89,7 @@ void show_items() {
 void interactive_get_line() {
     printf(">>> ");
     global.string = mem_head();
+    global.items_head.content = mem_head();
     char *dest = (global.string)->mem;
     mem_block *last_block = global.string;
     while (fgets(dest, MEM_BLOCK_SZ, stdin)) {
@@ -117,21 +118,21 @@ void read_numeric_literal(mem_block *item) {
                 (mem_subscription(global.string, global.index) == '.' && !dot_count)) {
         if (mem_subscription(global.string, global.index) == '.')
             dot_count++;
-        item[i++] = mem_subscription(global.string, global.index++);
+        mem_set(item, i++, mem_subscription(global.string, global.index++));
     }
-    item[i] = 0;
+    mem_set(item, i, 0);
     add_item(item);
     return;
 }
 
-void read_string_literal(mem_block *item) {
+void read_string_literal(mem_block *item, int len) {
     int i = 1;
     char op = mem_subscription(global.string, global.index++);
-    item[0] = op;
-    while (mem_subscription(global.string, global.index) != op)
-        item[i++] = mem_subscription(global.string, global.index++);
-    item[i++] = mem_subscription(global.string, global.index++);
-    item[i] = 0;
+    mem_set(item, len, op);
+    while (mem_subscription(global.string, len+global.index) != op)
+        mem_set(item, len+i++, mem_subscription(global.string, global.index++));
+    mem_set(item, len+i++, mem_subscription(global.string, global.index++));
+    mem_set(item, len+i, 0);
     add_item(item);
     return;
 }
@@ -145,9 +146,9 @@ void raw_read(mem_block *item) {
         }
         for (j = 3; j > 0; j--) {
             for (i = 0; strcmp(tokens[i], " ") != 0; i++) {
-                if (mem_ncmp(tokens[i], global.string, global.index, j) == 0) {
-                    mem_ncpy_out(item, global.string, global.index, j);
-                    item[j] = 0;
+                if (mem_ncmp(tokens[i], global.string, global.index, j) == 0)  {
+                    mem_ncpy(item, global.string, 0, global.index, j);
+                    mem_set(item, j, 0);
                     add_item(item);
                     global.index += j;
                     return;
@@ -160,8 +161,8 @@ void raw_read(mem_block *item) {
                 return;
             }
             else {
-                mem_ncpy_out(item, global.string, global.index, 1);
-                item[1] = 0;
+                mem_ncpy(item, global.string, 0, global.index, 1);
+                mem_set(item, 1, 0);
                 add_item(item);
                 global.index++;
                 return;
@@ -172,31 +173,31 @@ void raw_read(mem_block *item) {
             return;
         }
         if (mem_subscription(global.string, global.index) == '"' || mem_subscription(global.string, global.index) == '\'') {
-            read_string_literal(item);
+            read_string_literal(item, 0);
             return;
         }
         while ((mem_subscription(global.string, global.index) >= 'a' && mem_subscription(global.string, global.index) <= 'z') ||
                (mem_subscription(global.string, global.index) >= 'A' && mem_subscription(global.string, global.index) <= 'Z') ||
                (mem_subscription(global.string, global.index) >= '0' && mem_subscription(global.string, global.index) <= '9') ||
                (mem_subscription(global.string, global.index) == '_')) {
-            item[k++] = mem_subscription(global.string, global.index++);
+            mem_set(item, k++, mem_subscription(global.string, global.index++));
         }
         for (i = 0; !match(stringprefixes[i], " "); i++) {
-            if ((match(stringprefixes[i], item)) &&
+            if ((match(stringprefixes[i], mem_get(item, 0))) &&
                      (mem_subscription(global.string, global.index) == '"' || mem_subscription(global.string, global.index) == '\'')) {
-                read_string_literal(item+strlen(item));
+                read_string_literal(item, mem_len(item));
                 add_item(item);
                 return;
             }
             else {
-                item[k] = 0;
+                mem_set(item, k, 0);
                 add_item(item);
                 return;
             }
         }
     }
     else {
-        item[0] = 0;
+        mem_set(item, 0, 0);
         add_item(item);
         return;
     }
@@ -262,7 +263,7 @@ void *parse_atom() {
     if (is_int(item)) {
         int_expr *retptr = (int_expr *)malloc(sizeof(int_expr));
         retptr->type = int_expr_t;
-        strcpy(retptr->value, item);
+        mem_cpy(retptr->value, item);
         return retptr;
     }
     else if (is_str(item)) {
