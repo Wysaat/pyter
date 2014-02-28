@@ -31,6 +31,7 @@ char mem_subscription(mem_block *block, int index) {
         }
         count += strlen(ptr->mem);
     }
+    return 0;
 }
 
 char *mem_get(mem_block *block, int index) {
@@ -43,23 +44,29 @@ char *mem_get(mem_block *block, int index) {
         }
         count += strlen(ptr->mem);
     }
+    return 0;
+}
+
+void mem_alloc(mem_block *block) {
+    mem_block *new_block = (mem_block *)malloc(sizeof(mem_block));
+    new_block->prev = block;
+    new_block->next = 0;
+    block->next = new_block;
 }
 
 void mem_set(mem_block *block, int index, char val) {
     mem_block *ptr = block;
+    // printf("strlen(ptr->mem) is %d, sizeof(ptr->mem) is %d\n", strlen(ptr->mem), sizeof(ptr->mem));
     int count = 0, sz;
     while (1) {
         sz = index - count;
-        if (sz < strlen(ptr->mem)) {
+        if (sz < sizeof(ptr->mem)) {
             ptr->mem[sz] = val;
             return;
         }
-        count += strlen(ptr->mem);
+        count += sizeof(ptr->mem);
         if (ptr->next == 0) {
-            mem_block *new_block = (mem_block *)malloc(sizeof(mem_block));
-            new_block->prev = ptr;
-            new_block->next = 0;
-            ptr->next = new_block;
+            mem_alloc(ptr);
         }
         ptr = ptr->next;
     }
@@ -86,11 +93,16 @@ void mem_ncpy_out(char *dest, mem_block *block, int offset, int size) {
             to_read = offset_count - offset;
             if (to_read > size) {
                 strncpy(dest, ptr->mem+sz-to_read, size);
+                dest[size] = 0;
                 return;
             }
             strncpy(dest, ptr->mem+sz-to_read, to_read);
             dest += to_read;
             count += to_read;
+            if (ptr->next == 0) {
+                *dest = 0;
+                return;
+            }
             ptr = ptr->next;
             break;
         }
@@ -100,14 +112,12 @@ void mem_ncpy_out(char *dest, mem_block *block, int offset, int size) {
         int sz = strlen(ptr->mem);
         if (size-count < sz) {
             strncpy(dest, ptr->mem, size-count);
+            dest[size-count] = 0;
             return;
         }
         strncpy(dest, ptr->mem, sz);
         count += sz;
         dest += sz;
-        ptr = ptr->next;
-        if (ptr == 0)
-            break;
     }
 }
 
@@ -129,4 +139,18 @@ int mem_ncmp(char *dest, mem_block *block, int offset, int size) {
     int retval = strncmp(dest, tmp, size);
     free(tmp);
     return retval;
+}
+
+int mem_match_str(mem_block *block, char *dest) {
+    return !mem_ncmp(dest, block, 0, strlen(dest));
+}
+
+// construct mem from char *
+mem_block *mem_str(char *content) {
+    mem_block *head = mem_head();
+    int size = strlen(content), i;
+    for (i = 0; i < size; i++) {
+        memset(head, i, content[i]);
+    }
+    return head;
 }

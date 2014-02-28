@@ -46,7 +46,7 @@ typedef struct u_expr {
 
 typedef struct b_expr {
     int type;
-    char op[10];
+    mem_block *op;
     void *left;
     void *right;
 } b_expr;
@@ -58,7 +58,6 @@ typedef struct comparison {
 
 typedef struct not_test {
     int type;
-    char op[10];
     void *expr;
 } not_test;
 
@@ -81,7 +80,7 @@ typedef struct list {
 
 typedef struct pyint {
     int type;
-    mem_block *value;
+    int value;
 } pyint;
 
 typedef struct pystr {
@@ -103,9 +102,9 @@ typedef struct mem_block {
 void list_append(list *, void *);
 void list_add(list *, list *);
 
-void *B_EXPR(void *, char *, void *);
+void *B_EXPR(void *, mem_block *, void *);
 void *PYINT(int );
-void *PYSTR(char *);
+void *PYSTR(mem_block *);
 void *PYBOOL(int);
 void *PARENTH_FORM(list *);
 
@@ -133,11 +132,14 @@ void mem_print(mem_block *block);
 mem_block *mem_head();
 char mem_subscription(mem_block *, int );
 char *mem_get(mem_block *, int );
+void mem_alloc(mem_block *);
 void mem_set(mem_block *, int ,char);
 int mem_size(mem_block *);
 void mem_ncpy_out(char *, mem_block *, int, int);
 int mem_ncmp(char *, mem_block *, int, int);
 void mem_ncpy(mem_block *, mem_block *, int, int, int);
 void mem_cpy(mem_block *, mem_block *);
+int mem_match_str(mem_block *, char *);
+mem_block *mem_str(char *);
 
 #endif /* CPYTER_H */

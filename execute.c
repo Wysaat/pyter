@@ -23,10 +23,10 @@ void list_add(list *list1, list *list2) {
     free(list2);
 }
 
-void *B_EXPR(void *left, char *op, void *right) {
+void *B_EXPR(void *left, mem_block *op, void *right) {
     b_expr *expr = (b_expr *)malloc(sizeof(b_expr));
     expr->type = b_expr_t;
-    strcpy(expr->op, op);
+    expr->op = op;
     expr->left = left;
     expr->right = right;
     return expr;
@@ -39,10 +39,10 @@ void *PYINT(int value) {
     return retptr;
 }
 
-void *PYSTR(char *value) {
+void *PYSTR(mem_block *value) {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->type = pystr_t;
-    strcpy(retptr->value, value);
+    retptr->value = value;
     return retptr;
 }
 
@@ -63,7 +63,7 @@ void *PARENTH_FORM(list *expr_head) {
 void *int_exprEvaluate(int_expr *structure) {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
     retptr->type = pyint_t;
-    mem_cpy(retptr->value, structure->value);
+    retptr->value = atoi(structure->value->mem);
     return retptr;
 }
 
@@ -106,48 +106,48 @@ void *b_exprEvaluate(b_expr *structure) {
     if (*left_val == pyint_t && *right_val == pyint_t) {
         int left = ((pyint *)left_val)->value;
         int right = ((pyint *)right_val)->value;
-        if (match(structure->op, "*"))
+        if (mem_match_str(structure->op, "*"))
             return PYINT(left * right);
-        else if (match(structure->op, "//"))
+        else if (mem_match_str(structure->op, "//"))
             return PYINT(left / right);
-        else if (match(structure->op, "/"))
+        else if (mem_match_str(structure->op, "/"))
             return PYINT(left / right);
-        else if (match(structure->op, "%"))
+        else if (mem_match_str(structure->op, "%"))
             return PYINT(left % right);
-        else if (match(structure->op, "+"))
+        else if (mem_match_str(structure->op, "+"))
             return PYINT(left + right);
-        else if (match(structure->op, "-"))
+        else if (mem_match_str(structure->op, "-"))
             return PYINT(left - right);
-        else if (match(structure->op, "<<"))
+        else if (mem_match_str(structure->op, "<<"))
             return PYINT(left << right);
-        else if (match(structure->op, ">>"))
+        else if (mem_match_str(structure->op, ">>"))
             return PYINT(left >> right);
-        else if (match(structure->op, "&"))
+        else if (mem_match_str(structure->op, "&"))
             return PYINT(left & right);
-        else if (match(structure->op, "^"))
+        else if (mem_match_str(structure->op, "^"))
             return PYINT(left ^ right);
-        else if (match(structure->op, "|"))
+        else if (mem_match_str(structure->op, "|"))
             return PYINT(left | right);
-        else if (match(structure->op, "<"))
+        else if (mem_match_str(structure->op, "<"))
             return PYBOOL(left < right);
-        else if (match(structure->op, ">"))
+        else if (mem_match_str(structure->op, ">"))
             return PYBOOL(left > right);
-        else if (match(structure->op, "=="))
+        else if (mem_match_str(structure->op, "=="))
             return PYBOOL(left == right);
-        else if (match(structure->op, "<="))
+        else if (mem_match_str(structure->op, "<="))
             return PYBOOL(left <= right);
-        else if (match(structure->op, ">="))
+        else if (mem_match_str(structure->op, ">="))
             return PYBOOL(left >= right);
-        else if (match(structure->op, "<>"))
+        else if (mem_match_str(structure->op, "<>"))
             return PYBOOL(left != right);
-        else if (match(structure->op, "!="))
+        else if (mem_match_str(structure->op, "!="))
             return PYBOOL(left != right);
-        else if (match(structure->op, "and")) {
+        else if (mem_match_str(structure->op, "and")) {
             if (left && right)
                 return PYINT(right);
             return PYINT(0);
         }
-        else if (match(structure->op, "or")) {
+        else if (mem_match_str(structure->op, "or")) {
             if (left)
                 return PYINT(left);
             else if (right)
@@ -156,17 +156,17 @@ void *b_exprEvaluate(b_expr *structure) {
         }
     }
     else if (*left_val == pystr_t && *right_val == pyint_t) {
-        if (match(structure->op, "*")) {
+        if (mem_match_str(structure->op, "*")) {
             return str__mul__((pystr *)left_val, (pyint *)right_val);
         }
     }
     else if (*left_val == pyint_t && *right_val == pystr_t) {
-        if (match(structure->op, "*")) {
+        if (mem_match_str(structure->op, "*")) {
             return str__mul__((pystr *)right_val, (pyint *)left_val);
         }
     }
     else if (*left_val == pystr_t && *right_val == pystr_t) {
-        if (match(structure->op, "+")) {
+        if (mem_match_str(structure->op, "+")) {
             return str__add__((pystr *)left_val, (pystr *)right_val);
         }
     }
@@ -244,7 +244,8 @@ void print(void *structure) {
             printf("%d\n", ((pyint *)structure)->value);
             break;
         case pystr_t:
-            printf("'%s'\n", ((pystr *)structure)->value);
+            mem_print(((pystr *)structure)->value);
+            // printf("'%s'\n", ((pystr *)structure)->value);
             break;
         case pybool_t:
             if (((pybool *)structure)->value)
@@ -256,21 +257,19 @@ void print(void *structure) {
 }
 
 pystr *str__mul__(pystr *left, pyint *right) {
-    int offset = strlen(left->value), i;
-    char value[ITEMSIZE];
-    char *dest = value;
-    for (i = 0; i < right->value; i++) {
-        strncpy(dest, left->value, offset);
-        dest += offset;
+    mem_block *dest = mem_head();
+    mem_block *src = left->value;
+    int times = right->value;
+    int off = mem_size(left->value), offset;
+    for (offset = 0; times > 0; times--, offset += off) {
+        mem_ncpy(dest, src, offset, 0, off);
     }
-    *dest = 0;
-    return PYSTR(value);
+    return PYSTR(dest);
 }
 
 pystr *str__add__(pystr *left, pystr *right) {
-    char value[ITEMSIZE];
-    int offset = strlen(left->value);
-    strcpy(value, left->value);
-    strcpy(value+offset, right->value);
-    return PYSTR(value);
+    mem_block *dest = mem_head();
+    mem_cpy(dest, left->value);
+    mem_ncpy(dest, right->value, mem_size(dest), 0, mem_size(right->value));
+    return PYSTR(dest);
 }

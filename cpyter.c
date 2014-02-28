@@ -185,7 +185,7 @@ void raw_read(mem_block *item) {
         for (i = 0; !match(stringprefixes[i], " "); i++) {
             if ((match(stringprefixes[i], mem_get(item, 0))) &&
                      (mem_subscription(global.string, global.index) == '"' || mem_subscription(global.string, global.index) == '\'')) {
-                read_string_literal(item, mem_len(item));
+                read_string_literal(item, mem_size(item));
                 add_item(item);
                 return;
             }
@@ -239,13 +239,18 @@ int is_id(mem_block *item){
 }
 
 int is_int(mem_block *item) {
+    puts("enter is_int");
+    mem_print(item);
+    puts("...");
     int i;
+    printf("%c\n", mem_subscription(item, i));
     for (i = 0; mem_subscription(item, i); i++) {
         if (!is_digit(mem_subscription(item, i)))
             return 0;
     }
     if (i == 0)
         return 0;
+    puts("in is_int");
     return 1;
 }
 
@@ -269,29 +274,29 @@ void *parse_atom() {
     else if (is_str(item)) {
         str_expr *retptr = (str_expr *)malloc(sizeof(str_expr));
         retptr->type = str_expr_t;
-        strcpy(retptr->value, item);
+        mem_cpy(retptr->value, item);
         return retptr;
     }
-    else if (match(item, "(")) {
+    else if (mem_match_str(item, "(")) {
         list *expr_head = (list *)malloc(sizeof(list));
         read(item);
-        if (match(item, ")"))
+        if (mem_match_str(item, ")"))
             return PARENTH_FORM(expr_head);
         remonter();
         void *expression = parse_expression();
         read(item);
-        if (match(item, ")"))
+        if (mem_match_str(item, ")"))
             return expression;
-        else if(match(item, ",")) {
+        else if(mem_match_str(item, ",")) {
             list_append(expr_head, expression);
             read(item);
-            if (match(item, ")"))
+            if (mem_match_str(item, ")"))
                 return PARENTH_FORM(expr_head);
             remonter();
             list_add(expr_head, pa_exprs(")"));
             void *retptr = PARENTH_FORM(expr_head);
             read(item);
-            if (match(item, ")"))
+            if (mem_match_str(item, ")"))
                 return retptr;
         }
     }
@@ -306,7 +311,7 @@ void *parse_power() {
     mem_block *item = mem_head();
     void *primary = parse_primary();
     read(item);
-    if (!match(item, "**")) {
+    if (!mem_match_str(item, "**")) {
         remonter();
         return primary;
     }
@@ -321,11 +326,11 @@ void *parse_power() {
 void *parse_u_expr() {
     mem_block *item = mem_head();
     read(item);
-    if (match(item, "+") || match(item, "-") || match(item, "~")) {
+    if (mem_match_str(item, "+") || mem_match_str(item, "-") || mem_match_str(item, "~")) {
         // void *expr = parse_u_expr();
         u_expr *retptr = (u_expr *)malloc(sizeof(u_expr));
         retptr->type = u_expr_t;
-        retptr->u_op = item[0];
+        retptr->u_op = mem_subscription(item, 0);
         retptr->expr = parse_u_expr();
         return retptr;
     }
@@ -338,8 +343,8 @@ void *parse_m_expr() {
     void *expr = parse_u_expr();
     while (1) {
         read(item);
-        if (!(match(item, "*") || match(item, "//") ||
-              match(item, "/") || match(item, "%"))) {
+        if (!(mem_match_str(item, "*") || mem_match_str(item, "//") ||
+              mem_match_str(item, "/") || mem_match_str(item, "%"))) {
             remonter();
             return expr;
         }
@@ -353,7 +358,7 @@ void *parse_a_expr() {
     int *val = evaluate(expr);
     while (1) {
         read(item);
-        if (!(match(item, "+") || match(item, "-"))) {
+        if (!(mem_match_str(item, "+") || mem_match_str(item, "-"))) {
             remonter();
             return expr;
         }
@@ -366,7 +371,7 @@ void *parse_shift_expr() {
     void *expr = parse_a_expr();
     while (1) {
         read(item);
-        if (!(match(item, "<<") || match(item, ">>"))) {
+        if (!(mem_match_str(item, "<<") || mem_match_str(item, ">>"))) {
             remonter();
             return expr;
         }
@@ -379,7 +384,7 @@ void *parse_and_expr() {
     void *expr = parse_shift_expr();
     while (1) {
         read(item);
-        if (!(match(item, "&"))) {
+        if (!(mem_match_str(item, "&"))) {
             remonter();
             return expr;
         }
@@ -392,7 +397,7 @@ void *parse_xor_expr() {
     void *expr = parse_and_expr();
     while (1) {
         read(item);
-        if (!(match(item, "^"))) {
+        if (!(mem_match_str(item, "^"))) {
             remonter();
             return expr;
         }
@@ -405,7 +410,7 @@ void *parse_or_expr() {
     void *expr = parse_xor_expr();
     while (1) {
         read(item);
-        if (!(match(item, "|"))) {
+        if (!(mem_match_str(item, "|"))) {
             remonter();
             return expr;
         }
@@ -413,12 +418,12 @@ void *parse_or_expr() {
     }
 }
 
-int in_comp_operator(char *item) {
-    if (match(item, "is") || match(item, "not") || match(item, "in"))
+int in_comp_operator(mem_block *item) {
+    if (mem_match_str(item, "is") || mem_match_str(item, "not") || mem_match_str(item, "in"))
         return 1;
     int i = 0;
     for (i = 0; !match(comp_operators[i], " "); i++) {
-        if (match(item, comp_operators[i]))
+        if (mem_match_str(item, comp_operators[i]))
             return 1;
     }
     return 0;
@@ -426,7 +431,7 @@ int in_comp_operator(char *item) {
 
 void *parse_comparison() {
     mem_block *item = mem_head();
-    char *op;
+    mem_block *op;
     void *or_expr = parse_or_expr();
     read(item);
     remonter();
@@ -440,22 +445,22 @@ void *parse_comparison() {
     comp_expr->type = comparison_t;
     while (1) {
         read(item);
-        if (match(item, "is")) {
+        if (mem_match_str(item, "is")) {
             read(item);
-            if (match(item, "not"))
-                op = "is not";
+            if (mem_match_str(item, "not"))
+                op = mem_str("is not");
             else {
                 remonter();
-                op = "is";
+                op = mem_str("is");
             }
         }
-        else if (match(item, "not")) {
+        else if (mem_match_str(item, "not")) {
             read(item);
-            if (match(item, "in"))
-                op = "not in";
+            if (mem_match_str(item, "in"))
+                op = mem_str("not in");
         }
-        else if (match(item, "in"))
-            op = "in";
+        else if (mem_match_str(item, "in"))
+            op = mem_str("in");
         else if (in_comp_operator(item))
             op = item;
         else {
@@ -472,7 +477,7 @@ void *parse_comparison() {
 void *parse_not_test() {
     mem_block *item = mem_head();
     read(item);
-    if (match(item, "not")) {
+    if (mem_match_str(item, "not")) {
         not_test *test = (not_test *)malloc(sizeof(not_test));
         test->type = not_test_t;
         test->expr = parse_not_test();
@@ -487,7 +492,7 @@ void *parse_and_test() {
     void *test = parse_not_test();
     while (1) {
         read(item);
-        if (!match(item, "and")) {
+        if (!mem_match_str(item, "and")) {
             remonter();
             return test;
         }
@@ -500,7 +505,7 @@ void *parse_or_test() {
     void *test = parse_and_test();
     while (1) {
         read(item);
-        if (!match(item, "or")) {
+        if (!mem_match_str(item, "or")) {
             remonter();
             return test;
         }
@@ -512,13 +517,13 @@ void *parse_conditional_expression() {
     mem_block *item = mem_head();
     void *or_test = parse_or_test();
     read(item);
-    if (!match(item, "if")) {
+    if (!mem_match_str(item, "if")) {
         remonter();
         return or_test;
     }
     void *or_test2 = parse_or_test();
     read(item);
-    if (match(item, "else")) {
+    if (mem_match_str(item, "else")) {
         void *expr = parse_expression();
         conditional_expression *expression = (conditional_expression *)malloc(sizeof(conditional_expression));
         expression->type = conditional_expression_t;
@@ -545,10 +550,10 @@ list *pa_exprs(char *ending) {
     while (1) {
         list_append(expr_head, parse_expression());
         read(item);
-        if (match(item, ",")) {
+        if (mem_match_str(item, ",")) {
             read(item);
             remonter();
-            if (match(item, ending))
+            if (mem_match_str(item, ending))
                 return expr_head;
         }
         else {
@@ -585,14 +590,15 @@ int test1()
 
 int test()
 {
-    char item[ITEMSIZE];
+    mem_block *item = mem_head();
     do {
         interactive_get_line();
         mem_print(global.string);
         printf("[");
         while (global.index < global.string_sz - 1) {
             read(item);
-            printf("'%s', ", item);
+            mem_print(item);
+            printf(", ");
         }
         printf("]\n");
     } while (mem_ncmp("exit", global.string, 0, 4) != 0);
