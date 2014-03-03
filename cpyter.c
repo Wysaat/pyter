@@ -206,7 +206,8 @@ void raw_read(mem_block *item) {
 void read(mem_block *item) {
     if (global.rewind) {
         global.rewind = 0;
-        item = global.last_item;
+        memcpy(item, global.last_item, sizeof(mem_block));
+        // item = global.last_item;
         add_item(global.last_item);
         return;
     }
@@ -239,18 +240,13 @@ int is_id(mem_block *item){
 }
 
 int is_int(mem_block *item) {
-    puts("enter is_int");
-    mem_print(item);
-    puts("...");
     int i;
-    printf("%c\n", mem_subscription(item, i));
     for (i = 0; mem_subscription(item, i); i++) {
         if (!is_digit(mem_subscription(item, i)))
             return 0;
     }
     if (i == 0)
         return 0;
-    puts("in is_int");
     return 1;
 }
 
@@ -268,7 +264,7 @@ void *parse_atom() {
     if (is_int(item)) {
         int_expr *retptr = (int_expr *)malloc(sizeof(int_expr));
         retptr->type = int_expr_t;
-        mem_cpy(retptr->value, item);
+        retptr->value = item;
         return retptr;
     }
     else if (is_str(item)) {
@@ -355,14 +351,16 @@ void *parse_m_expr() {
 void *parse_a_expr() {
     mem_block *item = mem_head();
     void *expr = parse_m_expr();
-    int *val = evaluate(expr);
     while (1) {
         read(item);
         if (!(mem_match_str(item, "+") || mem_match_str(item, "-"))) {
             remonter();
+            printf("will leave parse_a_epxr, expr is %p\n", expr);
             return expr;
         }
+        puts("in parse_a_expr, matched '+' or '-'");
         expr = B_EXPR(expr, item, parse_m_expr());
+        printf("in parse_a_expr, expr is %p\n", expr);
     }
 }
 
@@ -583,6 +581,7 @@ int test1()
     mem_block *item = mem_head();
     interactive_get_line();
     void *expr = parse_expression();
+    printf("in test1, parsed expression is %p\n", expr);
     void *retval = evaluate(expr);
     print(retval);
     return 0;

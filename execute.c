@@ -101,11 +101,14 @@ void *u_exprEvaluate(u_expr *structure) {
 }
 
 void *b_exprEvaluate(b_expr *structure) {
+    puts("in b_exprEvaluate");
     int *left_val = evaluate(structure->left);
     int *right_val = evaluate(structure->right);
     if (*left_val == pyint_t && *right_val == pyint_t) {
         int left = ((pyint *)left_val)->value;
+        printf("left is %d\n", left);
         int right = ((pyint *)right_val)->value;
+        printf("right is %d\n", right);
         if (mem_match_str(structure->op, "*"))
             return PYINT(left * right);
         else if (mem_match_str(structure->op, "//"))
@@ -114,8 +117,10 @@ void *b_exprEvaluate(b_expr *structure) {
             return PYINT(left / right);
         else if (mem_match_str(structure->op, "%"))
             return PYINT(left % right);
-        else if (mem_match_str(structure->op, "+"))
+        else if (mem_match_str(structure->op, "+")) {
+            puts("in b_exprEvaluate, matched '+'");
             return PYINT(left + right);
+        }
         else if (mem_match_str(structure->op, "-"))
             return PYINT(left - right);
         else if (mem_match_str(structure->op, "<<"))

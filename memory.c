@@ -6,13 +6,14 @@
 
 void mem_print(mem_block *block) {
     if (block->mem == 0) {
-        puts("NONE");
+        puts("mem_print: NONE");
         return;
     }
     mem_block *ptr;
     for (ptr = block; ptr != 0; ptr = ptr->next) {
         printf("%s", ptr->mem);
     }
+    printf("\n");
 }
 
 mem_block *mem_head() {
@@ -52,19 +53,31 @@ void mem_alloc(mem_block *block) {
     new_block->prev = block;
     new_block->next = 0;
     block->next = new_block;
+    bzero(new_block->mem, MEM_BLOCK_SZ);
 }
 
 void mem_set(mem_block *block, int index, char val) {
     mem_block *ptr = block;
-    // printf("strlen(ptr->mem) is %d, sizeof(ptr->mem) is %d\n", strlen(ptr->mem), sizeof(ptr->mem));
-    int count = 0, sz;
+    int count = 0, sz, i;
+    char space = ' ';
     while (1) {
         sz = index - count;
-        if (sz < sizeof(ptr->mem)) {
-            ptr->mem[sz] = val;
+        if (sz < MEM_BLOCK_SZ-1) {
+            if (sz < strlen(ptr->mem)) {
+                strncpy(ptr->mem+sz, &val, 1);
+                // ptr->mem[sz] = val;
+                return;
+            }
+            for (i = strlen(ptr->mem); i < sz; i++)
+                strncpy(ptr->mem+i, &space, 1);
+            strncpy(ptr->mem+sz, &val, 1);
             return;
         }
-        count += sizeof(ptr->mem);
+        if (strlen(ptr->mem) < MEM_BLOCK_SZ-1) {
+            for (i = strlen(ptr->mem); i < MEM_BLOCK_SZ-1; i++)
+                strncpy(ptr->mem+i, &space, 1);
+        }
+        count += MEM_BLOCK_SZ-1;
         if (ptr->next == 0) {
             mem_alloc(ptr);
         }
@@ -74,7 +87,7 @@ void mem_set(mem_block *block, int index, char val) {
 
 int mem_size(mem_block *block) {
     mem_block *ptr;
-    int retval;
+    int retval = 0;
     for (ptr = block; ptr != 0; ptr = ptr->next) {
         retval += strlen(ptr->mem);
     }
@@ -142,6 +155,7 @@ int mem_ncmp(char *dest, mem_block *block, int offset, int size) {
 }
 
 int mem_match_str(mem_block *block, char *dest) {
+    puts("in mem_match_str");
     return !mem_ncmp(dest, block, 0, strlen(dest));
 }
 
@@ -150,7 +164,8 @@ mem_block *mem_str(char *content) {
     mem_block *head = mem_head();
     int size = strlen(content), i;
     for (i = 0; i < size; i++) {
-        memset(head, i, content[i]);
+        /* mem_set NOT memset */
+        mem_set(head, i, content[i]);
     }
     return head;
 }
