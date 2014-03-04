@@ -23,10 +23,12 @@ void list_add(list *list1, list *list2) {
     free(list2);
 }
 
+/* op should be copied(use memory.c function mem_cpy) */
 void *B_EXPR(void *left, mem_block *op, void *right) {
     b_expr *expr = (b_expr *)malloc(sizeof(b_expr));
     expr->type = b_expr_t;
-    expr->op = op;
+    expr->op = mem_head();
+    mem_cpy(expr->op, op);
     expr->left = left;
     expr->right = right;
     return expr;
@@ -68,10 +70,15 @@ void *int_exprEvaluate(int_expr *structure) {
 }
 
 void *str_exprEvaluate(str_expr *structure) {
+    puts("in str_exprEvaluate");
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->type = pystr_t;
-    mem_cpy(retptr->value, structure->value+1);
-    mem_set(retptr->value, mem_size(retptr->value)-1, 0);
+    retptr->value = mem_head();
+    printf("mem_size(strucuture->value is %d\n", mem_size(structure->value));
+    mem_ncpy(retptr->value, structure->value, 0, 1, mem_size(structure->value)-2);
+    // mem_cpy(retptr->value, structure->value+1);
+    // puts("in str_exprEvaluate, after mem_cpy");
+    // mem_set(retptr->value, mem_size(retptr->value)-1, 0);
     return retptr;
 }
 
@@ -101,14 +108,16 @@ void *u_exprEvaluate(u_expr *structure) {
 }
 
 void *b_exprEvaluate(b_expr *structure) {
-    puts("in b_exprEvaluate");
+    // puts("in b_exprEvaluate");
     int *left_val = evaluate(structure->left);
     int *right_val = evaluate(structure->right);
     if (*left_val == pyint_t && *right_val == pyint_t) {
         int left = ((pyint *)left_val)->value;
-        printf("left is %d\n", left);
+        // printf("left is %d\n", left);
         int right = ((pyint *)right_val)->value;
-        printf("right is %d\n", right);
+        // printf("right is %d\n", right);
+        // puts("print op in the next line");
+        // mem_print(structure->op);
         if (mem_match_str(structure->op, "*"))
             return PYINT(left * right);
         else if (mem_match_str(structure->op, "//"))
@@ -118,7 +127,7 @@ void *b_exprEvaluate(b_expr *structure) {
         else if (mem_match_str(structure->op, "%"))
             return PYINT(left % right);
         else if (mem_match_str(structure->op, "+")) {
-            puts("in b_exprEvaluate, matched '+'");
+            // puts("in b_exprEvaluate, matched '+'");
             return PYINT(left + right);
         }
         else if (mem_match_str(structure->op, "-"))
@@ -185,6 +194,11 @@ void *not_testEvaluate(not_test *structure) {
     }
     else if (*expr_val == pystr_t) {
         return PYBOOL(0);
+    }
+    else if (*expr_val == pybool_t) {
+        if (((pybool *)expr_val)->value)
+            return PYBOOL(0);
+        return PYBOOL(1);
     }
 }
 

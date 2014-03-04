@@ -56,7 +56,9 @@ void remonter() {
 void add_item(mem_block *content) {
     struct item *ptr = &global.items_head;
     struct item *new_item = (struct item *)malloc(sizeof(struct item));
-    new_item->content = content;
+    new_item->content = mem_head();
+    mem_cpy(new_item->content, content);
+    // new_item->content = content;
     new_item->next = 0;
     while (ptr->next != 0)
         ptr = ptr->next;
@@ -212,6 +214,8 @@ void read(mem_block *item) {
         return;
     }
     raw_read(item);
+    printf("in read, item is:\n");
+    mem_print(item);
 }
 
 int is_digit(char ch) {
@@ -268,9 +272,12 @@ void *parse_atom() {
         return retptr;
     }
     else if (is_str(item)) {
+        puts("in parse_atom, is_str");
         str_expr *retptr = (str_expr *)malloc(sizeof(str_expr));
         retptr->type = str_expr_t;
+        retptr->value = mem_head();
         mem_cpy(retptr->value, item);
+        mem_print(retptr->value);
         return retptr;
     }
     else if (mem_match_str(item, "(")) {
@@ -355,12 +362,9 @@ void *parse_a_expr() {
         read(item);
         if (!(mem_match_str(item, "+") || mem_match_str(item, "-"))) {
             remonter();
-            printf("will leave parse_a_epxr, expr is %p\n", expr);
             return expr;
         }
-        puts("in parse_a_expr, matched '+' or '-'");
         expr = B_EXPR(expr, item, parse_m_expr());
-        printf("in parse_a_expr, expr is %p\n", expr);
     }
 }
 
@@ -582,6 +586,9 @@ int test1()
     interactive_get_line();
     void *expr = parse_expression();
     printf("in test1, parsed expression is %p\n", expr);
+    printf("in test1, *(int *)expr is %d\n", *(int *)expr);
+    // printf("in test1, expr->op is %p\n", ((b_expr *)expr)->op);
+    // mem_print(((b_expr *)expr)->op);
     void *retval = evaluate(expr);
     print(retval);
     return 0;

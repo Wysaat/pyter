@@ -136,7 +136,7 @@ void mem_ncpy_out(char *dest, mem_block *block, int offset, int size) {
 
 void mem_ncpy(mem_block *dest, mem_block *src, int dest_off, int src_off, int size) {
     int d, s ,cnt;
-    for (d = dest_off, s = src_off, cnt = 0; cnt <= size; d++, s++, cnt++) {
+    for (d = dest_off, s = src_off, cnt = 0; cnt < size; d++, s++, cnt++) {
         char val = mem_subscription(src, s);
         mem_set(dest, d, val);
     }
@@ -155,7 +155,6 @@ int mem_ncmp(char *dest, mem_block *block, int offset, int size) {
 }
 
 int mem_match_str(mem_block *block, char *dest) {
-    puts("in mem_match_str");
     return !mem_ncmp(dest, block, 0, strlen(dest));
 }
 
