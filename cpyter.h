@@ -3,8 +3,14 @@
 
 #define ITEMSIZE 10
 #define MEM_BLOCK_SZ 10
+#define INTEGER_SZ 5
 
 #define match(x, y) !strcmp(x, y)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
 enum types { int_expr_t, str_expr_t,
              parenth_form_t,
@@ -16,6 +22,7 @@ enum types { int_expr_t, str_expr_t,
 
 typedef struct list list;
 typedef struct mem_block mem_block;
+typedef struct integer integer;
 
 typedef struct int_expr {
     int type;
@@ -80,7 +87,7 @@ typedef struct list {
 
 typedef struct pyint {
     int type;
-    int value;
+    integer *value;
 } pyint;
 
 typedef struct pystr {
@@ -93,11 +100,16 @@ typedef struct pybool {
     int value;
 } pybool;
 
-typedef struct mem_block {
+struct mem_block {
     char mem[MEM_BLOCK_SZ];
     struct mem_block *prev;
     struct mem_block *next;
-} mem_block;
+};
+
+struct integer {
+    int value;
+    struct integer *higher;
+};
 
 void list_append(list *, void *);
 void list_add(list *, list *);
@@ -141,5 +153,7 @@ void mem_ncpy(mem_block *, mem_block *, int, int, int);
 void mem_cpy(mem_block *, mem_block *);
 int mem_match_str(mem_block *, char *);
 mem_block *mem_str(char *);
+
+char *itoa(int );
 
 #endif /* CPYTER_H */
