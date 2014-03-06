@@ -39,13 +39,19 @@ char *mem_get(mem_block *block, int index) {
     mem_block *ptr;
     int count = 0;
     for (ptr = block; ptr != 0; ptr = ptr->next) {
-        int sz = index - count;
-        if (sz < strlen(ptr->mem)) {
-            return ptr->mem + sz;
+        if ((index-count) < strlen(ptr->mem)) {
+            return ptr->mem+index-count;
         }
         count += strlen(ptr->mem);
     }
     return 0;
+}
+
+/* python convention, start is included, stop excluded */
+mem_block *mem_slice(mem_block *block, int start, int stop) {
+    mem_block *retptr = mem_head();
+    mem_ncpy(retptr, block, 0, start, stop-start);
+    return retptr;
 }
 
 void mem_alloc(mem_block *block) {
@@ -54,6 +60,19 @@ void mem_alloc(mem_block *block) {
     new_block->next = 0;
     block->next = new_block;
     bzero(new_block->mem, MEM_BLOCK_SZ);
+}
+
+void mem_set(mem_block *block, int index, char val) {
+    mem_block *ptr = block;
+    int count = 0; rest, i;
+    char space = ' ';
+    if ((index+1) <= mem_size(block)) {
+        char *addr = mem_get(index);
+        strncpy(addr, &val, 1);
+        return;
+    }
+    else {
+    }
 }
 
 void mem_set(mem_block *block, int index, char val) {
@@ -82,6 +101,38 @@ void mem_set(mem_block *block, int index, char val) {
             mem_alloc(ptr);
         }
         ptr = ptr->next;
+    }
+}
+
+void mem_del(mem_block *block, int index) {
+    if ((index+1) > mem_size(block))
+        return;
+    mem_block *ptr;
+    int cnt = 0;
+    for (ptr = block; ptr != 0; ptr = ptr->next) {
+        if ((cnt+strlen(ptr->mem)) >= (index+1)) {
+            if (strlen(ptr->mem) == 1) {
+                ptr->prev->next = ptr->next;
+                if (ptr->next != 0)
+                    ptr->next->prev = ptr->prev;
+                free(ptr);
+                return;
+            }
+            int i;
+            for (i = index-cnt; i < strlen(ptr->mem); i++) {
+                ptr->mem[i] = ptr->mem[i+1];
+            }
+            return;
+        }
+        cnt += strlen(ptr->mem);
+    }
+}
+
+// python convention, start is included, stop isn't
+void mem_delete(mem_block *block, int start, int stop) {
+    int i;
+    for (i = stop-start; i > 0; i--) {
+        mem_del(block, start);
     }
 }
 
@@ -135,11 +186,21 @@ void mem_ncpy_out(char *dest, mem_block *block, int offset, int size) {
 }
 
 void mem_ncpy(mem_block *dest, mem_block *src, int dest_off, int src_off, int size) {
-    int d, s ,cnt;
+    int d, s, cnt;
     for (d = dest_off, s = src_off, cnt = 0; cnt < size; d++, s++, cnt++) {
         char val = mem_subscription(src, s);
         mem_set(dest, d, val);
     }
+}
+
+/* dest_off is the address the first byte of src will be in */
+void mem_insert(mem_block *dest, mem_block *src, int dest_off, int src_off, int size) {
+    int d, s, cnt;
+    mem_block *new_block = mem_head();
+    mem_ncpy(new_block, dest, 0, dest_off, mem_size(dest)-dest_off);
+    mem_delete(dest, dest_off, mem_size(dest));
+    mem_ncpy(dest, src, dest_off, src_off, size);
+    mem_ncpy(dest, new_block, mem_size(dest), 0, mem_size(new_block));
 }
 
 void mem_cpy(mem_block *dest, mem_block *src) {
