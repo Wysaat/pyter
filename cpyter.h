@@ -109,6 +109,7 @@ struct mem_block {
 struct integer {
     int value;
     struct integer *higher;
+    struct integer *lower;
 };
 
 void list_append(list *, void *);
@@ -159,5 +160,10 @@ int mem_match_str(mem_block *, char *);
 mem_block *mem_str(char *);
 
 char *itoa(int );
+
+integer *INTEGER_NODE();
+integer *integer__init__(mem_block *);
+mem_block *integer__str__(integer *);
+integer *integer__add__(integer *, integer *);
 
 #endif /* CPYTER_H */
