@@ -23,6 +23,8 @@ integer *INTEGER_NODE() {
     retptr->value = 0;
     retptr->higher = 0;
     retptr->lower = 0;
+    retptr->sign = '+';
+    retptr->index = 0;
     return retptr;
 }
 
@@ -31,7 +33,7 @@ integer *integer__init__(mem_block *head) {
     integer *cur_ptr = lowest;
     int length = mem_size(head);
     char string[INTEGER_SZ+1];
-    int copy_sz;
+    int copy_sz, i = 0;
     while (1) {
         if (length < INTEGER_SZ)
             copy_sz = length;
@@ -39,6 +41,7 @@ integer *integer__init__(mem_block *head) {
             copy_sz = INTEGER_SZ;
         mem_ncpy_out(string, head, length-copy_sz, copy_sz);
         cur_ptr->value = atoi(string);
+        cur_ptr->index = i++;
         length -= copy_sz;
         if (length == 0)
             return cur_ptr;
@@ -48,6 +51,32 @@ integer *integer__init__(mem_block *head) {
     }
 }
 
+integer *integer__cpy__(integer *head) {
+    integer *ret_head = INTEGER_NODE();
+    ret_head->sign = head->sign;
+    integer *ptr;
+    integer *retptr = ret_head;
+    for (ptr = head; ptr != 0; ptr = ptr->lower) {
+        retptr->value = ptr->value;
+        retptr->index = ptr->index;
+        retptr->lower = INTEGER_NODE();
+        retptr->lower->higher = retptr;
+        retptr = retptr->lower;
+    }
+    retptr->higher->lower = 0;
+    free(retptr);
+    return ret_head;
+}
+
+integer *integer__neg__(integer *head) {
+    integer *retptr = integer__cpy__(head);
+    if (head->sign == '+')
+        retptr->sign = '-';
+    else
+        retptr->sign = '+';
+    return retptr;
+}
+
 mem_block *integer__str__(integer *head) {
     mem_block *block = mem_head();
     integer *integer_ptr = head;
@@ -55,7 +84,8 @@ mem_block *integer__str__(integer *head) {
         char string[INTEGER_SZ+1];
         char *val = itoa(integer_ptr->value);
         if (integer_ptr == head) {
-            strcpy(string, val);
+            string[0] = integer_ptr->sign;
+            strcpy(string+1, val);
         }
         else {
             int offset = INTEGER_SZ - strlen(val);
@@ -71,7 +101,56 @@ mem_block *integer__str__(integer *head) {
     return block;
 }
 
+int integer__eq__(integer *left, integer *right) {
+    if (integer__gt__(left, right))
+        return 0;
+    else if (integer__lt__(left, right))
+        return 0;
+    return 1;
+}
+
+int integer__gt__(integer *left, integer *right) {
+    if (left->sign == '+' && right->sign == '-')
+        return 1;
+    else if (left->sign == '-' && right->sign == '+')
+        return 0;
+    else if (left->sign == '-' && right->sign == '-')
+        return 1 - integer__gt__(integer__neg__(left), integer__neg__(right));
+    mem_block *blkl = integer__str__(left);
+    mem_block *blkr = integer__str__(right);
+    if (mem_size(blkl) > mem_size(blkr))
+        return 1;
+    else if (mem_size(blkl) < mem_size(blkr))
+        return 0;
+    int i, size = mem_size(blkl);
+    for (i = 0; i < size; i++) {
+        if (mem_subscription(blkl, i) > mem_subscription(blkr, i))
+            return 1;
+        else if (mem_subscription(blkl, i) < mem_subscription(blkr, i))
+            return 0;
+    }
+    return 0;
+}
+
+int integer__lt__(integer *left, integer *right) {
+    return integer__gt__(right, left);
+}
+
+int integer__ge__(integer *left, integer *right) {
+    return !integer__lt__(left, right);
+}
+
+int integer__le__(integer *left, integer *right) {
+    return !integer__gt__(left, right);
+}
+
 integer *integer__add__(integer *left, integer *right) {
+    if (left->sign == '+' && right->sign == '-')
+        return integer__sub__(left, integer__neg__(right));
+    else if (left->sign == '-' && right->sign == '+')
+        return integer__neg__(integer__sub__(integer__neg__(left), right));
+    else if (left->sign == '-' && right->sign == '-')
+        return integer__neg__(integer__add__(integer__neg__(left), integer__neg__(right)));
     integer *lowest = INTEGER_NODE();
     integer *cur_ret = lowest;
     integer *cur_left = left;
@@ -118,4 +197,55 @@ integer *integer__add__(integer *left, integer *right) {
             cur_right = cur_right->higher;
         }
     }
+}
+
+integer *integer__sub__(integer *left, integer *right) {
+    if (left->sign == '+' && right->sign == '-')
+        return integer__add__(left, integer__neg__(right));
+    else if (left->sign == '-' && right->sign == '+')
+        return integer__neg__(integer__add__(integer__neg__(left), right));
+    else if (left->sign == '-' && right->sign == '-')
+        return integer__neg__(integer__sub__(integer__neg__(left), integer__neg__(right)));
+    else if (integer__lt__(left, right))
+        return integer__neg__(integer__sub__(right, left));
+    integer *lowest = INTEGER_NODE();
+    integer *cur_ret = lowest;
+    integer *cur_left = left;
+    while (cur_left->lower)
+        cur_left = cur_left->lower;
+    integer *cur_right = right;
+    while (cur_right->lower)
+        cur_right = cur_right->lower;
+    int carry = (int )pow(10, INTEGER_SZ+1);
+    while (1) {
+        if (cur_left == 0) {
+            integer *retptr = cur_ret->lower;
+            free(cur_ret);
+            return retptr;
+        }
+        else if (cur_right == 0) {
+            cur_ret->value = cur_left->value;
+            cur_ret->higher = INTEGER_NODE();
+            cur_ret->higher->lower = cur_ret;
+            cur_ret = cur_ret->higher;
+            cur_left = cur_left->higher;
+        }
+        else {
+            if (cur_left->value < cur_right->value) {
+                cur_ret->value = carry + cur_left->value - cur_right->value;
+                cur_left->higher->value--;
+            }
+            else {
+                cur_ret->value = cur_left->value - cur_right->value;
+            }
+            cur_ret->higher = INTEGER_NODE();
+            cur_ret->higher->lower = cur_ret;
+            cur_ret = cur_ret->higher;
+            cur_left = cur_left->higher;
+            cur_right = cur_right->higher;
+        }
+    }
+}
+
+integer *integer__mul__(integer *left, integer *right) {
 }

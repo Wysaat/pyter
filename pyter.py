@@ -349,6 +349,9 @@ class lexical_analyzer(object):
                 digits = '0123456789abcdefABCDEF'
             self.index += 2
             if self.index == len(self.string):
+                self.error('syntax_error: invalid token')
+            elif self.string[self.index] not in digits:
+                self.error('syntax_error: invalid token')
             while self.string[self.index] in digits:
                 item += self.string[self.index]
                 self.index += 1

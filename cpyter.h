@@ -110,6 +110,8 @@ struct integer {
     int value;
     struct integer *higher;
     struct integer *lower;
+    char sign;
+    int index;
 };
 
 void list_append(list *, void *);
@@ -163,7 +165,15 @@ char *itoa(int );
 
 integer *INTEGER_NODE();
 integer *integer__init__(mem_block *);
+integer *integer__cpy__(integer *);
+integer *integer__neg__(integer *);
 mem_block *integer__str__(integer *);
+int integer__eq__(integer *, integer *);
+int integer__gt__(integer *, integer *);
+int integer__lt__(integer *, integer *);
+int integer__ge__(integer *, integer *);
+int integer__le__(integer *, integer *);
 integer *integer__add__(integer *, integer *);
+integer *integer__sub__(integer *, integer *);
 
 #endif /* CPYTER_H */
