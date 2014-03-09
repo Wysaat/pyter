@@ -3,6 +3,30 @@
 char *itoa(int value) {
     int n = 0;
     int num = value;
+    if (num == 0) {
+        return "0";
+    }
+    while (num > 0) {
+        num = num / 10;
+        n++;
+    }
+    // char retptr[n+1];
+    char *retptr = (char *)malloc(n+1);
+    retptr[n] = 0;
+    int i;
+    for (i = 1; i <= n; i++) {
+        retptr[n-i] = value%10 + '0';
+        value = value / 10;
+    }
+    return retptr;
+}
+
+char *lltoa(long long value) {
+    int n = 0;
+    long long num = value;
+    if (num == 0) {
+        return "0";
+    }
     while (num > 0) {
         num = num / 10;
         n++;
@@ -159,7 +183,7 @@ integer *integer__add__(integer *left, integer *right) {
     integer *cur_right = right;
     while (cur_right->lower)
         cur_right = cur_right->lower;
-    int carry = 0;
+    int carry = 0, i = 0;
     while (1) {
         int den = (int )pow(10, INTEGER_SZ);
         if (cur_left == 0 && cur_right == 0) {
@@ -169,10 +193,12 @@ integer *integer__add__(integer *left, integer *right) {
                 return retptr;
             }
             cur_ret->value = carry;
+            cur_ret->index = i++;
             return cur_ret;
         }
         if (cur_left == 0) {
             cur_ret->value = (cur_right->value + carry) % den;
+            cur_ret->index = i++;
             carry = (cur_right->value + carry) / den;
             cur_ret->higher = INTEGER_NODE();
             cur_ret->higher->lower = cur_ret;
@@ -181,6 +207,7 @@ integer *integer__add__(integer *left, integer *right) {
         }
         else if (cur_right == 0) {
             cur_ret->value = (cur_left->value + carry) % den;
+            cur_ret->index = i++;
             carry = (cur_left->value + carry) / den;
             cur_ret->higher = INTEGER_NODE();
             cur_ret->higher->lower = cur_ret;
@@ -189,6 +216,7 @@ integer *integer__add__(integer *left, integer *right) {
         }
         else {
             cur_ret->value = (cur_left->value + cur_right->value + carry) % den;
+            cur_ret->index = i++;
             carry = (cur_left->value + cur_right->value + carry) / den;
             cur_ret->higher = INTEGER_NODE();
             cur_ret->higher->lower = cur_ret;
@@ -216,7 +244,7 @@ integer *integer__sub__(integer *left, integer *right) {
     integer *cur_right = right;
     while (cur_right->lower)
         cur_right = cur_right->lower;
-    int carry = (int )pow(10, INTEGER_SZ+1);
+    int carry = (int )pow(10, INTEGER_SZ+1), i = 0;
     while (1) {
         if (cur_left == 0) {
             integer *retptr = cur_ret->lower;
@@ -225,6 +253,7 @@ integer *integer__sub__(integer *left, integer *right) {
         }
         else if (cur_right == 0) {
             cur_ret->value = cur_left->value;
+            cur_ret->index = i++;
             cur_ret->higher = INTEGER_NODE();
             cur_ret->higher->lower = cur_ret;
             cur_ret = cur_ret->higher;
@@ -238,6 +267,7 @@ integer *integer__sub__(integer *left, integer *right) {
             else {
                 cur_ret->value = cur_left->value - cur_right->value;
             }
+            cur_ret->index = i++;
             cur_ret->higher = INTEGER_NODE();
             cur_ret->higher->lower = cur_ret;
             cur_ret = cur_ret->higher;
@@ -247,5 +277,51 @@ integer *integer__sub__(integer *left, integer *right) {
     }
 }
 
+integer *integer__mkempt__(int size) {
+    integer *lowest_node = INTEGER_NODE();
+    integer *node_ptr = lowest_node;
+    int i;
+    for (i = 0; i < size; i++) {
+        node_ptr->index = i;
+        node_ptr->higher = INTEGER_NODE();
+        node_ptr->higher->lower = node_ptr;
+        node_ptr = node_ptr->higher;
+    }
+    integer *retptr = node_ptr->lower;
+    free(node_ptr);
+    return retptr;
+}
+
+integer *integer__node__mul__(integer *node1, integer *node2) {
+    integer *retptr = integer__mkempt__(node1->index+node2->index+2);
+    long long value = (long long )node1->value * (long long)node2->value;
+    char *val_char = lltoa(value);
+    mem_block *val_block = mem_str(val_char);
+    integer *valptr = integer__init__(val_block);
+    if (valptr->index == 1) {
+        retptr->value = valptr->value;
+        retptr->lower->value = valptr->lower->value;
+    }
+    else {
+        retptr->lower->value = valptr->value;
+    }
+    printf("retptr is: ");
+    mem_print(integer__str__(retptr));
+    return retptr;
+}
+
 integer *integer__mul__(integer *left, integer *right) {
+    integer *retptr = INTEGER_NODE(), *leftptr, *rightptr;
+    for (leftptr = left; leftptr; leftptr = leftptr->lower) {
+        for (rightptr = right; rightptr; rightptr = rightptr->lower) {
+            integer *val = integer__node__mul__(leftptr, rightptr);
+            val->higher = 0;
+            retptr = integer__add__(retptr, val);
+        }
+    }
+    if (left->sign == right->sign)
+        retptr->sign = '+';
+    else
+        retptr->sign = '-';
+    return retptr;
 }

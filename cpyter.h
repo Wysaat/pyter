@@ -162,6 +162,7 @@ int mem_match_str(mem_block *, char *);
 mem_block *mem_str(char *);
 
 char *itoa(int );
+char *lltoa(long long );
 
 integer *INTEGER_NODE();
 integer *integer__init__(mem_block *);
@@ -175,5 +176,8 @@ int integer__ge__(integer *, integer *);
 int integer__le__(integer *, integer *);
 integer *integer__add__(integer *, integer *);
 integer *integer__sub__(integer *, integer *);
+integer *integer__mkempt__(int size);
+integer *integer__node__mul__(integer *, integer *);
+integer *integer__mul__(integer *, integer *);
 
 #endif /* CPYTER_H */
