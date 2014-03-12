@@ -277,7 +277,7 @@ void *parse_atom() {
         return retptr;
     }
     else if (mem_match_str(item, "(")) {
-        list *expr_head = (list *)malloc(sizeof(list));
+        list *expr_head = list_node();
         read(item);
         if (mem_match_str(item, ")"))
             return PARENTH_FORM(expr_head);
@@ -287,12 +287,12 @@ void *parse_atom() {
         if (mem_match_str(item, ")"))
             return expression;
         else if(mem_match_str(item, ",")) {
-            list_append(expr_head, expression);
+            list_append_content(expr_head, expression);
             read(item);
             if (mem_match_str(item, ")"))
                 return PARENTH_FORM(expr_head);
             remonter();
-            list_add(expr_head, pa_exprs(")"));
+            list_append_list(expr_head, pa_exprs(")"));
             void *retptr = PARENTH_FORM(expr_head);
             read(item);
             if (mem_match_str(item, ")"))
@@ -437,8 +437,7 @@ void *parse_comparison() {
         return or_expr;
     void *left = or_expr;
     void *right;
-    list *comparisons = (list *)malloc(sizeof(list));
-    bzero(comparisons, sizeof(list));
+    list *comparisons = list_node();
     comparison *comp_expr = (comparison *)malloc(sizeof(comparison));
     comp_expr->type = comparison_t;
     while (1) {
@@ -467,7 +466,7 @@ void *parse_comparison() {
             return comp_expr;
         }
         right = parse_or_expr();
-        list_append(comparisons, B_EXPR(left, op, right));
+        list_append_content(comparisons, B_EXPR(left, op, right));
         left = right;
     }
 }
@@ -544,9 +543,9 @@ void *parse_expression_nocond() {
 
 list *pa_exprs(char *ending) {
     mem_block *item = mem_head();
-    list *expr_head = (list *)malloc(sizeof(list));
+    list *expr_head = list_node();
     while (1) {
-        list_append(expr_head, parse_expression());
+        list_append_content(expr_head, parse_expression());
         read(item);
         if (mem_match_str(item, ",")) {
             read(item);

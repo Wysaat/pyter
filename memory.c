@@ -4,7 +4,7 @@
 
 #include "cpyter.h"
 
-void mem_print(mem_block *block) {
+void mem_print_nnl(mem_block *block) {
     if (block->mem == 0) {
         puts("mem_print: NONE");
         return;
@@ -13,6 +13,10 @@ void mem_print(mem_block *block) {
     for (ptr = block; ptr != 0; ptr = ptr->next) {
         printf("%s", ptr->mem);
     }
+}
+
+void mem_print(mem_block *block) {
+    mem_print_nnl(block);
     printf("\n");
 }
 
@@ -199,7 +203,6 @@ void mem_ncpy(mem_block *dest, mem_block *src, int dest_off, int src_off, int si
 
 /* dest_off is the address the first byte of src will be in */
 void mem_insert(mem_block *dest, mem_block *src, int dest_off, int src_off, int size) {
-    int d, s, cnt;
     mem_block *new_block = mem_head();
     mem_ncpy(new_block, dest, 0, dest_off, mem_size(dest)-dest_off);
     mem_delete(dest, dest_off, mem_size(dest));

@@ -101,6 +101,13 @@ integer *integer__neg__(integer *head) {
     return retptr;
 }
 
+integer *integer__invert__(integer *head) {
+    integer *one = integer__init__(mem_str("1"));
+    integer *retptr = integer__add__(head, one);
+    retptr = integer__neg__(retptr);
+    return retptr;
+}
+
 mem_block *integer__str__(integer *head) {
     mem_block *block = mem_head();
     integer *integer_ptr = head;
@@ -108,8 +115,12 @@ mem_block *integer__str__(integer *head) {
         char string[INTEGER_SZ+1];
         char *val = itoa(integer_ptr->value);
         if (integer_ptr == head) {
-            string[0] = integer_ptr->sign;
-            strcpy(string+1, val);
+            if (integer_ptr->sign == '-') {
+                string[0] = integer_ptr->sign;
+                strcpy(string+1, val);
+            }
+            else
+                strcpy(string, val);
         }
         else {
             int offset = INTEGER_SZ - strlen(val);
@@ -123,6 +134,16 @@ mem_block *integer__str__(integer *head) {
         integer_ptr = integer_ptr->lower;
     }
     return block;
+}
+
+integer *integer__inc__(integer *head) {
+    integer *one = integer__init__(mem_str("1"));
+    return integer__add__(head, one);
+}
+
+integer *integer__dec__(integer *head) {
+    integer *one = integer__init__(mem_str("1"));
+    return integer__sub__(head, one);
 }
 
 int integer__eq__(integer *left, integer *right) {
@@ -189,6 +210,7 @@ integer *integer__add__(integer *left, integer *right) {
         if (cur_left == 0 && cur_right == 0) {
             if (!carry) {
                 integer *retptr = cur_ret->lower;
+                retptr->higher = 0;
                 free(cur_ret);
                 return retptr;
             }
@@ -248,6 +270,7 @@ integer *integer__sub__(integer *left, integer *right) {
     while (1) {
         if (cur_left == 0) {
             integer *retptr = cur_ret->lower;
+            retptr->higher = 0;
             free(cur_ret);
             return retptr;
         }
@@ -288,26 +311,29 @@ integer *integer__mkempt__(int size) {
         node_ptr = node_ptr->higher;
     }
     integer *retptr = node_ptr->lower;
+    retptr->higher = 0;
     free(node_ptr);
     return retptr;
 }
 
 integer *integer__node__mul__(integer *node1, integer *node2) {
     integer *retptr = integer__mkempt__(node1->index+node2->index+2);
-    long long value = (long long )node1->value * (long long)node2->value;
+    long long value = (long long )node1->value * (long long )node2->value;
     char *val_char = lltoa(value);
     mem_block *val_block = mem_str(val_char);
     integer *valptr = integer__init__(val_block);
     if (valptr->index == 1) {
         retptr->value = valptr->value;
         retptr->lower->value = valptr->lower->value;
+        return retptr;
     }
     else {
         retptr->lower->value = valptr->value;
+        retptr->lower->higher = 0;
+        integer *ret = retptr->lower;
+        free(retptr);
+        return ret;
     }
-    printf("retptr is: ");
-    mem_print(integer__str__(retptr));
-    return retptr;
 }
 
 integer *integer__mul__(integer *left, integer *right) {
@@ -323,5 +349,133 @@ integer *integer__mul__(integer *left, integer *right) {
         retptr->sign = '+';
     else
         retptr->sign = '-';
+    return retptr;
+}
+
+integer *integer__div__(integer *left, integer *right) {
+    integer *retptr = INTEGER_NODE(), *tmp;
+    integer *lcopy = integer__cpy__(left), *rcopy = integer__cpy__(right);
+    while (integer__ge__(lcopy, rcopy)) {
+        lcopy = integer__sub__(lcopy, rcopy);
+        tmp = integer__inc__(retptr);
+        free(retptr);
+        retptr = tmp;
+    }
+    return retptr;
+}
+
+integer *integer__mod__(integer *left, integer *right) {
+    integer *lcopy = integer__cpy__(left), *tmp;
+    while (integer__ge__(lcopy, right)) {
+        tmp = integer__sub__(lcopy, right);
+        free(lcopy);
+        lcopy = tmp;
+    }
+    return lcopy;
+}
+
+/* buggy: (a) cannot handle big numbers, (b) get wrong with some big numbers */
+integer *integer__pow__(integer *left, integer *right) {
+    integer *retptr = integer__init__(mem_str("1")), *i;
+    integer *one = integer__init__(mem_str("1"));
+    for (i = INTEGER_NODE(); integer__lt__(i, right); i = integer__add__(i, one)) {
+        retptr = integer__mul__(retptr, left);
+        // mem_print(integer__str__(i));
+    }
+    return retptr;
+}
+
+integer *integer__lshift__(integer *left, integer *right) {
+    return integer__mul__(left, integer__pow__(integer__init__(mem_str("2")), right));
+}
+
+integer *integer__rshift__(integer *left, integer *right) {
+    return integer__div__(left, integer__pow__(integer__init__(mem_str("2")), right));
+}
+
+integer *integer__and__(integer *left, integer *right) {
+    integer *two = integer__init__(mem_str("2"));
+    integer *one = integer__init__(mem_str("1"));
+    integer *zero = integer__init__(mem_str("0"));
+    integer *retptr = INTEGER_NODE();
+    integer *lcopy = integer__cpy__(left), *rcopy = integer__cpy__(right);
+    integer *n = INTEGER_NODE(), *lmod, *rmod;
+    int lm, rm;
+    while (!integer__eq__(lcopy, zero) && !integer__eq__(rcopy, zero)) {
+        lmod = integer__mod__(lcopy, two);
+        rmod = integer__mod__(rcopy, two);
+        if (integer__eq__(lmod, one))
+            lm = 1;
+        else
+            lm = 0;
+        if (integer__eq__(rmod, one))
+            rm = 1;
+        else
+            rm = 0;
+        if (lm & rm) {
+            retptr = integer__add__(retptr, integer__pow__(two, n));
+        }
+        n = integer__inc__(n);
+        lcopy = integer__div__(lcopy, two);
+        rcopy = integer__div__(rcopy, two);
+    }
+    return retptr;
+}
+
+integer *integer__xor__(integer *left, integer *right) {
+    integer *two = integer__init__(mem_str("2"));
+    integer *one = integer__init__(mem_str("1"));
+    integer *zero = integer__init__(mem_str("0"));
+    integer *retptr = INTEGER_NODE();
+    integer *lcopy = integer__cpy__(left), *rcopy = integer__cpy__(right);
+    integer *n = INTEGER_NODE(), *lmod, *rmod;
+    int lm, rm;
+    while (!integer__eq__(lcopy, zero) && !integer__eq__(rcopy, zero)) {
+        lmod = integer__mod__(lcopy, two);
+        rmod = integer__mod__(rcopy, two);
+        if (integer__eq__(lmod, one))
+            lm = 1;
+        else
+            lm = 0;
+        if (integer__eq__(rmod, one))
+            rm = 1;
+        else
+            rm = 0;
+        if (lm ^ rm) {
+            retptr = integer__add__(retptr, integer__pow__(two, n));
+        }
+        n = integer__inc__(n);
+        lcopy = integer__div__(lcopy, two);
+        rcopy = integer__div__(rcopy, two);
+    }
+    return retptr;
+}
+
+integer *integer__or__(integer *left, integer *right) {
+    integer *two = integer__init__(mem_str("2"));
+    integer *one = integer__init__(mem_str("1"));
+    integer *zero = integer__init__(mem_str("0"));
+    integer *retptr = INTEGER_NODE();
+    integer *lcopy = integer__cpy__(left), *rcopy = integer__cpy__(right);
+    integer *n = INTEGER_NODE(), *lmod, *rmod;
+    int lm, rm;
+    while (!integer__eq__(lcopy, zero) && !integer__eq__(rcopy, zero)) {
+        lmod = integer__mod__(lcopy, two);
+        rmod = integer__mod__(rcopy, two);
+        if (integer__eq__(lmod, one))
+            lm = 1;
+        else
+            lm = 0;
+        if (integer__eq__(rmod, one))
+            rm = 1;
+        else
+            rm = 0;
+        if (lm | rm) {
+            retptr = integer__add__(retptr, integer__pow__(two, n));
+        }
+        n = integer__inc__(n);
+        lcopy = integer__div__(lcopy, two);
+        rcopy = integer__div__(rcopy, two);
+    }
     return retptr;
 }

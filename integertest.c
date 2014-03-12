@@ -1,8 +1,8 @@
 #include "cpyter.h"
 
 int main() {
-    integer *x = integer__neg__(integer__init__(mem_str("24325")));
-    integer *y = integer__neg__(integer__init__(mem_str("84235234423")));
+    // integer *x = integer__neg__(integer__init__(mem_str("24325")));
+    // integer *y = integer__neg__(integer__init__(mem_str("84235234423")));
     // mem_block *blk1 = mem_str("56169432423645234243150165154532423442353626264745846320441");
     // mem_block *blk2 = mem_str("415425165165031454251654514314150365156104");
     // integer *a = integer__init__(blk1);
@@ -25,9 +25,19 @@ int main() {
     // mem_print(integer__str__(z));
     // mem_print(integer__str__(w));
     // printf("w->index is %d\n", w->index);
-    integer *m = integer__mul__(x, y);
-    mem_print(integer__str__(m));
-    printf("m->index is %d\n", m->index);
+
+    // integer *x = integer__neg__(integer__init__(mem_str("432523524423525324324222222222225356263252442")));
+    // integer *y = integer__init__(mem_str("95064341434249523426534242342352768547"));
+    // integer *m = integer__mul__(x, y);
+    // mem_print(integer__str__(x));
+    // mem_print(integer__str__(y));
+    // mem_print(integer__str__(m));
+    // mem_print(integer__str__(integer__node__mul__(x, y)));
+    // printf("m->index is %d\n", m->index);
+
+    // integer *a = integer__mkempt__(13);
+    // printf("a->index is %d\n", a->index);
+    // mem_print(integer__str__(a));
 
     // integer *node1 = integer__init__(mem_str("12345"));
     // integer *node2 = integer__init__(mem_str("67890"));
@@ -37,5 +47,14 @@ int main() {
     // integer *val2 = integer__mul__(node1, node2);
     // mem_print(integer__str__(val));
     // mem_print(integer__str__(val2));
+
+    // integer *a = integer__init__(mem_str("15943242"));
+    // integer *b = integer__init__(mem_str("534295"));
+    // integer *c = integer__or__(a, b);
+    // mem_print(integer__str__(a));
+    // mem_print(integer__str__(b));
+    // mem_print(integer__str__(c));
+    integer *zero = INTEGER_NODE();
+    mem_print(integer__str__(zero));
     return 0;
 }

@@ -80,10 +80,11 @@ typedef struct expression_list {
     list *expr_head;
 } expression_list;
 
-typedef struct list {
+struct list {
     void *content;
+    struct list *prev;
     struct list *next;
-} list;
+};
 
 typedef struct pyint {
     int type;
@@ -100,6 +101,11 @@ typedef struct pybool {
     int value;
 } pybool;
 
+typedef struct pytuple {
+    int type;
+    list *values;
+} pytuple;
+
 struct mem_block {
     char mem[MEM_BLOCK_SZ];
     struct mem_block *prev;
@@ -114,11 +120,12 @@ struct integer {
     int index;
 };
 
-void list_append(list *, void *);
-void list_add(list *, list *);
+list *list_node();
+void list_append_content(list *, void *);
+void list_append_list(list *, list *);
 
 void *B_EXPR(void *, mem_block *, void *);
-void *PYINT(int );
+void *PYINT(integer *);
 void *PYSTR(mem_block *);
 void *PYBOOL(int);
 void *PARENTH_FORM(list *);
@@ -168,7 +175,10 @@ integer *INTEGER_NODE();
 integer *integer__init__(mem_block *);
 integer *integer__cpy__(integer *);
 integer *integer__neg__(integer *);
+integer *integer__invert__(integer *);
 mem_block *integer__str__(integer *);
+integer *integer__inc__(integer *);
+integer *integer__dec__(integer *);
 int integer__eq__(integer *, integer *);
 int integer__gt__(integer *, integer *);
 int integer__lt__(integer *, integer *);
@@ -179,5 +189,13 @@ integer *integer__sub__(integer *, integer *);
 integer *integer__mkempt__(int size);
 integer *integer__node__mul__(integer *, integer *);
 integer *integer__mul__(integer *, integer *);
+integer *integer__div__(integer *, integer *);
+integer *integer__mod__(integer *, integer *);
+integer *integer__pow__(integer *, integer *);
+integer *integer__lshift__(integer *, integer *);
+integer *integer__rshift__(integer *, integer *);
+integer *integer__and__(integer *, integer *);
+integer *integer__xor__(integer *, integer *);
+integer *integer__or__(integer *, integer *);
 
 #endif /* CPYTER_H */
