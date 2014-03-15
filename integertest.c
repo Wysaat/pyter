@@ -1,10 +1,10 @@
 #include "cpyter.h"
 
 int main() {
-    // integer *x = integer__neg__(integer__init__(mem_str("24325")));
-    // integer *y = integer__neg__(integer__init__(mem_str("84235234423")));
-    // mem_block *blk1 = mem_str("56169432423645234243150165154532423442353626264745846320441");
-    // mem_block *blk2 = mem_str("415425165165031454251654514314150365156104");
+
+/* test integer__init__ */
+    // mem_block *blk1 = mem_str("0047201474618485759040998705027158154577");
+    // mem_block *blk2 = mem_str("95064341434249523426534242342352768547");
     // integer *a = integer__init__(blk1);
     // integer *b = integer__init__(blk2);
     // integer *c = integer__add__(a, b);
@@ -18,6 +18,16 @@ int main() {
     // mem_print(blk3);
     // mem_print(blk4);
     // mem_print(blk5);
+
+/* test integer__cpy__ */
+    // integer *x = (integer__init__(mem_str("0047201474618485759040998705027158154577")));
+    // integer *y = integer__cpy__(x);
+    // mem_print(integer__str__(x));
+    // mem_print(integer__str__(y));
+
+/* test add/sub */
+    // integer *x = (integer__init__(mem_str("1088676821651466301081527589335665881446")));
+    // integer *y = (integer__init__(mem_str("95064341434249523426534242342352768547")));
     // mem_print(integer__str__(x));
     // mem_print(integer__str__(y));
     // integer *z = integer__add__(x, y);
@@ -26,6 +36,7 @@ int main() {
     // mem_print(integer__str__(w));
     // printf("w->index is %d\n", w->index);
 
+/* test mul */
     // integer *x = integer__neg__(integer__init__(mem_str("432523524423525324324222222222225356263252442")));
     // integer *y = integer__init__(mem_str("95064341434249523426534242342352768547"));
     // integer *m = integer__mul__(x, y);
@@ -34,6 +45,31 @@ int main() {
     // mem_print(integer__str__(m));
     // mem_print(integer__str__(integer__node__mul__(x, y)));
     // printf("m->index is %d\n", m->index);
+
+/* test div */
+    // #100: 33751618337928430092168819988197264971632
+
+    // integer *x = (integer__init__(mem_str("43252352442352532432422222222222535626332")));
+    integer *x = integer__init__(mem_str("43252352442352"));
+    integer *y = integer__init__(mem_str("4324444445"));
+    // integer *a = integer__init__(mem_str("0028474562208354090892429268364861991716"));
+    // integer *b = integer__init__(mem_str("95064341434249523426534242342352768547"));
+    // integer *c = integer__sub__(a, b);
+    // mem_print(integer__str__(c));
+    // exit(0);
+    int i;
+    for (i = 0; i < 100000; i++) {
+        x = integer__sub__(x, y);
+        printf("%d:\n", i);
+        printf("%p\n", x);
+        mem_print(integer__str__(x));
+        mem_print(integer__str__(y));
+        puts("");
+    }
+    // integer *m = integer__div__(x, y);
+    // mem_print(integer__str__(x));
+    // mem_print(integer__str__(y));
+    // mem_print(integer__str__(m));
 
     // integer *a = integer__mkempt__(13);
     // printf("a->index is %d\n", a->index);
@@ -54,7 +90,10 @@ int main() {
     // mem_print(integer__str__(a));
     // mem_print(integer__str__(b));
     // mem_print(integer__str__(c));
-    integer *zero = INTEGER_NODE();
-    mem_print(integer__str__(zero));
+
+/* test INTEGER_NODE */
+    // integer *zero = INTEGER_NODE();
+    // mem_print(integer__str__(zero));
+
     return 0;
 }

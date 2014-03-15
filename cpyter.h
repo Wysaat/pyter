@@ -86,10 +86,7 @@ struct list {
     struct list *next;
 };
 
-typedef struct pyint {
-    int type;
-    integer *value;
-} pyint;
+typedef struct pyint pyint;
 
 typedef struct pystr {
     int type;
@@ -121,8 +118,12 @@ struct integer {
 };
 
 list *list_node();
+int list_is_empty(list *);
 void list_append_content(list *, void *);
 void list_append_list(list *, list *);
+list *list_add(list *, list *);
+void list_sort(list *, int (*func)());
+void list_sort0(list *, int (*func)(), int size);
 
 void *B_EXPR(void *, mem_block *, void *);
 void *PYINT(integer *);
@@ -140,6 +141,7 @@ void *comparisonEvaluate(comparison *);
 void *conditional_expressionEvaluate(conditional_expression *);
 void *expression_listEvaluate(expression_list *);
 void *evaluate(void *);
+void print_nnl(void *);
 void print(void *);
 
 mem_block *pop_item();
@@ -147,8 +149,8 @@ void *parse_u_expr();
 void *parse_expression();
 list *pa_exprs(char *);
 
-pystr *str__mul__(pystr *, pyint *);
-pystr *str__add__(pystr *, pystr *);
+pystr *pystr__mul__(pystr *, pyint *);
+pystr *pystr__add__(pystr *, pystr *);
 
 void mem_print(mem_block *block);
 mem_block *mem_head();
@@ -171,31 +173,10 @@ mem_block *mem_str(char *);
 char *itoa(int );
 char *lltoa(long long );
 
-integer *INTEGER_NODE();
-integer *integer__init__(mem_block *);
-integer *integer__cpy__(integer *);
-integer *integer__neg__(integer *);
-integer *integer__invert__(integer *);
-mem_block *integer__str__(integer *);
-integer *integer__inc__(integer *);
-integer *integer__dec__(integer *);
-int integer__eq__(integer *, integer *);
-int integer__gt__(integer *, integer *);
-int integer__lt__(integer *, integer *);
-int integer__ge__(integer *, integer *);
-int integer__le__(integer *, integer *);
-integer *integer__add__(integer *, integer *);
-integer *integer__sub__(integer *, integer *);
-integer *integer__mkempt__(int size);
-integer *integer__node__mul__(integer *, integer *);
-integer *integer__mul__(integer *, integer *);
-integer *integer__div__(integer *, integer *);
-integer *integer__mod__(integer *, integer *);
-integer *integer__pow__(integer *, integer *);
-integer *integer__lshift__(integer *, integer *);
-integer *integer__rshift__(integer *, integer *);
-integer *integer__and__(integer *, integer *);
-integer *integer__xor__(integer *, integer *);
-integer *integer__or__(integer *, integer *);
+pytuple *pytuple__init__();
+pytuple *pytuple__add__(pytuple *, pytuple *);
+
+#include "integer.h"
+#include "pyint.h"
 
 #endif /* CPYTER_H */

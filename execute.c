@@ -5,32 +5,6 @@
 
 #include "cpyter.h"
 
-list *list_node() {
-    list *retptr = (list *)malloc(sizeof(list));
-    retptr->prev = 0;
-    retptr->next = 0;
-    retptr->content = 0;
-    return retptr;
-}
-
-void list_append_list(list *list1, list *list2) {
-    if (*list1 == 0)
-        memcpy(list1, list2, sizeof(list));
-    else {
-        list *ptr = list1;
-        while (ptr->next)
-            ptr = ptr->next;
-        ptr->next = list2;
-        list2->prev = list1;
-    }
-}
-
-void list_append_content(list *head, void *content) {
-    list *node = list_node();
-    node->content = content;
-    list_append_list(head, node);
-}
-
 /* op should be copied(use memory.c function mem_cpy) */
 void *B_EXPR(void *left, mem_block *op, void *right) {
     b_expr *expr = (b_expr *)malloc(sizeof(b_expr));
@@ -94,7 +68,7 @@ void *parenth_formEvaluate(parenth_form *structure) {
     retptr->values = list_node();
     list *ptr;
     for (ptr = structure->expr_head; ptr; ptr = ptr->next) {
-        list_append_content(retptr->values, evaluate(ptr));
+        list_append_content(retptr->values, evaluate(ptr->content));
     }
     return retptr;
 }
@@ -138,17 +112,17 @@ void *b_exprEvaluate(b_expr *structure) {
         // puts("print op in the next line");
         // mem_print(structure->op);
         if (mem_match_str(structure->op, "*"))
-            return PYINT(integer__mul__(left, right));
+            return pyint__mul__((pyint *)left_val, (pyint *)right_val);
         else if (mem_match_str(structure->op, "//"))
-            return PYINT(integer__div__(left, right));
+            return pyint__div__((pyint *)left_val, (pyint *)right_val);
         else if (mem_match_str(structure->op, "/"))
-            return PYINT(integer__div__(left, right));
+            return pyint__div__((pyint *)left_val, (pyint *)right_val);
         else if (mem_match_str(structure->op, "%"))
-            return PYINT(integer__mod__(left, right));
+            return pyint__mod__((pyint *)left_val, (pyint *)right_val);
         else if (mem_match_str(structure->op, "+"))
-            return PYINT(integer__add__(left, right));
+            return pyint__add__((pyint *)left_val, (pyint *)right_val);
         else if (mem_match_str(structure->op, "-"))
-            return PYINT(integer__sub__(left, right));
+            return pyint__sub__((pyint *)left_val, (pyint *)right_val);
         else if (mem_match_str(structure->op, "<<"))
             return PYINT(integer__lshift__(left, right));
         else if (mem_match_str(structure->op, ">>"))
@@ -189,18 +163,20 @@ void *b_exprEvaluate(b_expr *structure) {
     }
     else if (*left_val == pystr_t && *right_val == pyint_t) {
         if (mem_match_str(structure->op, "*")) {
-            return str__mul__((pystr *)left_val, (pyint *)right_val);
+            return pystr__mul__((pystr *)left_val, (pyint *)right_val);
         }
     }
     else if (*left_val == pyint_t && *right_val == pystr_t) {
-        if (mem_match_str(structure->op, "*")) {
-            return str__mul__((pystr *)right_val, (pyint *)left_val);
-        }
+        if (mem_match_str(structure->op, "*"))
+            return pystr__mul__((pystr *)right_val, (pyint *)left_val);
     }
     else if (*left_val == pystr_t && *right_val == pystr_t) {
-        if (mem_match_str(structure->op, "+")) {
-            return str__add__((pystr *)left_val, (pystr *)right_val);
-        }
+        if (mem_match_str(structure->op, "+"))
+            return pystr__add__((pystr *)left_val, (pystr *)right_val);
+    }
+    else if (*left_val == pytuple_t && *right_val == pytuple_t) {
+        if (mem_match_str(structure->op, "+"))
+            return pytuple__add__((pytuple *)left_val, (pytuple *)right_val);
     }
 }
 
@@ -291,6 +267,9 @@ void *evaluate(void *structure) {
             return conditional_expressionEvaluate((conditional_expression *)structure);
         case expression_list_t:
             return expression_listEvaluate((expression_list *)structure);
+        default:
+            printf("[evaluate]: can't evaluate this structure, exit now\n");
+            exit(0);
     }
 }
 
@@ -312,11 +291,15 @@ void print_nnl(void *structure) {
         case pytuple_t:
             printf("(");
             list *ptr;
-            for (ptr = structure->values; ptr; ptr = ptr->next) {
-                print(ptr);
-                printf(", ");
+            for (ptr = ((pytuple *)structure)->values; ptr; ptr = ptr->next) {
+                print_nnl(ptr->content);
+                if (ptr->next)
+                    printf(", ");
             }
             printf(")");
+            break;
+        default:
+            printf("[print_nnl]: unsupported structure\n");
     }
 }
 
@@ -326,7 +309,7 @@ void print(void *structure) {
     printf("\n");
 }
 
-pystr *str__mul__(pystr *left, pyint *right) {
+pystr *pystr__mul__(pystr *left, pyint *right) {
     mem_block *dest = mem_head();
     mem_block *src = left->value;
     integer *times = right->value, *zero = INTEGER_NODE();
@@ -337,7 +320,7 @@ pystr *str__mul__(pystr *left, pyint *right) {
     return PYSTR(dest);
 }
 
-pystr *str__add__(pystr *left, pystr *right) {
+pystr *pystr__add__(pystr *left, pystr *right) {
     mem_block *dest = mem_head();
     mem_cpy(dest, left->value);
     mem_ncpy(dest, right->value, mem_size(dest), 0, mem_size(right->value));

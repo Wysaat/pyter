@@ -75,6 +75,15 @@ integer *integer__init__(mem_block *head) {
     }
 }
 
+void integer__del__(integer *head) {
+    integer *ptr = head, *lower;
+    while (ptr) {
+        lower = ptr->lower;
+        free(ptr);
+        ptr = lower;
+    }
+}
+
 integer *integer__cpy__(integer *head) {
     integer *ret_head = INTEGER_NODE();
     ret_head->sign = head->sign;
@@ -139,11 +148,13 @@ mem_block *integer__str__(integer *head) {
 integer *integer__inc__(integer *head) {
     integer *one = integer__init__(mem_str("1"));
     return integer__add__(head, one);
+    free(one);
 }
 
 integer *integer__dec__(integer *head) {
     integer *one = integer__init__(mem_str("1"));
     return integer__sub__(head, one);
+    free(one);
 }
 
 int integer__eq__(integer *left, integer *right) {
@@ -189,16 +200,42 @@ int integer__le__(integer *left, integer *right) {
     return !integer__gt__(left, right);
 }
 
+int integer__cmp__(integer *left, integer *right) {
+    if (integer__lt__(left, right))
+        return -1;
+    if (integer__eq__(left, right))
+        return 0;
+    return 1;
+}
+
 integer *integer__add__(integer *left, integer *right) {
-    if (left->sign == '+' && right->sign == '-')
-        return integer__sub__(left, integer__neg__(right));
-    else if (left->sign == '-' && right->sign == '+')
-        return integer__neg__(integer__sub__(integer__neg__(left), right));
-    else if (left->sign == '-' && right->sign == '-')
-        return integer__neg__(integer__add__(integer__neg__(left), integer__neg__(right)));
+    integer *retptr, *left_neg, *right_neg;
+
+    if (left->sign == '+' && right->sign == '-') {
+        right_neg = integer__neg__(right);
+        retptr = integer__sub__(left, right_neg);
+        integer__del__(right_neg);
+        return retptr;
+    }
+    else if (left->sign == '-' && right->sign == '+') {
+        left_neg = integer__neg__(left);
+        retptr = integer__neg__(integer__sub__(left_neg, right));
+        integer__del__(left_neg);
+        return retptr;
+    }
+    else if (left->sign == '-' && right->sign == '-') {
+        left_neg = integer__neg__(left);
+        right_neg = integer__neg__(right);
+        retptr = integer__neg__(integer__add__(left_neg, right_neg));
+        integer__del__(left_neg);
+        integer__del__(right_neg);
+        return retptr;
+    }
+
     integer *lowest = INTEGER_NODE();
     integer *cur_ret = lowest;
     integer *cur_left = left;
+
     while (cur_left->lower)
         cur_left = cur_left->lower;
     integer *cur_right = right;
@@ -209,7 +246,7 @@ integer *integer__add__(integer *left, integer *right) {
         int den = (int )pow(10, INTEGER_SZ);
         if (cur_left == 0 && cur_right == 0) {
             if (!carry) {
-                integer *retptr = cur_ret->lower;
+                retptr = cur_ret->lower;
                 retptr->higher = 0;
                 free(cur_ret);
                 return retptr;
@@ -250,17 +287,36 @@ integer *integer__add__(integer *left, integer *right) {
 }
 
 integer *integer__sub__(integer *left, integer *right) {
-    if (left->sign == '+' && right->sign == '-')
-        return integer__add__(left, integer__neg__(right));
-    else if (left->sign == '-' && right->sign == '+')
-        return integer__neg__(integer__add__(integer__neg__(left), right));
-    else if (left->sign == '-' && right->sign == '-')
-        return integer__neg__(integer__sub__(integer__neg__(left), integer__neg__(right)));
-    else if (integer__lt__(left, right))
+    integer *retptr, *left_neg, *right_neg;
+
+    if (left->sign == '+' && right->sign == '-') {
+        right_neg = integer__neg__(right);
+        retptr = integer__add__(left, right_neg);
+        integer__del__(right_neg);
+        return retptr;
+    }
+    else if (left->sign == '-' && right->sign == '+') {
+        left_neg = integer__neg__(left);
+        retptr = integer__neg__(integer__add__(left_neg, right));
+        integer__del__(left_neg);
+        return retptr;
+    }
+    else if (left->sign == '-' && right->sign == '-') {
+        left_neg = integer__neg__(left);
+        right_neg = integer__neg__(right);
+        retptr = integer__neg__(integer__sub__(left_neg, right_neg));
+        integer__del__(left_neg);
+        integer__del__(right_neg);
+        return retptr;
+    }
+    else if (integer__lt__(left, right)) {
         return integer__neg__(integer__sub__(right, left));
+    }
+
     integer *lowest = INTEGER_NODE();
     integer *cur_ret = lowest;
     integer *cur_left = left;
+
     while (cur_left->lower)
         cur_left = cur_left->lower;
     integer *cur_right = right;
@@ -321,7 +377,9 @@ integer *integer__node__mul__(integer *node1, integer *node2) {
     long long value = (long long )node1->value * (long long )node2->value;
     char *val_char = lltoa(value);
     mem_block *val_block = mem_str(val_char);
+    free(val_char);
     integer *valptr = integer__init__(val_block);
+    free(val_block);
     if (valptr->index == 1) {
         retptr->value = valptr->value;
         retptr->lower->value = valptr->lower->value;
@@ -337,12 +395,15 @@ integer *integer__node__mul__(integer *node1, integer *node2) {
 }
 
 integer *integer__mul__(integer *left, integer *right) {
-    integer *retptr = INTEGER_NODE(), *leftptr, *rightptr;
+    integer *retptr = INTEGER_NODE(), *leftptr, *rightptr, *new_retptr;
     for (leftptr = left; leftptr; leftptr = leftptr->lower) {
         for (rightptr = right; rightptr; rightptr = rightptr->lower) {
             integer *val = integer__node__mul__(leftptr, rightptr);
             val->higher = 0;
-            retptr = integer__add__(retptr, val);
+            new_retptr = integer__add__(retptr, val);
+            integer__del__(val);
+            integer__del__(retptr);
+            retptr = new_retptr;
         }
     }
     if (left->sign == right->sign)
@@ -352,13 +413,19 @@ integer *integer__mul__(integer *left, integer *right) {
     return retptr;
 }
 
+/* too slow */
 integer *integer__div__(integer *left, integer *right) {
     integer *retptr = INTEGER_NODE(), *tmp;
-    integer *lcopy = integer__cpy__(left), *rcopy = integer__cpy__(right);
+    integer *lcopy = integer__cpy__(left), *rcopy = integer__cpy__(right), *new_lcopy;
     while (integer__ge__(lcopy, rcopy)) {
-        lcopy = integer__sub__(lcopy, rcopy);
+        new_lcopy = integer__sub__(lcopy, rcopy);
+        integer__del__(lcopy);
+        lcopy = new_lcopy;
+        mem_print(integer__str__(lcopy));
+        mem_print(integer__str__(rcopy));
+        puts("");
         tmp = integer__inc__(retptr);
-        free(retptr);
+        integer__del__(retptr);
         retptr = tmp;
     }
     return retptr;
@@ -368,7 +435,7 @@ integer *integer__mod__(integer *left, integer *right) {
     integer *lcopy = integer__cpy__(left), *tmp;
     while (integer__ge__(lcopy, right)) {
         tmp = integer__sub__(lcopy, right);
-        free(lcopy);
+        integer__del__(lcopy);
         lcopy = tmp;
     }
     return lcopy;
