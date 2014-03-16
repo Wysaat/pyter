@@ -1,6 +1,11 @@
 #include "cpyter.h"
 
 int main() {
+    // integer *a = integer__init__(mem_str("8888888"));
+    // integer *b = integer__init__(mem_str("8888888"));
+    // integer *c = integer__sub__(a, b);
+    // mem_print(integer__str__(c));
+    // exit(0);
 
 /* test integer__init__ */
     // mem_block *blk1 = mem_str("0047201474618485759040998705027158154577");
@@ -48,28 +53,45 @@ int main() {
 
 /* test div */
     // #100: 33751618337928430092168819988197264971632
+    // integer *a = integer__init__(mem_str("93141431203248796775676198794378705994"));
+    // integer *b = integer__init__(mem_str("95064341434249523426534242342352768547"));
+    //                                   // "95064341434249523326534242332352768547"
+    // integer *c = integer__sub__(a, b);
+    // mem_print(integer__str__(a));
+    // mem_print(integer__str__(b));
+    // mem_print(integer__str__(c));
+    // exit(0);
 
-    // integer *x = (integer__init__(mem_str("43252352442352532432422222222222535626332")));
-    integer *x = integer__init__(mem_str("43252352442352"));
-    integer *y = integer__init__(mem_str("4324444445"));
+    integer *x = integer__init__(mem_str("7096278976412553801576094515275238891792118306389298398476332583863723162649973008036929605274858882"));
+    integer *x_n = integer__neg__(x);
+    integer *z = integer__init__(mem_str("7096278976412553801576094515275238891792118306389298398476332583863723162649973008036929605274858882"));
+    integer *y = integer__init__(mem_str("58318072537305140708872100995438527734141988105602703115250249521103186142739037"));
+    integer *w = integer__init__(mem_str("583180725373051407088721009954385277341419881056027031152502495211031861427390374324243213424324"));
     // integer *a = integer__init__(mem_str("0028474562208354090892429268364861991716"));
     // integer *b = integer__init__(mem_str("95064341434249523426534242342352768547"));
     // integer *c = integer__sub__(a, b);
     // mem_print(integer__str__(c));
     // exit(0);
-    int i;
-    for (i = 0; i < 100000; i++) {
-        x = integer__sub__(x, y);
-        printf("%d:\n", i);
-        printf("%p\n", x);
-        mem_print(integer__str__(x));
-        mem_print(integer__str__(y));
-        puts("");
-    }
-    // integer *m = integer__div__(x, y);
+    // int i;
+    // int end = 10000;
+    // for (i = 0; i < end; i++) {
+    //     x = integer__sub__(x, y);
+    //     // printf("%d:\n", i);
+    //     // // printf("%p\n", x);
+    //     // mem_print(integer__str__(x));
+    //     // mem_print(integer__str__(y));
+    //     // puts("");
+    //     // if (i == 349) while (1) ;
+    //     // if (i == end-1) while (1) ;
+    // }
+    // mem_print(integer__str__(x));
+    integer *r = integer__init__(mem_str("8"));
+    integer *r_n = integer__neg__(r);
+    integer *s = integer__init__(mem_str("2"));
+    integer *m = integer__div__(r_n, s);
     // mem_print(integer__str__(x));
     // mem_print(integer__str__(y));
-    // mem_print(integer__str__(m));
+    mem_print(integer__str__(m));
 
     // integer *a = integer__mkempt__(13);
     // printf("a->index is %d\n", a->index);
@@ -95,5 +117,10 @@ int main() {
     // integer *zero = INTEGER_NODE();
     // mem_print(integer__str__(zero));
 
-    return 0;
+    // integer *head = INTEGER_NODE();
+    // head->sign = '-';
+    // head->value = -10;
+    // head->index = 8;
+    // mem_print(integer__str__(head));
+    // return 0;
 }

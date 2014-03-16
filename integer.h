@@ -3,6 +3,7 @@ integer *integer__init__(mem_block *);
 void integer__del__(integer *);
 integer *integer__cpy__(integer *);
 integer *integer__neg__(integer *);
+integer *integer__abs__(integer *);
 integer *integer__invert__(integer *);
 mem_block *integer__str__(integer *);
 integer *integer__inc__(integer *);

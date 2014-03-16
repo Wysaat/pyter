@@ -110,6 +110,12 @@ integer *integer__neg__(integer *head) {
     return retptr;
 }
 
+integer *integer__abs__(integer *head) {
+    integer *retptr = integer__cpy__(head);
+    retptr->sign = '+';
+    return retptr;
+}
+
 integer *integer__invert__(integer *head) {
     integer *one = integer__init__(mem_str("1"));
     integer *retptr = integer__add__(head, one);
@@ -286,9 +292,9 @@ integer *integer__add__(integer *left, integer *right) {
     }
 }
 
+/* must copy left */
 integer *integer__sub__(integer *left, integer *right) {
     integer *retptr, *left_neg, *right_neg;
-
     if (left->sign == '+' && right->sign == '-') {
         right_neg = integer__neg__(right);
         retptr = integer__add__(left, right_neg);
@@ -313,22 +319,39 @@ integer *integer__sub__(integer *left, integer *right) {
         return integer__neg__(integer__sub__(right, left));
     }
 
+    integer *left_copy = integer__cpy__(left);
+
     integer *lowest = INTEGER_NODE();
     integer *cur_ret = lowest;
-    integer *cur_left = left;
-
+    integer *cur_left = left_copy;
     while (cur_left->lower)
         cur_left = cur_left->lower;
     integer *cur_right = right;
     while (cur_right->lower)
         cur_right = cur_right->lower;
-    int carry = (int )pow(10, INTEGER_SZ+1), i = 0;
+    /* BIG BUG:
+     * WRONG: !!!! int carry = (int )pow(10, INTEGER_SZ+1), i = 0;
+     */
+    int carry = (int )pow(10, INTEGER_SZ), i = 0;
+    // printf("cur_left->value: %d\n", cur_left->value);
+    // printf("cur_right->value: %d\n", cur_right->value);
+
     while (1) {
         if (cur_left == 0) {
-            integer *retptr = cur_ret->lower;
-            retptr->higher = 0;
+            integer *tmp = cur_ret->lower;
+            tmp->higher = 0;
             free(cur_ret);
-            return retptr;
+            free(left_copy);
+            cur_ret = tmp;
+            while (tmp->value == 0) {
+                if (tmp->lower == 0)
+                    return tmp;
+                cur_ret = tmp->lower;
+                cur_ret->higher = 0;
+                free(tmp);
+                tmp = cur_ret;
+            }
+            return cur_ret;
         }
         else if (cur_right == 0) {
             cur_ret->value = cur_left->value;
@@ -416,18 +439,40 @@ integer *integer__mul__(integer *left, integer *right) {
 /* too slow */
 integer *integer__div__(integer *left, integer *right) {
     integer *retptr = INTEGER_NODE(), *tmp;
-    integer *lcopy = integer__cpy__(left), *rcopy = integer__cpy__(right), *new_lcopy;
-    while (integer__ge__(lcopy, rcopy)) {
-        new_lcopy = integer__sub__(lcopy, rcopy);
-        integer__del__(lcopy);
-        lcopy = new_lcopy;
-        mem_print(integer__str__(lcopy));
-        mem_print(integer__str__(rcopy));
+    integer *left_abs = integer__abs__(left), *right_abs = integer__abs__(right), *new_left_abs;
+    int counter = 1;
+    while (integer__ge__(left_abs, right_abs)) {
+        new_left_abs = integer__sub__(left_abs, right_abs);
+        integer__del__(left_abs);
+        left_abs = new_left_abs;
+        printf("%d:\n", counter++);
+        mem_print(integer__str__(left_abs));
+        mem_print(integer__str__(right_abs));
         puts("");
         tmp = integer__inc__(retptr);
         integer__del__(retptr);
         retptr = tmp;
     }
+    integer__del__(right_abs);
+    if (left->sign != right->sign) {
+        integer *zero = INTEGER_NODE();
+        if (!integer__eq__(left_abs, zero)) {
+            integer__del__(zero);
+            integer *ret = integer__inc__(retptr);
+            integer *ret_neg = integer__neg__(ret);
+            integer__del__(left_abs);
+            integer__del__(retptr);
+            integer__del__(ret);
+            return ret_neg;
+        }
+        else {
+            integer__del__(zero);
+            integer *ret = integer__neg__(retptr);
+            integer__del__(retptr);
+            return ret;
+        }
+    }
+    integer__del__(left_abs);
     return retptr;
 }
 
