@@ -1,11 +1,11 @@
 integer *INTEGER_NODE();
-integer *integer__init__(mem_block *);
+integer *integer__init__(string *);
 void integer__del__(integer *);
 integer *integer__cpy__(integer *);
 integer *integer__neg__(integer *);
 integer *integer__abs__(integer *);
 integer *integer__invert__(integer *);
-mem_block *integer__str__(integer *);
+string *integer__str__(integer *);
 integer *integer__inc__(integer *);
 integer *integer__dec__(integer *);
 int integer__eq__(integer *, integer *);

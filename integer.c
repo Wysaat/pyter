@@ -24,15 +24,19 @@ char *itoa(int value) {
 char *lltoa(long long value) {
     int n = 0;
     long long num = value;
+    char *retptr;
     if (num == 0) {
-        return "0";
+        retptr = (char *)malloc(2);
+        retptr[0] = '0';
+        retptr[1] = 0;
+        return retptr;
     }
     while (num > 0) {
         num = num / 10;
         n++;
     }
     // char retptr[n+1];
-    char *retptr = (char *)malloc(n+1);
+    retptr = (char *)malloc(n+1);
     retptr[n] = 0;
     int i;
     for (i = 1; i <= n; i++) {
@@ -52,19 +56,17 @@ integer *INTEGER_NODE() {
     return retptr;
 }
 
-integer *integer__init__(mem_block *head) {
+integer *integer__init__(string *strval) {
     integer *lowest = INTEGER_NODE();
     integer *cur_ptr = lowest;
-    int length = mem_size(head);
-    char string[INTEGER_SZ+1];
+    int length = string_len(strval);
+    char chars[INTEGER_SZ+1];
     int copy_sz, i = 0;
     while (1) {
-        if (length < INTEGER_SZ)
-            copy_sz = length;
-        else
-            copy_sz = INTEGER_SZ;
-        mem_ncpy_out(string, head, length-copy_sz, copy_sz);
-        cur_ptr->value = atoi(string);
+        copy_sz = (length < INTEGER_SZ) ? length : INTEGER_SZ;
+        chars = string_tochs(string_slice(strval, ));
+        cur_ptr->value = atoi(chars);
+        free(chars);
         cur_ptr->index = i++;
         length -= copy_sz;
         if (length == 0)
@@ -117,50 +119,63 @@ integer *integer__abs__(integer *head) {
 }
 
 integer *integer__invert__(integer *head) {
-    integer *one = integer__init__(mem_str("1"));
+    integer *one = INTEGER_NODE();
+    one->value = 1;
     integer *retptr = integer__add__(head, one);
     retptr = integer__neg__(retptr);
     return retptr;
 }
 
-mem_block *integer__str__(integer *head) {
-    mem_block *block = mem_head();
+string *integer__str__(integer *head) {
+    string *strptr = string_init(), *new_strptr, *to_add;
     integer *integer_ptr = head;
+    char *val;
     while (integer_ptr) {
-        char string[INTEGER_SZ+1];
-        char *val = itoa(integer_ptr->value);
+        char chars[INTEGER_SZ+1];
+        val = itoa(integer_ptr->value);
         if (integer_ptr == head) {
             if (integer_ptr->sign == '-') {
                 string[0] = integer_ptr->sign;
-                strcpy(string+1, val);
+                strcpy(chars+1, val);
+                free(val);
             }
-            else
-                strcpy(string, val);
+            else {
+                strcpy(chars, val);
+                free(val);
+            }
         }
         else {
             int offset = INTEGER_SZ - strlen(val);
-            strcpy(string+offset, val);
-            string[INTEGER_SZ] = 0;
+            strcpy(chars+offset, val);
+            free(val);
+            chars[INTEGER_SZ] = 0;
             while (--offset >= 0)
                 string[offset] = '0';
         }
-        mem_block *new_block = mem_str(string);
-        mem_ncpy(block, new_block, mem_size(block), 0, mem_size(new_block));
+        to_add = string_frchs(chars);
+        new_strptr = string_add(strptr, to_add);
+        string_del(to_add);
+        string_del(new_strptr);
+        strptr = new_strptr;
         integer_ptr = integer_ptr->lower;
     }
-    return block;
+    return strptr;
 }
 
 integer *integer__inc__(integer *head) {
-    integer *one = integer__init__(mem_str("1"));
-    return integer__add__(head, one);
+    integer *one = INTEGER_NODE();
+    one->value = 1;
+    integer *retptr = integer__add__(head, one);
     free(one);
+    return retptr;
 }
 
 integer *integer__dec__(integer *head) {
-    integer *one = integer__init__(mem_str("1"));
-    return integer__sub__(head, one);
+    integer *one = INTEGER_NODE();
+    one->value = 1;
+    integer *retptr = integer__sub__(head, one);
     free(one);
+    return retptr;
 }
 
 int integer__eq__(integer *left, integer *right) {
@@ -178,17 +193,26 @@ int integer__gt__(integer *left, integer *right) {
         return 0;
     else if (left->sign == '-' && right->sign == '-')
         return 1 - integer__gt__(integer__neg__(left), integer__neg__(right));
-    mem_block *blkl = integer__str__(left);
-    mem_block *blkr = integer__str__(right);
-    if (mem_size(blkl) > mem_size(blkr))
+    string *strl = integer__str__(left);
+    string *strr = integer__str__(right);
+    if (string_len(strl) > string_len(strr)) {
+        string_del(strl);
+        string_del(strr);
         return 1;
-    else if (mem_size(blkl) < mem_size(blkr))
+    }
+    else if (string_len(strl) < string_len(strr)) {
+        string_del(strl);
+        string_del(strr);
         return 0;
-    int i, size = mem_size(blkl);
+    }
+    int i, size = string_len(strl);
+    char *l, *r;
     for (i = 0; i < size; i++) {
-        if (mem_subscription(blkl, i) > mem_subscription(blkr, i))
+        l = string_ssci(strl, i);
+        r = string_ssci(strr, i);
+        if (*l > *r)
             return 1;
-        else if (mem_subscription(blkl, i) < mem_subscription(blkr, i))
+        else if (*l < *r)
             return 0;
     }
     return 0;
@@ -399,10 +423,10 @@ integer *integer__node__mul__(integer *node1, integer *node2) {
     integer *retptr = integer__mkempt__(node1->index+node2->index+2);
     long long value = (long long )node1->value * (long long )node2->value;
     char *val_char = lltoa(value);
-    mem_block *val_block = mem_str(val_char);
+    string *val_block = string_frchs(val_char);
     free(val_char);
     integer *valptr = integer__init__(val_block);
-    free(val_block);
+    string_del(val_block);
     if (valptr->index == 1) {
         retptr->value = valptr->value;
         retptr->lower->value = valptr->lower->value;
@@ -440,15 +464,11 @@ integer *integer__mul__(integer *left, integer *right) {
 integer *integer__div__(integer *left, integer *right) {
     integer *retptr = INTEGER_NODE(), *tmp;
     integer *left_abs = integer__abs__(left), *right_abs = integer__abs__(right), *new_left_abs;
-    int counter = 1;
+    // int counter = 1;
     while (integer__ge__(left_abs, right_abs)) {
         new_left_abs = integer__sub__(left_abs, right_abs);
         integer__del__(left_abs);
         left_abs = new_left_abs;
-        printf("%d:\n", counter++);
-        mem_print(integer__str__(left_abs));
-        mem_print(integer__str__(right_abs));
-        puts("");
         tmp = integer__inc__(retptr);
         integer__del__(retptr);
         retptr = tmp;
@@ -488,30 +508,48 @@ integer *integer__mod__(integer *left, integer *right) {
 
 /* buggy: (a) cannot handle big numbers, (b) get wrong with some big numbers */
 integer *integer__pow__(integer *left, integer *right) {
-    integer *retptr = integer__init__(mem_str("1")), *i;
-    integer *one = integer__init__(mem_str("1"));
-    for (i = INTEGER_NODE(); integer__lt__(i, right); i = integer__add__(i, one)) {
-        retptr = integer__mul__(retptr, left);
-        // mem_print(integer__str__(i));
+    integer *retptr = INTEGER_NODE();
+    retptr->value = 1;
+    integer *i, *new_retptr, *new_i;
+    i = INTEGER_NODE();
+    while (integer__lt__(i, right)) {
+        new_retptr = integer__mul__(retptr, left);
+        retptr = new_retptr;
+        new_i = integer__inc__(i);
+        i = new_i;
     }
     return retptr;
 }
 
 integer *integer__lshift__(integer *left, integer *right) {
-    return integer__mul__(left, integer__pow__(integer__init__(mem_str("2")), right));
+    integer *two = INTEGER_NODE();
+    two->value = 2;
+    integer *power = integer__pow__(two, right);
+    free(two);
+    integer *retptr = integer__mul__(left, power);
+    integer__del__(power);
+    return retptr;
 }
 
 integer *integer__rshift__(integer *left, integer *right) {
-    return integer__div__(left, integer__pow__(integer__init__(mem_str("2")), right));
+    integer *two = INTEGER_NODE();
+    two->value = 2;
+    integer *power = integer__pow__(two, right);
+    free(two);
+    integer *retptr = integer__div__(left, power);
+    integer__del__(power);
+    return retptr;
 }
 
 integer *integer__and__(integer *left, integer *right) {
-    integer *two = integer__init__(mem_str("2"));
-    integer *one = integer__init__(mem_str("1"));
-    integer *zero = integer__init__(mem_str("0"));
-    integer *retptr = INTEGER_NODE();
+    integer *two = INTEGER_NODE();
+    two->value = 2;
+    integer *one = INTEGER_NODE();
+    one->value = 1;
+    integer *zero = INTEGER_NODE();
+    integer *retptr = INTEGER_NODE(), *new_retptr, *power;
     integer *lcopy = integer__cpy__(left), *rcopy = integer__cpy__(right);
-    integer *n = INTEGER_NODE(), *lmod, *rmod;
+    integer *n = INTEGER_NODE(), *lmod, *rmod, *n_new, *new_lcopy, *new_rcopy;
     int lm, rm;
     while (!integer__eq__(lcopy, zero) && !integer__eq__(rcopy, zero)) {
         lmod = integer__mod__(lcopy, two);
@@ -525,24 +563,39 @@ integer *integer__and__(integer *left, integer *right) {
         else
             rm = 0;
         if (lm & rm) {
-            retptr = integer__add__(retptr, integer__pow__(two, n));
+            power = integer__pow__(two, n);
+            new_retptr = integer__add__(retptr, power);
+            integer__del__(power);
+            integer__del__(retptr);
+            retptr = new_retptr;
         }
-        n = integer__inc__(n);
-        lcopy = integer__div__(lcopy, two);
-        rcopy = integer__div__(rcopy, two);
+        n_new = integer__inc__(n);
+        integer__del__(n);
+        n = n_new;
+        new_lcopy = integer__div__(lcopy, two);
+        new_rcopy = integer__div__(rcopy, two);
+        integer__del__(lcopy);
+        integer__del__(rcopy);
+        lcopy = new_lcopy;
+        rcopy = new_rcopy;
     }
+    free(one);
+    free(two);
+    free(zero);
     return retptr;
 }
 
 integer *integer__xor__(integer *left, integer *right) {
-    integer *two = integer__init__(mem_str("2"));
-    integer *one = integer__init__(mem_str("1"));
-    integer *zero = integer__init__(mem_str("0"));
-    integer *retptr = INTEGER_NODE();
+    integer *two = INTEGER_NODE();
+    two->value = 2;
+    integer *one = INTEGER_NODE();
+    one->value = 1;
+    integer *zero = INTEGER_NODE();
+    integer *retptr = INTEGER_NODE(), *new_retptr, *power;
     integer *lcopy = integer__cpy__(left), *rcopy = integer__cpy__(right);
-    integer *n = INTEGER_NODE(), *lmod, *rmod;
+    integer *n = INTEGER_NODE(), *lmod, *rmod, *n_new, *new_lcopy, *new_rcopy;
     int lm, rm;
-    while (!integer__eq__(lcopy, zero) && !integer__eq__(rcopy, zero)) {
+    while (!(integer__eq__(lcopy, zero) && integer__eq__(rcopy, zero))) {
         lmod = integer__mod__(lcopy, two);
         rmod = integer__mod__(rcopy, two);
         if (integer__eq__(lmod, one))
@@ -554,24 +607,39 @@ integer *integer__xor__(integer *left, integer *right) {
         else
             rm = 0;
         if (lm ^ rm) {
-            retptr = integer__add__(retptr, integer__pow__(two, n));
+            power = integer__pow__(two, n);
+            new_retptr = integer__add__(retptr, power);
+            integer__del__(power);
+            integer__del__(retptr);
+            retptr = new_retptr;
         }
-        n = integer__inc__(n);
-        lcopy = integer__div__(lcopy, two);
-        rcopy = integer__div__(rcopy, two);
+        n_new = integer__inc__(n);
+        integer__del__(n);
+        n = n_new;
+        new_lcopy = integer__div__(lcopy, two);
+        new_rcopy = integer__div__(rcopy, two);
+        integer__del__(lcopy);
+        integer__del__(rcopy);
+        lcopy = new_lcopy;
+        rcopy = new_rcopy;
     }
+    free(one);
+    free(two);
+    free(zero);
     return retptr;
 }
 
 integer *integer__or__(integer *left, integer *right) {
-    integer *two = integer__init__(mem_str("2"));
-    integer *one = integer__init__(mem_str("1"));
-    integer *zero = integer__init__(mem_str("0"));
-    integer *retptr = INTEGER_NODE();
+    integer *two = INTEGER_NODE();
+    two->value = 2;
+    integer *one = INTEGER_NODE();
+    one->value = 1;
+    integer *zero = INTEGER_NODE();
+    integer *retptr = INTEGER_NODE(), *new_retptr, *power;
     integer *lcopy = integer__cpy__(left), *rcopy = integer__cpy__(right);
-    integer *n = INTEGER_NODE(), *lmod, *rmod;
+    integer *n = INTEGER_NODE(), *lmod, *rmod, *n_new, *new_lcopy, *new_rcopy;
     int lm, rm;
-    while (!integer__eq__(lcopy, zero) && !integer__eq__(rcopy, zero)) {
+    while (!(integer__eq__(lcopy, zero) && integer__eq__(rcopy, zero))) {
         lmod = integer__mod__(lcopy, two);
         rmod = integer__mod__(rcopy, two);
         if (integer__eq__(lmod, one))
@@ -583,11 +651,24 @@ integer *integer__or__(integer *left, integer *right) {
         else
             rm = 0;
         if (lm | rm) {
-            retptr = integer__add__(retptr, integer__pow__(two, n));
+            power = integer__pow__(two, n);
+            new_retptr = integer__add__(retptr, power);
+            integer__del__(power);
+            integer__del__(retptr);
+            retptr = new_retptr;
         }
-        n = integer__inc__(n);
-        lcopy = integer__div__(lcopy, two);
-        rcopy = integer__div__(rcopy, two);
+        n_new = integer__inc__(n);
+        integer__del__(n);
+        n = n_new;
+        new_lcopy = integer__div__(lcopy, two);
+        new_rcopy = integer__div__(rcopy, two);
+        integer__del__(lcopy);
+        integer__del__(rcopy);
+        lcopy = new_lcopy;
+        rcopy = new_rcopy;
     }
+    free(one);
+    free(two);
+    free(zero);
     return retptr;
 }

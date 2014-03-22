@@ -7,5 +7,9 @@ int main() {
     mem_print(blk2);
     mem_ncpy(blk1, blk2, mem_size(blk1), 0, mem_size(blk2));
     mem_print(blk1);
+    mem_free(blk1);
+    mem_free(blk2);
+    mem_print(blk1);
+    mem_print(blk2);
     return 0;
 }

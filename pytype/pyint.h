@@ -9,4 +9,6 @@ pyint *pyint__sub__(pyint *, pyint *);
 pyint *pyint__mul__(pyint *, pyint *);
 pyint *pyint__div__(pyint *, pyint *);
 pyint *pyint__mod__(pyint *, pyint *);
+pyint *pyint__lshift__(pyint *, pyint *);
+pyint *pyint__rshift__(pyint *, pyint *);
 int pyint__cmp__(pyint *, pyint *);

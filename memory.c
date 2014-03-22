@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "cpyter.h"
 
 void mem_print_nnl(mem_block *block) {
@@ -82,35 +78,6 @@ void mem_set(mem_block *block, int index, char val) {
         ptr->mem[strlen(ptr->mem)] = val;
     }
 }
-
-// void mem_set(mem_block *block, int index, char val) {
-//     mem_block *ptr = block;
-//     int count = 0, sz, i;
-//     char space = ' ';
-//     while (1) {
-//         sz = index - count;
-//         if (sz < MEM_BLOCK_SZ-1) {
-//             if (sz < strlen(ptr->mem)) {
-//                 strncpy(ptr->mem+sz, &val, 1);
-//                 // ptr->mem[sz] = val;
-//                 return;
-//             }
-//             for (i = strlen(ptr->mem); i < sz; i++)
-//                 strncpy(ptr->mem+i, &space, 1);
-//             strncpy(ptr->mem+sz, &val, 1);
-//             return;
-//         }
-//         if (strlen(ptr->mem) < MEM_BLOCK_SZ-1) {
-//             for (i = strlen(ptr->mem); i < MEM_BLOCK_SZ-1; i++)
-//                 strncpy(ptr->mem+i, &space, 1);
-//         }
-//         count += MEM_BLOCK_SZ-1;
-//         if (ptr->next == 0) {
-//             mem_alloc(ptr);
-//         }
-//         ptr = ptr->next;
-//     }
-// }
 
 void mem_del(mem_block *block, int index) {
     if ((index+1) > mem_size(block))
@@ -235,4 +202,13 @@ mem_block *mem_str(char *content) {
         mem_set(head, i, content[i]);
     }
     return head;
+}
+
+void mem_free(mem_block *head) {
+    mem_block *ptr = head, *tmp;
+    while (ptr) {
+        tmp = ptr->next;
+        free(ptr);
+        ptr = tmp;
+    }
 }

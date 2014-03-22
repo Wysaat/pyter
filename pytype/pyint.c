@@ -36,6 +36,18 @@ pyint *pyint__mod__(pyint *left, pyint *right) {
 	return retptr;
 }
 
+pyint *pyint__lshift__(pyint *left, pyint *right) {
+	pyint *retptr = pyint__init__();
+	retptr->value = integer__lshift__(left->value, right->value);
+	return retptr;
+}
+
+pyint *pyint__rshift__(pyint *left, pyint *right) {
+	pyint *retptr = pyint__init__();
+	retptr->value = integer__rshift__(left->value, right->value);
+	return retptr;
+}
+
 int pyint__cmp__(pyint *left, pyint *right) {
 	return integer__cmp__(left->value, right->value);
 }

@@ -6,14 +6,67 @@
 #include "cpyter.h"
 
 /* op should be copied(use memory.c function mem_cpy) */
-void *B_EXPR(void *left, mem_block *op, void *right) {
+void *INT_EXPR(string *token) {
+    int_expr *retptr = (int_expr *)malloc(sizeof(int_expr));
+    retptr->type = int_expr_t;
+    retptr->value = string_cpy(token);
+    return retptr;
+}
+
+void *STR_EXPR(string *token) {
+    str_expr *retptr = (str_expr *)malloc(sizeof(str_expr));
+    retptr->type = str_expr_t;
+    retptr->value = string_cpy(token);
+    return retptr;
+}
+
+void *POWER(void *primary, void *u_expr) {
+    power *retptr = (power *)malloc(sizeof(power));
+    retptr->type = power_t;
+    retptr->primary = primary;
+    retptr->u_expr = u_expr;
+    return retptr;
+}
+
+void *U_EXPR(string *op, void *expr) {
+    u_expr *retptr = (u_expr *)malloc(sizeof(u_expr));
+    retptr->type = u_expr_t;
+    retptr->op = string_cpy(token);
+    retptr->expr = expr;
+    return retptr;
+}
+
+void *B_EXPR(void *left, string *op, void *right) {
     b_expr *expr = (b_expr *)malloc(sizeof(b_expr));
     expr->type = b_expr_t;
-    expr->op = mem_head();
-    mem_cpy(expr->op, op);
+    expr->op = string_cpy(op);
     expr->left = left;
     expr->right = right;
     return expr;
+}
+
+void *NOT_TEST(void *expr) {
+    not_test *test = (not_test *)malloc(sizeof(not_test));
+    test->type = not_test_t;
+    test->expr = expr;
+    return test;
+}
+
+void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr) {
+    conditional_expression *expression = \
+        (conditional_expression *)malloc(sizeof(conditional_expression));
+    expression->type = conditional_expression_t;
+    expression->or_test = or_test;
+    expression->or_test2 = or_test2;
+    expression->expr = expr;
+    return expression;
+}
+
+void *EXPRESSION_LIST(list *expr_head) {
+    expression_list *retptr = (expression_list *)malloc(sizeof(expression_list));
+    retptr->type = expression_list_t;
+    retptr->expr_head = expr_head;
+    return retptr;
 }
 
 void *PYINT(integer *value) {
@@ -44,6 +97,13 @@ void *PARENTH_FORM(list *expr_head) {
     return retptr;
 }
 
+void *LIST_EXPR(list *expr_head) {
+    list_expr *retptr = (list_expr *)malloc(sizeof(list_expr));
+    retptr->type = list_expr_t;
+    retptr->expr_head = expr_head;
+    return retptr;
+}
+
 void *int_exprEvaluate(int_expr *structure) {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
     retptr->type = pyint_t;
@@ -65,6 +125,17 @@ void *str_exprEvaluate(str_expr *structure) {
 void *parenth_formEvaluate(parenth_form *structure) {
     pytuple *retptr = (pytuple *)malloc(sizeof(pytuple));
     retptr->type = pytuple_t;
+    retptr->values = list_node();
+    list *ptr;
+    for (ptr = structure->expr_head; ptr; ptr = ptr->next) {
+        list_append_content(retptr->values, evaluate(ptr->content));
+    }
+    return retptr;
+}
+
+void *list_exprEvaluate(list_expr *structure) {
+    pylist *retptr = (pylist *)malloc(sizeof(pylist));
+    retptr->type = pylist_t;
     retptr->values = list_node();
     list *ptr;
     for (ptr = structure->expr_head; ptr; ptr = ptr->next) {
@@ -124,9 +195,9 @@ void *b_exprEvaluate(b_expr *structure) {
         else if (mem_match_str(structure->op, "-"))
             return pyint__sub__((pyint *)left_val, (pyint *)right_val);
         else if (mem_match_str(structure->op, "<<"))
-            return PYINT(integer__lshift__(left, right));
+            return pyint__lshift__((pyint *)left_val, (pyint *)right_val);
         else if (mem_match_str(structure->op, ">>"))
-            return PYINT(integer__rshift__(left, right));
+            return pyint__rshift__((pyint *)left_val, (pyint *)right_val);
         else if (mem_match_str(structure->op, "&"))
             return PYINT(integer__and__(left, right));
         else if (mem_match_str(structure->op, "^"))
@@ -253,6 +324,8 @@ void *evaluate(void *structure) {
             return str_exprEvaluate((str_expr *)structure);
         case parenth_form_t:
             return parenth_formEvaluate((parenth_form *)structure);
+        case list_expr_t:
+            return list_exprEvaluate((list_expr *)structure);
         case power_t:
             return powerEvaluate((power *)structure);
         case u_expr_t:
@@ -275,6 +348,7 @@ void *evaluate(void *structure) {
 
 /* no '\n' append */
 void print_nnl(void *structure) {
+    list *ptr;
     switch (*(int *)structure) {
         case pyint_t:
             mem_print_nnl(integer__str__(((pyint *)structure)->value));
@@ -290,13 +364,21 @@ void print_nnl(void *structure) {
             break;
         case pytuple_t:
             printf("(");
-            list *ptr;
             for (ptr = ((pytuple *)structure)->values; ptr; ptr = ptr->next) {
                 print_nnl(ptr->content);
                 if (ptr->next)
                     printf(", ");
             }
             printf(")");
+            break;
+        case pylist_t:
+            printf("[");
+            for (ptr = ((pylist *)structure)->values; ptr; ptr = ptr->next) {
+                print_nnl(ptr->content);
+                if (ptr->next)
+                    printf(", ");
+            }
+            printf("]");
             break;
         default:
             printf("[print_nnl]: unsupported structure\n");

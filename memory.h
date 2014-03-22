@@ -1,0 +1,18 @@
+void mem_print(mem_block *block);
+mem_block *mem_head();
+char mem_subscription(mem_block *, int );
+char *mem_get(mem_block *, int );
+mem_block *mem_slice(mem_block *block, int start, int stop);
+void mem_alloc(mem_block *);
+void mem_set(mem_block *, int ,char);
+void mem_del(mem_block *, int index);
+void mem_delete(mem_block *, int start, int stop);
+int mem_size(mem_block *);
+void mem_ncpy_out(char *, mem_block *, int, int);
+int mem_ncmp(char *, mem_block *, int, int);
+void mem_ncpy(mem_block *, mem_block *, int, int, int);
+void mem_insert(mem_block *, mem_block *, int, int, int);
+void mem_cpy(mem_block *, mem_block *);
+int mem_match_str(mem_block *, char *);
+mem_block *mem_str(char *);
+void mem_free(mem_block *);

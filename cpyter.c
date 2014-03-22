@@ -5,435 +5,252 @@
 
 #include "cpyter.h"
 
-/* "<>" is deprecated in Python 3 */
-char tokens[100][4] = { "+", "-", "*", "**", "/", "//", "%",
-                        "<<", ">>", "&", "|", "^", "~",
-                        "<", ">", "<=", ">=", "==", "!=", "<>",
-                        "(", ")", "[", "]", "{", "}", "@",
-                        ",", ":", "`", "=", ";",
-                        "+=", "-=", "*=", "/=", "//=", "%=",
-                        "&=", "|=", "^=", ">>=", "<<=", "**=",
-
-                        "!", "$", "?", "#", "\\",
-
-                        "+=", "-=", "*=", "/=", "//=", "%=", "**=",
-                        ">>=", "<<=", "&=", "^=", "|=", " " };
-
-char stringprefixes[10][2] = { "r", "u", "R", "U", " " };
-
-char comp_operators[10][3] = { "<", ">", "==", ">=", "<=", "<>", "!=", " " };
-
-struct item {
-    mem_block *content;
-    struct item *next;
-};
-
-struct {
-    mem_block *string;
-    int string_sz;
-    int index;
-    int line_number;
-    struct item items_head;
-    int multi_lines;
-    int rewind;
-    mem_block *last_item;
-} global = {
-    .string = 0,
-    .string_sz = 0,
-    .index = 0,
-    .line_number = 0,
-    .items_head = { 0, 0 },
-    .multi_lines = 0,
-    .rewind = 0,
-    .last_item = 0,
-};
-
-void remonter() {
-    global.rewind = 1;
-    global.last_item = pop_item();
+void rollback(scanner *sc) {
+    sc_rbf_set(sc);
 }
 
-void add_item(mem_block *content) {
-    struct item *ptr = &global.items_head;
-    struct item *new_item = (struct item *)malloc(sizeof(struct item));
-    new_item->content = mem_head();
-    mem_cpy(new_item->content, content);
-    // new_item->content = content;
-    new_item->next = 0;
-    while (ptr->next != 0)
-        ptr = ptr->next;
-    ptr->next = new_item;
-}
-
-mem_block *pop_item() {
-    struct item *ptr = &global.items_head;
-    struct item *last;
-    while (ptr->next != 0) {
-        last = ptr;
-        ptr = ptr->next;
-    }
-    last->next = 0;
-    return ptr->content;
-}
-
-void show_items() {
-    struct item *ptr = &global.items_head;
-    printf("[");
-    while (ptr->next != 0) {
-        printf("'");
-        mem_print(ptr->next->content);
-        printf("', ");
-        ptr = ptr->next;
-    }
-    printf("]\n");
-}
-
-void interactive_get_line() {
-    printf(">>> ");
-    global.string = mem_head();
-    global.items_head.content = mem_head();
-    char *dest = (global.string)->mem;
-    mem_block *last_block = global.string;
-    while (fgets(dest, MEM_BLOCK_SZ, stdin)) {
-        int i;
-        for (i = 0; i < MEM_BLOCK_SZ; i++) {
-            if (dest[i] == '\n') {
-                global.string_sz += strlen(dest);
-                global.index = 0;
-                return;
-            }
-        }
-        global.string_sz += strlen(dest);
-        mem_block *new_block = (mem_block *)malloc(sizeof(mem_block));
-        new_block->prev = last_block;
-        last_block->next = new_block;
-        new_block->next = 0;
-        dest = new_block->mem;
-        last_block = new_block;
-    }
-    global.index = 0;
-}
-
-void read_numeric_literal(mem_block *item) {
+string *sc_read_num_lit(scanner *sc, buffer *buff) {
     int i = 0, dot_count = 0;
-    while ((mem_subscription(global.string, global.index) >= '0' && mem_subscription(global.string, global.index) <= '9') ||
-                (mem_subscription(global.string, global.index) == '.' && !dot_count)) {
-        if (mem_subscription(global.string, global.index) == '.')
-            dot_count++;
-        mem_set(item, i++, mem_subscription(global.string, global.index++));
+    buffer *buff = buff_init();
+    while ((sc_curch(sc) >= '0' && sc_curch(sc) <= '9') ||
+           (sc_curch(sc) == '.' && !dot_count) {
+        if (sc_curch(sc) == '.') dot_count++;
+        buff_add(buff, sc_readch(sc)); /* sc_readch automatically increases index (call sc_inci) */
     }
-    mem_set(item, i, 0);
-    add_item(item);
-    return;
+    return tk_init(buff);
 }
 
-void read_string_literal(mem_block *item, int len) {
+string *sc_read_str_lit(scanner *sc, buffer *buff) {
     int i = 1;
-    char op = mem_subscription(global.string, global.index++);
-    mem_set(item, len, op);
-    while (mem_subscription(global.string, len+global.index) != op)
-        mem_set(item, len+i++, mem_subscription(global.string, global.index++));
-    mem_set(item, len+i++, mem_subscription(global.string, global.index++));
-    mem_set(item, len+i, 0);
-    add_item(item);
-    return;
+    char op = sc_readch(sc), ch;
+    buff_add(buff, op);
+    while ((ch = sc_readch(sc)) != op)
+        buff_add(buff, ch);
+    buff_add(buff, op);
+    return tk_init(buff);
 }
 
-void raw_read(mem_block *item) {
+string *sc_rread(scanner *sc, buffer *buff) { /* raw read */
     int i, j, k = 0;
-
-    if (global.index < global.string_sz-1) {
-        while (mem_subscription(global.string, global.index) == ' ' || mem_subscription(global.string, global.index) == '\t') {
-            global.index++;
+    if (!sc_eolf_get(sc)) {
+        while (sc_curch(sc) == ' ' || sc_curch(sc) == '\t')
+            sc_inci(sc);
+        for (j = 3; j > 0; j--)
+            if (is_spctk(sc_curchs(sc, j))) /* sc_curchs: return j chars from current char(included) */
+                return tk_init(sc_readchs(sc, j)); /* sc_readchs() = sc_curchs() + sc_inci() */
+        if (sc_curch(sc) == '.') {
+            if (sc_nxtch(sc) >= '0' && sc_nxtch(sc) <= '9')
+                return sc_read_num_lit(sc, buff);
+            return tk_init(sc_curch(sc));
         }
-        for (j = 3; j > 0; j--) {
-            for (i = 0; strcmp(tokens[i], " ") != 0; i++) {
-                if (mem_ncmp(tokens[i], global.string, global.index, j) == 0)  {
-                    mem_ncpy(item, global.string, 0, global.index, j);
-                    mem_set(item, j, 0);
-                    add_item(item);
-                    global.index += j;
-                    return;
-                }
-            }
-        }
-        if (mem_subscription(global.string, global.index) == '.') {
-            if (mem_subscription(global.string, global.index+1) >= '0' && mem_subscription(global.string, global.index+1) <= '9') {
-                read_numeric_literal(item);
-                return;
-            }
-            else {
-                mem_ncpy(item, global.string, 0, global.index, 1);
-                mem_set(item, 1, 0);
-                add_item(item);
-                global.index++;
-                return;
-            }
-        }
-        if (mem_subscription(global.string, global.index) >= '0' && mem_subscription(global.string, global.index) <= '9') {
-            read_numeric_literal(item);
-            return;
-        }
-        if (mem_subscription(global.string, global.index) == '"' || mem_subscription(global.string, global.index) == '\'') {
-            read_string_literal(item, 0);
-            return;
-        }
-        while ((mem_subscription(global.string, global.index) >= 'a' && mem_subscription(global.string, global.index) <= 'z') ||
-               (mem_subscription(global.string, global.index) >= 'A' && mem_subscription(global.string, global.index) <= 'Z') ||
-               (mem_subscription(global.string, global.index) >= '0' && mem_subscription(global.string, global.index) <= '9') ||
-               (mem_subscription(global.string, global.index) == '_')) {
-            mem_set(item, k++, mem_subscription(global.string, global.index++));
-        }
-        for (i = 0; !match(stringprefixes[i], " "); i++) {
-            if ((match(stringprefixes[i], mem_get(item, 0))) &&
-                     (mem_subscription(global.string, global.index) == '"' || mem_subscription(global.string, global.index) == '\'')) {
-                read_string_literal(item, mem_size(item));
-                add_item(item);
-                return;
-            }
-            else {
-                mem_set(item, k, 0);
-                add_item(item);
-                return;
-            }
-        }
+        if (sc_curch(sc) >= '0' && sc_curch(sc) <= '9')
+            return sc_read_num_lit(sc, buff);
+        if (sc_curch(sc) == '"' || sc_curch(sc) == '\'')
+            return sc_read_str_lit(sc, buff);
+        while (is_alphnum(sc_curch(sc)) || sc_curch(sc) == '_')
+            buff_add(buff, sc_readch(sc));
+        if (is_strprfx(buff_puts(buff)) && (sc_curch(sc) == '\'' || sc_curch(sc) == '"'))
+            return tk_add(tk_init(buff), sc_read_str_lit(sc, buff));
+        else
+            return tk_init(buff);
     }
-    else {
-        mem_set(item, 0, 0);
-        add_item(item);
-        return;
-    }
+    else return eol;
 }
 
-void read(mem_block *item) {
-    if (global.rewind) {
-        global.rewind = 0;
-        memcpy(item, global.last_item, sizeof(mem_block));
-        // item = global.last_item;
-        add_item(global.last_item);
-        return;
+string *sc_read(scanner *sc) {
+    if (sc_rbf_get(sc)) {
+        sc_rbf_clr(sc); /* clear rollback flag */
+        return sc_lasttk(sc);
     }
-    raw_read(item);
-}
-
-int is_digit(char ch) {
-    if (ch >= '0' && ch <= '9')
-        return 1;
-    return 0;
-}
-
-int is_alpha(char ch) {
-    if ((ch >= 'a' && ch <= 'z') || ch >= 'A' && ch <= 'Z')
-        return 1;
-    return 0;
-}
-
-int is_id(mem_block *item){
-    int i = 0;
-    if (!(is_alpha(mem_subscription(item, 0)) || 
-          mem_subscription(item, 0) == '_'))
-        return 0;
-    while (mem_subscription(item, ++i) != 0) {
-        if (!(is_alpha(mem_subscription(item, 0)) ||
-            is_digit(mem_subscription(item, i))))
-            return 0;
-    }
-    return 1;
-}
-
-int is_int(mem_block *item) {
-    int i;
-    for (i = 0; mem_subscription(item, i); i++) {
-        if (!is_digit(mem_subscription(item, i)))
-            return 0;
-    }
-    if (i == 0)
-        return 0;
-    return 1;
-}
-
-int is_str(mem_block *item) {
-    int i;
-    if (mem_subscription(item, 0) == '\'' ||
-        mem_subscription(item, 0) == '"')
-        return 1;
-    return 0;
-}
-
-void *parse_atom() {
-    mem_block *item = mem_head();
-    read(item);
-    if (is_int(item)) {
-        int_expr *retptr = (int_expr *)malloc(sizeof(int_expr));
-        retptr->type = int_expr_t;
-        retptr->value = item;
-        return retptr;
-    }
-    else if (is_str(item)) {
-        str_expr *retptr = (str_expr *)malloc(sizeof(str_expr));
-        retptr->type = str_expr_t;
-        retptr->value = mem_head();
-        mem_cpy(retptr->value, item);
-        return retptr;
-    }
-    else if (mem_match_str(item, "(")) {
-        list *expr_head = list_node();
-        read(item);
-        if (mem_match_str(item, ")"))
-            return PARENTH_FORM(expr_head);
-        remonter();
-        void *expression = parse_expression();
-        read(item);
-        if (mem_match_str(item, ")"))
-            return expression;
-        else if(mem_match_str(item, ",")) {
-            list_append_content(expr_head, expression);
-            read(item);
-            if (mem_match_str(item, ")"))
-                return PARENTH_FORM(expr_head);
-            remonter();
-            list_append_list(expr_head, pa_exprs(")"));
-            void *retptr = PARENTH_FORM(expr_head);
-            read(item);
-            if (mem_match_str(item, ")"))
-                return retptr;
-        }
-    }
-}
-
-void *parse_primary() {
-    void *primary = parse_atom();
-    return primary;
-}
-
-void *parse_power() {
-    mem_block *item = mem_head();
-    void *primary = parse_primary();
-    read(item);
-    if (!mem_match_str(item, "**")) {
-        remonter();
-        return primary;
-    }
-    void *u_expr = parse_u_expr();
-    power *retptr = (power *)malloc(sizeof(power));
-    retptr->type = power_t;
-    retptr->primary = primary;
-    retptr->u_expr = u_expr;
+    buffer *buff = buff_init();
+    string *retptr = sc_rread(sc, buff);
+    buff_del(buff);
+    sc_tkstore(sc, retptr);
     return retptr;
 }
 
-void *parse_u_expr() {
-    mem_block *item = mem_head();
-    read(item);
-    if (mem_match_str(item, "+") || mem_match_str(item, "-") || mem_match_str(item, "~")) {
-        // void *expr = parse_u_expr();
-        u_expr *retptr = (u_expr *)malloc(sizeof(u_expr));
-        retptr->type = u_expr_t;
-        retptr->u_op = mem_subscription(item, 0);
-        retptr->expr = parse_u_expr();
-        return retptr;
-    }
-    remonter();
-    return parse_power();
+
+
+int is_num(char ch) {
+    return ch >= '0' && ch <= '9';
 }
 
-void *parse_m_expr() {
-    mem_block *item = mem_head();
-    void *expr = parse_u_expr();
+int is_alph(char ch) {
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
+
+int is_alphnum(char ch) {
+    return is_alph(ch) | is_num(ch);
+}
+
+void *parse_atom(scanner *sc) {
+    string *token = sc_read(sc);
+    if (is_int(token))
+        return INT_EXPR(token);
+    else if (is_str(token))
+        return STR_EPR(token);
+    else if (string_eqchs(token, "(")) {
+        list *expr_head = list_node();
+        token = sc_read(sc);
+        if (string_eqchs(token, ")"))
+            return PARENTH_FORM(expr_head);
+        rollback(sc);
+        void *expression = parse_expression();
+        token = sc_read(sc);
+        if (string_eqchs(token, ")"))
+            return expression;
+        else if(string_eqchs(token, ",")) {
+            list_append_content(expr_head, expression);
+            token = sc_read(sc);
+            if (string_eqchs(token, ")"))
+                return PARENTH_FORM(expr_head);
+            rollback(sc);
+            list_append_list(expr_head, pa_exprs(")"));
+            void *retptr = PARENTH_FORM(expr_head);
+            token = sc_read(sc);
+            if (string_eqchs(token, ")"))
+                return retptr;
+        }
+    }
+    else if (string_eqchs(token, "[")) {
+        list *expr_head = list_node();
+        token = sc_read(sc);
+        if (string_eqchs(token, "]"))
+            return LIST_EXPR(expr_head);
+        rollback(sc);
+        void *expression = parse_expression();
+        list_append_content(expr_head, expression);
+        token = sc_read(sc);
+        if (string_eqchs(token, "]"))
+            return LIST_EXPR(expr_head);
+        else if (string_eqchs(token, ",")) {
+            token = sc_read(sc);
+            if (string_eqchs(token, "]"))
+                return LIST_EXPR(expr_head);
+            rollback(sc);
+            list_append_list(expr_head, pa_exprs("]"));
+            token = sc_read(sc);
+            if (string_eqchs(token, "]"))
+                return LIST_EXPR(expr_head);
+        }
+    }
+}
+
+void *parse_primary(scanner *sc) {
+    void *primary = parse_atom(sc);
+    return primary;
+}
+
+void *parse_power(scanner *sc) {
+    void *primary = parse_primary(sc);
+    string *token = sc_read(sc);
+    if (!string_eqchs(token, "**")) {
+        rollback(sc);
+        return primary;
+    }
+    return POWER(primary, parse_u_expr(sc));
+}
+
+void *parse_u_expr(scanner *sc) {
+    string *token = sc_read(sc);
+    if (string_eqchs(token, "+") || string_eqchs(token, "-") || string_eqchs(token, "~"))
+        return U_EXPR(token, parse_u_expr(sc));
+    rollback(sc);
+    return parse_power(sc);
+}
+
+void *parse_m_expr(scanner *sc) {
+    string *token;
+    void *expr = parse_u_expr(sc);
     while (1) {
-        read(item);
-        if (!(mem_match_str(item, "*") || mem_match_str(item, "//") ||
-              mem_match_str(item, "/") || mem_match_str(item, "%"))) {
-            remonter();
+        token = sc_read(sc);
+        if (!(string_eqchs(token, "*") || string_eqchs(token, "//") ||
+              string_eqchs(token, "/") || string_eqchs(token, "%"))) {
+            rollboack(sc);
             return expr;
         }
-        expr = B_EXPR(expr, item, parse_u_expr());
+        expr = B_EXPR(expr, token, parse_u_expr(sc));
     }
 }
 
-void *parse_a_expr() {
-    mem_block *item = mem_head();
-    void *expr = parse_m_expr();
+void *parse_a_expr(scanner *sc) {
+    string *token;
+    void *expr = parse_m_expr(sc);
     while (1) {
-        read(item);
-        if (!(mem_match_str(item, "+") || mem_match_str(item, "-"))) {
-            remonter();
+        token = sc_read(sc);
+        if (!(string_eqchs(token, "+") || string_eqchs(token, "-"))) {
+            rollback(sc);
             return expr;
         }
-        expr = B_EXPR(expr, item, parse_m_expr());
+        expr = B_EXPR(expr, token, parse_m_expr(sc));
     }
 }
 
-void *parse_shift_expr() {
-    mem_block *item = mem_head();
-    void *expr = parse_a_expr();
+void *parse_shift_expr(scanner *sc) {
+    string *token;
+    void *expr = parse_a_expr(sc);
     while (1) {
-        read(item);
-        if (!(mem_match_str(item, "<<") || mem_match_str(item, ">>"))) {
-            remonter();
-            return expr;
+        token = sc_read(sc);
+        if (!string_eqchs(token, "<<") || string_eqchs(token, ">>")) {
+            rollback(sc);
+            return retptr;
         }
-        expr = B_EXPR(expr, item, parse_a_expr());
+        expr = B_EXPR(expr, token, parse_a_expr(sc));
     }
 }
 
-void *parse_and_expr() {
-    mem_block *item = mem_head();
+void *parse_and_expr(scanner *sc) {
+    string *token;
     void *expr = parse_shift_expr();
     while (1) {
-        read(item);
-        if (!(mem_match_str(item, "&"))) {
-            remonter();
+        token = sc_read(sc);
+        if (!string_eqchs(token, "&")) {
+            rollback(sc);
             return expr;
         }
-        expr = B_EXPR(expr, item, parse_shift_expr());
+        expr = B_EXPR(expr, token, parse_shift_expr(sc));
     }
 }
 
-void *parse_xor_expr() {
-    mem_block *item = mem_head();
+void *parse_xor_expr(scanner *sc) {
+    string *token;
     void *expr = parse_and_expr();
     while (1) {
-        read(item);
-        if (!(mem_match_str(item, "^"))) {
-            remonter();
+        token = sc_read(sc);
+        if (!string_eqchs(token, "^")) {
+            rollback(sc);
             return expr;
         }
-        expr = B_EXPR(expr, item, parse_and_expr());
+        expr = B_EXPR(expr, token, parse_and_expr(sc));
     }
 }
 
-void *parse_or_expr() {
-    mem_block *item = mem_head();
+void *parse_or_expr(scanner *sc) {
+    string *token;
     void *expr = parse_xor_expr();
     while (1) {
-        read(item);
-        if (!(mem_match_str(item, "|"))) {
-            remonter();
+        token = sc_read(sc);
+        if (!string_eqchs(token, "|")) {
+            rollback(sc);
             return expr;
         }
-        expr = B_EXPR(expr, item, parse_xor_expr());
+        expr = B_EXPR(expr, token, parse_xor_expr(sc));
     }
 }
 
-int in_comp_operator(mem_block *item) {
-    if (mem_match_str(item, "is") || mem_match_str(item, "not") || mem_match_str(item, "in"))
+int in_cmpop(string *token) {
+    if (string_eqchs(token, "is") || string_eqchs(token, "not") || string_eqchs(token, "in"))
         return 1;
-    int i = 0;
-    for (i = 0; !match(comp_operators[i], " "); i++) {
-        if (mem_match_str(item, comp_operators[i]))
-            return 1;
-    }
-    return 0;
+    return is_cmpop(token);
 }
 
-void *parse_comparison() {
-    mem_block *item = mem_head();
-    mem_block *op;
-    void *or_expr = parse_or_expr();
-    read(item);
-    remonter();
-    if (!in_comp_operator(item))
+void *parse_comparison(scanner *sc) {
+    string *token;
+    string *op;
+    void *or_expr = parse_or_expr(sc);
+    token = sc_read(sc);
+    rollback(sc);
+    if (!in_cmpop(token))
         return or_expr;
     void *left = or_expr;
     void *right;
@@ -441,167 +258,126 @@ void *parse_comparison() {
     comparison *comp_expr = (comparison *)malloc(sizeof(comparison));
     comp_expr->type = comparison_t;
     while (1) {
-        read(item);
-        if (mem_match_str(item, "is")) {
-            read(item);
-            if (mem_match_str(item, "not"))
-                op = mem_str("is not");
+        token = sc_read(sc);
+        if (string_eqchs(token, "is")) {
+            token = sc_read(sc);
+            if (string_eqchs(token, "not"))
+                op = string_frchs("is not");
             else {
-                remonter();
-                op = mem_str("is");
+                rollback(sc);
+                op = string_frchs("is");
             }
         }
-        else if (mem_match_str(item, "not")) {
-            read(item);
-            if (mem_match_str(item, "in"))
-                op = mem_str("not in");
+        else if (string_eqchs(token, "not")) {
+            token = sc_read(sc);
+            if (string_eqchs(token, "in"))
+                op = string_frchs("not in");
         }
-        else if (mem_match_str(item, "in"))
-            op = mem_str("in");
-        else if (in_comp_operator(item))
-            op = item;
+        else if (string_eqchs(token, "in"))
+            op = string_frchs("in");
+        else if (in_comp_operator(token))
+            op = token;
         else {
-            remonter();
+            rollback(sc);
             comp_expr->comparisons = comparisons;
             return comp_expr;
         }
-        right = parse_or_expr();
+        right = parse_or_expr(sc);
         list_append_content(comparisons, B_EXPR(left, op, right));
+        string_del(op);
         left = right;
     }
 }
 
-void *parse_not_test() {
-    mem_block *item = mem_head();
-    read(item);
-    if (mem_match_str(item, "not")) {
-        not_test *test = (not_test *)malloc(sizeof(not_test));
-        test->type = not_test_t;
-        test->expr = parse_not_test();
-        return test;
-    }
-    remonter();
-    return parse_comparison();
+void *parse_not_test(scanner *sc) {
+    string *token = sc_read(sc);
+    if (string_eqchs(token, "not"))
+        return NOT_TEST(parse_not_test(sc));
+    rollback(sc);
+    return parse_comparison(sc);
 }
 
-void *parse_and_test() {
-    mem_block *item = mem_head();
-    void *test = parse_not_test();
+void *parse_and_test(scanner *sc) {
+    string *token;
+    void *test = parse_not_test(sc);
     while (1) {
-        read(item);
-        if (!mem_match_str(item, "and")) {
-            remonter();
+        token = sc_read(sc);
+        if (!string_eqchs(token, "and")) {
+            rollback(sc);
             return test;
         }
-        test = B_EXPR(test, item, parse_not_test());
+        test = B_EXPR(test, token, parse_not_test(sc));
     }
 }
 
-void *parse_or_test() {
-    mem_block *item = mem_head();
-    void *test = parse_and_test();
+void *parse_or_test(scanner *sc) {
+    string *token;
+    void *test = parse_and_test(sc);
     while (1) {
-        read(item);
-        if (!mem_match_str(item, "or")) {
-            remonter();
+        token = sc_read(sc);
+        if (!string_eqchs(token, "or")) {
+            rollback(sc);
             return test;
         }
-        test = B_EXPR(test, item, parse_and_test());
+        test = B_EXPR(test, token, parse_and_test(sc));
     }
 }
 
-void *parse_conditional_expression() {
-    mem_block *item = mem_head();
-    void *or_test = parse_or_test();
-    read(item);
-    if (!mem_match_str(item, "if")) {
-        remonter();
+void *parse_conditional_expression(scanner *sc) {
+    void *or_test = parse_or_test(sc);
+    string *token = sc_read(sc);
+    if (!string_eqchs(token, "if")) {
+        rollback(sc);
         return or_test;
     }
-    void *or_test2 = parse_or_test();
-    read(item);
-    if (mem_match_str(item, "else")) {
-        void *expr = parse_expression();
-        conditional_expression *expression = (conditional_expression *)malloc(sizeof(conditional_expression));
-        expression->type = conditional_expression_t;
-        expression->or_test = or_test;
-        expression->or_test2 = or_test2;
-        expression->expr = expr;
-        return expression;
-    }
+    void *or_test2 = parse_or_test(sc);
+    token = sc_read(sc);
+    if (string_eqchs(token, "else"))
+        return CONDITIONAL_EXPRESSION(or_test, or_test2, parse_expression(sc));
 }
 
 /* no lambda expression support */
-void *parse_expression() {
-    return parse_conditional_expression();
+void *parse_expression(scanner *sc) {
+    return parse_conditional_expression(sc);
 }
 
 /* no lambda expression support */
-void *parse_expression_nocond() {
-    return parse_or_test();
+void *parse_expression_nocond(scanner *sc) {
+    return parse_or_test(sc);
 }
 
 list *pa_exprs(char *ending) {
-    mem_block *item = mem_head();
+    string *token;
     list *expr_head = list_node();
     while (1) {
-        list_append_content(expr_head, parse_expression());
-        read(item);
-        if (mem_match_str(item, ",")) {
-            read(item);
-            remonter();
-            if (mem_match_str(item, ending))
+        list_append_content(expr_head, parse_expression(sc));
+        token = sc_read(sc);
+        if (string_eqchs(token, ",")) {
+            token = sc_read(sc);
+            rollback(sc);
+            if (string_eqchs(token, ending))
                 return expr_head;
         }
         else {
-            remonter();
+            rollback(sc);
             return expr_head;
         }
     }
 }
 
 void *parse_expression_list(char *ending) {
-    mem_block *item = mem_head();
-    expression_list *retptr = (expression_list *)malloc(sizeof(expression_list));
-    retptr->type = expression_list_t;
-    retptr->expr_head = pa_exprs(ending);
-    return retptr;
-}
-
-int test2()
-{
-    interactive_get_line();
-    mem_print(global.string);
-    return 0;
+    return EXPRESSION_LIST(pa_exprs(ending));
 }
 
 int test1()
 {
-    mem_block *item = mem_head();
-    interactive_get_line();
-    void *expr = parse_expression();
-    // printf("in test1, expr->op is %p\n", ((b_expr *)expr)->op);
-    // mem_print(((b_expr *)expr)->op);
+    scanner *sc = sc_init();
+    sc_getline(sc);
+    void *expr = parse_expression(sc);
     void *retval = evaluate(expr);
+    if (*(int *)retval == pylist_t)
+        pylist__sort__((pylist *)retval, pyint__cmp__);
     print(retval);
-    return 0;
-}
-
-int test()
-{
-    mem_block *item = mem_head();
-    do {
-        interactive_get_line();
-        mem_print(global.string);
-        printf("[");
-        while (global.index < global.string_sz - 1) {
-            read(item);
-            mem_print(item);
-            printf(", ");
-        }
-        printf("]\n");
-    } while (mem_ncmp("exit", global.string, 0, 4) != 0);
-
     return 0;
 }
 
