@@ -11,6 +11,11 @@
 #include <string.h>
 #include <math.h>
 
+#include "string.h"
+#include "scan/buffer.h"
+#include "scan/scanner.h"
+#include "scan/token.h"
+
 enum types { int_expr_t, str_expr_t,
              parenth_form_t, list_expr_t,
              power_t, u_expr_t, b_expr_t, comparison_t, 
@@ -119,6 +124,10 @@ struct integer {
     int index;
 };
 
+int is_alph(char );
+int is_num(char );
+int is_alphnum(char );
+
 list *list_node();
 int list_is_empty(list *);
 void list_append_content(list *, void *);
@@ -129,7 +138,8 @@ void list_sort0(list *, int (*func)(), int size);
 
 void *INT_EXPR(string *);
 void *STR_EXPR(string *);
-void *U_EXPR(string *);
+void *POWER(void *primary, void *u__expr);
+void *U_EXPR(string *, void *);
 void *B_EXPR(void *, string *, void *);
 void *NOT_TEST(void *);
 void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr);
@@ -153,9 +163,9 @@ void *evaluate(void *);
 void print_nnl(void *);
 void print(void *);
 
-void *parse_u_expr();
-void *parse_expression();
-list *pa_exprs(char *);
+void *parse_u_expr(scanner *sc);
+void *parse_expression(scanner *sc);
+list *pa_exprs(scanner *, char *);
 
 pystr *pystr__mul__(pystr *, pyint *);
 pystr *pystr__add__(pystr *, pystr *);
@@ -167,7 +177,8 @@ pytuple *pytuple__init__();
 pytuple *pytuple__add__(pytuple *, pytuple *);
 
 #include "integer.h"
-#include "pyint.h"
-#include "pylist.h"
+
+#include "pytype/pyint.h"
+#include "pytype/pylist.h"
 
 #endif /* CPYTER_H */

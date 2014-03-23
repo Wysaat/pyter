@@ -1,4 +1,4 @@
-#include "cpyter.h"
+#include "../cpyter.h"
 
 pytuple *pytuple__init__() {
     pytuple *retptr = (pytuple *)malloc(sizeof(pytuple));

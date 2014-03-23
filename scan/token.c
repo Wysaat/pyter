@@ -1,3 +1,5 @@
+#include "../cpyter.h"
+
 int is_spctk(string *token) {
     int len = sizeof(spctks) / sizeof(*spctks), i;
     for (i = 0; i < len; i++)

@@ -11,9 +11,8 @@ void rollback(scanner *sc) {
 
 string *sc_read_num_lit(scanner *sc, buffer *buff) {
     int i = 0, dot_count = 0;
-    buffer *buff = buff_init();
     while ((sc_curch(sc) >= '0' && sc_curch(sc) <= '9') ||
-           (sc_curch(sc) == '.' && !dot_count) {
+           (sc_curch(sc) == '.' && !dot_count)) {
         if (sc_curch(sc) == '.') dot_count++;
         buff_add(buff, sc_readch(sc)); /* sc_readch automatically increases index (call sc_inci) */
     }
@@ -32,16 +31,24 @@ string *sc_read_str_lit(scanner *sc, buffer *buff) {
 
 string *sc_rread(scanner *sc, buffer *buff) { /* raw read */
     int i, j, k = 0;
+    string *token;
     if (!sc_eolf_get(sc)) {
         while (sc_curch(sc) == ' ' || sc_curch(sc) == '\t')
             sc_inci(sc);
-        for (j = 3; j > 0; j--)
-            if (is_spctk(sc_curchs(sc, j))) /* sc_curchs: return j chars from current char(included) */
-                return tk_init(sc_readchs(sc, j)); /* sc_readchs() = sc_curchs() + sc_inci() */
+        for (j = 3; j > 0; j--) {
+            token = string_frchs(sc_curchs(sc, j));
+            if (is_spctk(token)) {
+                return token;
+            }
+            else {
+                string_del(token);
+            }
+        }
         if (sc_curch(sc) == '.') {
             if (sc_nxtch(sc) >= '0' && sc_nxtch(sc) <= '9')
                 return sc_read_num_lit(sc, buff);
-            return tk_init(sc_curch(sc));
+            buff_add(buff, sc_curch(sc));
+            return tk_init(buff);
         }
         if (sc_curch(sc) >= '0' && sc_curch(sc) <= '9')
             return sc_read_num_lit(sc, buff);
@@ -49,12 +56,16 @@ string *sc_rread(scanner *sc, buffer *buff) { /* raw read */
             return sc_read_str_lit(sc, buff);
         while (is_alphnum(sc_curch(sc)) || sc_curch(sc) == '_')
             buff_add(buff, sc_readch(sc));
-        if (is_strprfx(buff_puts(buff)) && (sc_curch(sc) == '\'' || sc_curch(sc) == '"'))
-            return tk_add(tk_init(buff), sc_read_str_lit(sc, buff));
+        string *tk = tk_init(buff);
+        if (is_strprfx(tk) && (sc_curch(sc) == '\'' || sc_curch(sc) == '"'))
+            return string_add(tk, sc_read_str_lit(sc, buff));
         else
-            return tk_init(buff);
+            return tk;
     }
-    else return eol;
+    else {
+        puts("in sc_rread end, NOT IMPLEMENTING EOL");
+        exit(0);
+    }
 }
 
 string *sc_read(scanner *sc) {
@@ -75,12 +86,13 @@ int is_num(char ch) {
     return ch >= '0' && ch <= '9';
 }
 
+
 int is_alph(char ch) {
     return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
 }
 
 int is_alphnum(char ch) {
-    return is_alph(ch) | is_num(ch);
+    return is_alph(ch) || is_num(ch);
 }
 
 void *parse_atom(scanner *sc) {
@@ -88,14 +100,14 @@ void *parse_atom(scanner *sc) {
     if (is_int(token))
         return INT_EXPR(token);
     else if (is_str(token))
-        return STR_EPR(token);
+        return STR_EXPR(token);
     else if (string_eqchs(token, "(")) {
         list *expr_head = list_node();
         token = sc_read(sc);
         if (string_eqchs(token, ")"))
             return PARENTH_FORM(expr_head);
         rollback(sc);
-        void *expression = parse_expression();
+        void *expression = parse_expression(sc);
         token = sc_read(sc);
         if (string_eqchs(token, ")"))
             return expression;
@@ -105,7 +117,7 @@ void *parse_atom(scanner *sc) {
             if (string_eqchs(token, ")"))
                 return PARENTH_FORM(expr_head);
             rollback(sc);
-            list_append_list(expr_head, pa_exprs(")"));
+            list_append_list(expr_head, pa_exprs(sc, ")"));
             void *retptr = PARENTH_FORM(expr_head);
             token = sc_read(sc);
             if (string_eqchs(token, ")"))
@@ -118,7 +130,7 @@ void *parse_atom(scanner *sc) {
         if (string_eqchs(token, "]"))
             return LIST_EXPR(expr_head);
         rollback(sc);
-        void *expression = parse_expression();
+        void *expression = parse_expression(sc);
         list_append_content(expr_head, expression);
         token = sc_read(sc);
         if (string_eqchs(token, "]"))
@@ -128,7 +140,7 @@ void *parse_atom(scanner *sc) {
             if (string_eqchs(token, "]"))
                 return LIST_EXPR(expr_head);
             rollback(sc);
-            list_append_list(expr_head, pa_exprs("]"));
+            list_append_list(expr_head, pa_exprs(sc, "]"));
             token = sc_read(sc);
             if (string_eqchs(token, "]"))
                 return LIST_EXPR(expr_head);
@@ -193,7 +205,7 @@ void *parse_shift_expr(scanner *sc) {
         token = sc_read(sc);
         if (!string_eqchs(token, "<<") || string_eqchs(token, ">>")) {
             rollback(sc);
-            return retptr;
+            return expr;
         }
         expr = B_EXPR(expr, token, parse_a_expr(sc));
     }
@@ -201,7 +213,7 @@ void *parse_shift_expr(scanner *sc) {
 
 void *parse_and_expr(scanner *sc) {
     string *token;
-    void *expr = parse_shift_expr();
+    void *expr = parse_shift_expr(sc);
     while (1) {
         token = sc_read(sc);
         if (!string_eqchs(token, "&")) {
@@ -214,7 +226,7 @@ void *parse_and_expr(scanner *sc) {
 
 void *parse_xor_expr(scanner *sc) {
     string *token;
-    void *expr = parse_and_expr();
+    void *expr = parse_and_expr(sc);
     while (1) {
         token = sc_read(sc);
         if (!string_eqchs(token, "^")) {
@@ -227,7 +239,7 @@ void *parse_xor_expr(scanner *sc) {
 
 void *parse_or_expr(scanner *sc) {
     string *token;
-    void *expr = parse_xor_expr();
+    void *expr = parse_xor_expr(sc);
     while (1) {
         token = sc_read(sc);
         if (!string_eqchs(token, "|")) {
@@ -346,7 +358,7 @@ void *parse_expression_nocond(scanner *sc) {
     return parse_or_test(sc);
 }
 
-list *pa_exprs(char *ending) {
+list *pa_exprs(scanner *sc, char *ending) {
     string *token;
     list *expr_head = list_node();
     while (1) {
@@ -365,14 +377,14 @@ list *pa_exprs(char *ending) {
     }
 }
 
-void *parse_expression_list(char *ending) {
-    return EXPRESSION_LIST(pa_exprs(ending));
+void *parse_expression_list(scanner *sc, char *ending) {
+    return EXPRESSION_LIST(pa_exprs(sc, ending));
 }
 
 int test1()
 {
     scanner *sc = sc_init();
-    sc_getline(sc);
+    sc_getline(sc, stdin);
     void *expr = parse_expression(sc);
     void *retval = evaluate(expr);
     if (*(int *)retval == pylist_t)

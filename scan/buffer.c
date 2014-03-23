@@ -1,3 +1,5 @@
+#include "../cpyter.h"
+
 buffer *buff_init() {
     buffer *retptr = (buffer *)malloc(sizeof(buffer));
     memset(retptr, 0, sizeof(buffer));

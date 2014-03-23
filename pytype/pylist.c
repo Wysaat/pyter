@@ -1,4 +1,4 @@
-#include "cpyter.h"
+#include "../cpyter.h"
 
 pylist *pylist__init__() {
 	pylist *retptr = (pylist *)malloc(sizeof(pylist));

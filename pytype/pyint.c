@@ -1,4 +1,4 @@
-#include "cpyter.h"
+#include "../cpyter.h"
 
 pyint *pyint__init__() {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));

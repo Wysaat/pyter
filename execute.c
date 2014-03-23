@@ -31,7 +31,7 @@ void *POWER(void *primary, void *u_expr) {
 void *U_EXPR(string *op, void *expr) {
     u_expr *retptr = (u_expr *)malloc(sizeof(u_expr));
     retptr->type = u_expr_t;
-    retptr->op = string_cpy(token);
+    retptr->op = string_cpy(op);
     retptr->expr = expr;
     return retptr;
 }
@@ -76,7 +76,7 @@ void *PYINT(integer *value) {
     return retptr;
 }
 
-void *PYSTR(mem_block *value) {
+void *PYSTR(string *value) {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->type = pystr_t;
     retptr->value = value;
@@ -114,11 +114,7 @@ void *int_exprEvaluate(int_expr *structure) {
 void *str_exprEvaluate(str_expr *structure) {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->type = pystr_t;
-    retptr->value = mem_head();
-    mem_ncpy(retptr->value, structure->value, 0, 1, mem_size(structure->value)-2);
-    // mem_cpy(retptr->value, structure->value+1);
-    // puts("in str_exprEvaluate, after mem_cpy");
-    // mem_set(retptr->value, mem_size(retptr->value)-1, 0);
+    retptr->value = string_slice(retptr->value, 1, -1, 1);
     return retptr;
 }
 
@@ -157,74 +153,73 @@ void *u_exprEvaluate(u_expr *structure) {
     void *expr_val = evaluate(structure->expr);
     if (*(int *)expr_val == pyint_t) {
         pyint *val = expr_val;
-        switch(structure->u_op) {
-            case '+':
-                return val;
-            case '-':
-                val->value = integer__neg__(val->value);
-                return val;
-            case '~':
-                val->value = integer__invert__(val->value);
-                return val;
+        if (string_eqchs(structure->op, "+"))
+            return val;
+        else if (string_eqchs(structure->op, "-")) {
+            integer *newvalue = integer__neg__(val->value);
+            integer__del__(val->value);
+            val->value = newvalue;
+            return val;
+        }
+        else if ((string_eqchs(structure->op, "~"))) {
+            integer *newvalue = integer__invert__(val->value);
+            integer__del__(val->value);
+            val->value = newvalue;
+            return val;
         }
     }
 }
 
 void *b_exprEvaluate(b_expr *structure) {
-    // puts("in b_exprEvaluate");
     int *left_val = evaluate(structure->left);
     int *right_val = evaluate(structure->right);
     integer *zero = INTEGER_NODE();
     if (*left_val == pyint_t && *right_val == pyint_t) {
         integer *left = ((pyint *)left_val)->value;
-        // printf("left is %d\n", left);
         integer *right = ((pyint *)right_val)->value;
-        // printf("right is %d\n", right);
-        // puts("print op in the next line");
-        // mem_print(structure->op);
-        if (mem_match_str(structure->op, "*"))
+        if (string_eqchs(structure->op, "*"))
             return pyint__mul__((pyint *)left_val, (pyint *)right_val);
-        else if (mem_match_str(structure->op, "//"))
+        else if (string_eqchs(structure->op, "//"))
             return pyint__div__((pyint *)left_val, (pyint *)right_val);
-        else if (mem_match_str(structure->op, "/"))
+        else if (string_eqchs(structure->op, "/"))
             return pyint__div__((pyint *)left_val, (pyint *)right_val);
-        else if (mem_match_str(structure->op, "%"))
+        else if (string_eqchs(structure->op, "%"))
             return pyint__mod__((pyint *)left_val, (pyint *)right_val);
-        else if (mem_match_str(structure->op, "+"))
+        else if (string_eqchs(structure->op, "+"))
             return pyint__add__((pyint *)left_val, (pyint *)right_val);
-        else if (mem_match_str(structure->op, "-"))
+        else if (string_eqchs(structure->op, "-"))
             return pyint__sub__((pyint *)left_val, (pyint *)right_val);
-        else if (mem_match_str(structure->op, "<<"))
+        else if (string_eqchs(structure->op, "<<"))
             return pyint__lshift__((pyint *)left_val, (pyint *)right_val);
-        else if (mem_match_str(structure->op, ">>"))
+        else if (string_eqchs(structure->op, ">>"))
             return pyint__rshift__((pyint *)left_val, (pyint *)right_val);
-        else if (mem_match_str(structure->op, "&"))
+        else if (string_eqchs(structure->op, "&"))
             return PYINT(integer__and__(left, right));
-        else if (mem_match_str(structure->op, "^"))
+        else if (string_eqchs(structure->op, "^"))
             return PYINT(integer__xor__(left, right));
-        else if (mem_match_str(structure->op, "|"))
+        else if (string_eqchs(structure->op, "|"))
             return PYINT(integer__or__(left, right));
-        else if (mem_match_str(structure->op, "<"))
+        else if (string_eqchs(structure->op, "<"))
             return PYBOOL(integer__lt__(left, right));
-        else if (mem_match_str(structure->op, ">"))
+        else if (string_eqchs(structure->op, ">"))
             return PYBOOL(integer__gt__(left, right));
-        else if (mem_match_str(structure->op, "=="))
+        else if (string_eqchs(structure->op, "=="))
             return PYBOOL(integer__eq__(left, right));
-        else if (mem_match_str(structure->op, "<="))
+        else if (string_eqchs(structure->op, "<="))
             return PYBOOL(integer__le__(left, right));
-        else if (mem_match_str(structure->op, ">="))
+        else if (string_eqchs(structure->op, ">="))
             return PYBOOL(integer__ge__(left, right));
-        else if (mem_match_str(structure->op, "<>"))
+        else if (string_eqchs(structure->op, "<>"))
             return PYBOOL(!integer__eq__(left, right));
-        else if (mem_match_str(structure->op, "!="))
+        else if (string_eqchs(structure->op, "!="))
             return PYBOOL(!integer__eq__(left, right));
-        else if (mem_match_str(structure->op, "and")) {
+        else if (string_eqchs(structure->op, "and")) {
             if (left && right)
             if (!integer__eq__(left, zero) && !integer__eq__(right, zero))
                 return PYINT(right);
             return PYINT(zero);
         }
-        else if (mem_match_str(structure->op, "or")) {
+        else if (string_eqchs(structure->op, "or")) {
             if (!integer__eq__(left, zero))
                 return PYINT(left);
             else if (!integer__eq__(right, zero))
@@ -233,20 +228,20 @@ void *b_exprEvaluate(b_expr *structure) {
         }
     }
     else if (*left_val == pystr_t && *right_val == pyint_t) {
-        if (mem_match_str(structure->op, "*")) {
+        if (string_eqchs(structure->op, "*")) {
             return pystr__mul__((pystr *)left_val, (pyint *)right_val);
         }
     }
     else if (*left_val == pyint_t && *right_val == pystr_t) {
-        if (mem_match_str(structure->op, "*"))
+        if (string_eqchs(structure->op, "*"))
             return pystr__mul__((pystr *)right_val, (pyint *)left_val);
     }
     else if (*left_val == pystr_t && *right_val == pystr_t) {
-        if (mem_match_str(structure->op, "+"))
+        if (string_eqchs(structure->op, "+"))
             return pystr__add__((pystr *)left_val, (pystr *)right_val);
     }
     else if (*left_val == pytuple_t && *right_val == pytuple_t) {
-        if (mem_match_str(structure->op, "+"))
+        if (string_eqchs(structure->op, "+"))
             return pytuple__add__((pytuple *)left_val, (pytuple *)right_val);
     }
 }
@@ -351,10 +346,10 @@ void print_nnl(void *structure) {
     list *ptr;
     switch (*(int *)structure) {
         case pyint_t:
-            mem_print_nnl(integer__str__(((pyint *)structure)->value));
+            string_print_nnl(integer__str__(((pyint *)structure)->value));
             break;
         case pystr_t:
-            mem_print_nnl(((pystr *)structure)->value);
+            string_print_nnl(((pystr *)structure)->value);
             break;
         case pybool_t:
             if (((pybool *)structure)->value)
@@ -392,19 +387,7 @@ void print(void *structure) {
 }
 
 pystr *pystr__mul__(pystr *left, pyint *right) {
-    mem_block *dest = mem_head();
-    mem_block *src = left->value;
-    integer *times = right->value, *zero = INTEGER_NODE();
-    int off = mem_size(left->value), offset;
-    for (offset = 0; integer__gt__(times, zero); times = integer__dec__(times), offset += off) {
-        mem_ncpy(dest, src, offset, 0, off);
-    }
-    return PYSTR(dest);
 }
 
 pystr *pystr__add__(pystr *left, pystr *right) {
-    mem_block *dest = mem_head();
-    mem_cpy(dest, left->value);
-    mem_ncpy(dest, right->value, mem_size(dest), 0, mem_size(right->value));
-    return PYSTR(dest);
 }

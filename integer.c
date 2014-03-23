@@ -60,11 +60,11 @@ integer *integer__init__(string *strval) {
     integer *lowest = INTEGER_NODE();
     integer *cur_ptr = lowest;
     int length = string_len(strval);
-    char chars[INTEGER_SZ+1];
+    char *chars;
     int copy_sz, i = 0;
     while (1) {
         copy_sz = (length < INTEGER_SZ) ? length : INTEGER_SZ;
-        chars = string_tochs(string_slice(strval, ));
+        chars = string_tochs(string_slice(strval, length-copy_sz, copy_sz, 1));
         cur_ptr->value = atoi(chars);
         free(chars);
         cur_ptr->index = i++;
@@ -127,7 +127,9 @@ integer *integer__invert__(integer *head) {
 }
 
 string *integer__str__(integer *head) {
-    string *strptr = string_init(), *new_strptr, *to_add;
+    string *strptr = string_init(); 
+    string *new_strptr;
+    string *to_add;
     integer *integer_ptr = head;
     char *val;
     while (integer_ptr) {
@@ -135,7 +137,7 @@ string *integer__str__(integer *head) {
         val = itoa(integer_ptr->value);
         if (integer_ptr == head) {
             if (integer_ptr->sign == '-') {
-                string[0] = integer_ptr->sign;
+                chars[0] = integer_ptr->sign;
                 strcpy(chars+1, val);
                 free(val);
             }
@@ -150,7 +152,7 @@ string *integer__str__(integer *head) {
             free(val);
             chars[INTEGER_SZ] = 0;
             while (--offset >= 0)
-                string[offset] = '0';
+                chars[offset] = '0';
         }
         to_add = string_frchs(chars);
         new_strptr = string_add(strptr, to_add);
@@ -208,8 +210,8 @@ int integer__gt__(integer *left, integer *right) {
     int i, size = string_len(strl);
     char *l, *r;
     for (i = 0; i < size; i++) {
-        l = string_ssci(strl, i);
-        r = string_ssci(strr, i);
+        l = string_get(strl, i);
+        r = string_get(strr, i);
         if (*l > *r)
             return 1;
         else if (*l < *r)
