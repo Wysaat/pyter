@@ -6,6 +6,11 @@ pyint *pyint__init__() {
     return retptr;
 }
 
+void pyint__del__(pyint *val) {
+	integer__del__(val->value);
+	free(val);
+}
+
 pyint *pyint__add__(pyint *left, pyint *right) {
     pyint *retptr = pyint__init__();
     retptr->value = integer__add__(left->value, right->value);
@@ -14,7 +19,7 @@ pyint *pyint__add__(pyint *left, pyint *right) {
 
 pyint *pyint__sub__(pyint *left, pyint *right) {
 	pyint *retptr = pyint__init__();
-	retptr->value = integer__add__(left->value, right->value);
+	retptr->value = integer__sub__(left->value, right->value);
 	return retptr;
 }
 
@@ -48,6 +53,28 @@ pyint *pyint__rshift__(pyint *left, pyint *right) {
 	return retptr;
 }
 
+pybool *pyint__lt__(pyint *left, pyint *right) {
+	return PYBOOL(integer__lt__(left, right));
+}
+
+pybool *pyint__gt__(pyint *left, pyint *right) {
+	return PYBOOL(integer__gt__(left, right));
+}
+
 int pyint__cmp__(pyint *left, pyint *right) {
 	return integer__cmp__(left->value, right->value);
+}
+
+
+
+void pyint__dec__(pyint *val) {
+    integer *new_value = integer__dec__(val->value);
+	integer__del__(val->value);
+	val->value = new_value;
+}
+
+void pyint__inc__(pyint *val) {
+	integer *new_value = integer__inc__(val->value);
+	integer__del__(val->value);
+	val->value = new_value;
 }

@@ -1,4 +1,9 @@
-#include "cpyter.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include "integer.h"
+#include "string.h"
 
 char *itoa(int value) {
     int n = 0;
@@ -56,15 +61,15 @@ integer *INTEGER_NODE() {
     return retptr;
 }
 
-integer *integer__init__(string *strval) {
+integer *integer__init__(char *chval) {
     integer *lowest = INTEGER_NODE();
     integer *cur_ptr = lowest;
-    int length = string_len(strval);
+    int length = strlen(chval);
     char *chars;
     int copy_sz, i = 0;
     while (1) {
         copy_sz = (length < INTEGER_SZ) ? length : INTEGER_SZ;
-        chars = string_tochs(string_slice(strval, length-copy_sz, copy_sz, 1));
+        chars = strslice(chval, length-copy_sz, length, 1);
         cur_ptr->value = atoi(chars);
         free(chars);
         cur_ptr->index = i++;
@@ -126,42 +131,36 @@ integer *integer__invert__(integer *head) {
     return retptr;
 }
 
-string *integer__str__(integer *head) {
-    string *strptr = string_init(); 
-    string *new_strptr;
-    string *to_add;
+char *integer__str__(integer *head) {
+    char *retval = strdup("");
+    char *new_retval;
     integer *integer_ptr = head;
     char *val;
+    char chars[INTEGER_SZ+1];
     while (integer_ptr) {
-        char chars[INTEGER_SZ+1];
         val = itoa(integer_ptr->value);
         if (integer_ptr == head) {
             if (integer_ptr->sign == '-') {
                 chars[0] = integer_ptr->sign;
                 strcpy(chars+1, val);
-                free(val);
             }
             else {
                 strcpy(chars, val);
-                free(val);
             }
         }
         else {
             int offset = INTEGER_SZ - strlen(val);
             strcpy(chars+offset, val);
-            free(val);
             chars[INTEGER_SZ] = 0;
             while (--offset >= 0)
                 chars[offset] = '0';
         }
-        to_add = string_frchs(chars);
-        new_strptr = string_add(strptr, to_add);
-        string_del(to_add);
-        string_del(new_strptr);
-        strptr = new_strptr;
+        new_retval = stradd(retval, chars);
+        free(retval);
+        retval = new_retval;
         integer_ptr = integer_ptr->lower;
     }
-    return strptr;
+    return retval;
 }
 
 integer *integer__inc__(integer *head) {
@@ -195,26 +194,23 @@ int integer__gt__(integer *left, integer *right) {
         return 0;
     else if (left->sign == '-' && right->sign == '-')
         return 1 - integer__gt__(integer__neg__(left), integer__neg__(right));
-    string *strl = integer__str__(left);
-    string *strr = integer__str__(right);
-    if (string_len(strl) > string_len(strr)) {
-        string_del(strl);
-        string_del(strr);
+    char *strl = integer__str__(left);
+    char *strr = integer__str__(right);
+    if (strlen(strl) > strlen(strr)) {
+        free(strl);
+        free(strr);
         return 1;
     }
-    else if (string_len(strl) < string_len(strr)) {
-        string_del(strl);
-        string_del(strr);
+    else if (strlen(strl) < strlen(strr)) {
+        free(strl);
+        free(strr);
         return 0;
     }
-    int i, size = string_len(strl);
-    char *l, *r;
+    int i, size = strlen(strl);
     for (i = 0; i < size; i++) {
-        l = string_get(strl, i);
-        r = string_get(strr, i);
-        if (*l > *r)
+        if (strl[i] > strr[i])
             return 1;
-        else if (*l < *r)
+        else if (strl[i] < strr[i])
             return 0;
     }
     return 0;
@@ -424,11 +420,9 @@ integer *integer__mkempt__(int size) {
 integer *integer__node__mul__(integer *node1, integer *node2) {
     integer *retptr = integer__mkempt__(node1->index+node2->index+2);
     long long value = (long long )node1->value * (long long )node2->value;
-    char *val_char = lltoa(value);
-    string *val_block = string_frchs(val_char);
-    free(val_char);
-    integer *valptr = integer__init__(val_block);
-    string_del(val_block);
+    char *chval = lltoa(value);
+    integer *valptr = integer__init__(chval);
+    free(chval);
     if (valptr->index == 1) {
         retptr->value = valptr->value;
         retptr->lower->value = valptr->lower->value;

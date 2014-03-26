@@ -1,11 +1,25 @@
+#ifndef INTEGER_H
+#define INTEGER_H
+
+#define INTEGER_SZ 5
+
+typedef struct integer integer;
+struct integer {
+    int value;
+    integer *higher;
+    integer *lower;
+    char sign;
+    int index;
+};
+
 integer *INTEGER_NODE();
-integer *integer__init__(string *);
+integer *integer__init__(char *);
 void integer__del__(integer *);
 integer *integer__cpy__(integer *);
 integer *integer__neg__(integer *);
 integer *integer__abs__(integer *);
 integer *integer__invert__(integer *);
-string *integer__str__(integer *);
+char *integer__str__(integer *);
 integer *integer__inc__(integer *);
 integer *integer__dec__(integer *);
 int integer__eq__(integer *, integer *);
@@ -27,3 +41,5 @@ integer *integer__rshift__(integer *, integer *);
 integer *integer__and__(integer *, integer *);
 integer *integer__xor__(integer *, integer *);
 integer *integer__or__(integer *, integer *);
+
+#endif /* INTEGER_H */

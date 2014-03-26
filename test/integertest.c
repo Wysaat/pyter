@@ -1,6 +1,20 @@
-#include "cpyter.h"
+#include "../integer.h"
 
 int main() {
+    integer *a = integer__init__("34234234324");
+    char *e = integer__str__(a);
+    puts(e);
+    integer *c = integer__cpy__(a);
+    char *b = integer__str__(c);
+    puts(b);
+    integer *d = integer__neg__(a);
+    char *f = integer__str__(d);
+    puts(f);
+    integer *m = integer__init__("143429564534");
+    integer *n = integer__mul__(a, m);
+    char *nn = integer__str__(n);
+    puts(nn);
+    puts(integer__str__(integer__add__(m, n)));
 // /*/*/*/*/*    // integer *a = integer__init__(mem_str("8888888"));
 //     // integer *b = integer__init__(mem_str("8888888"));
 //     // integer *c = integer__sub__(a, b);
@@ -129,18 +143,18 @@ int main() {
     // mem_print(integer__str__(ee));
 
 /* test INTEGER_NODE */
-    integer *zero = INTEGER_NODE();
-    mem_print(integer__str__(zero));
-    integer *p = INTEGER_NODE();
-    p->value = 10;
-    integer *ppp = INTEGER_NODE();
-    ppp->value = 6;
-    integer *pp = integer__pow__(p, ppp);
-    mem_print(integer__str__(pp));
+    // integer *zero = INTEGER_NODE();
+    // mem_print(integer__str__(zero));
+    // integer *p = INTEGER_NODE();
+    // p->value = 10;
+    // integer *ppp = INTEGER_NODE();
+    // ppp->value = 6;
+    // integer *pp = integer__pow__(p, ppp);
+    // mem_print(integer__str__(pp));
 
-    integer *eight = INTEGER_NODE(); eight->value = 8;
-    integer *valz = integer__node__mul__(zero, eight);
-    mem_print(integer__str__(valz));
+    // integer *eight = INTEGER_NODE(); eight->value = 8;
+    // integer *valz = integer__node__mul__(zero, eight);
+    // mem_print(integer__str__(valz));
 
     // integer *head = INTEGER_NODE();
     // head->sign = '-';

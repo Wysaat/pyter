@@ -2,7 +2,6 @@
 #define CPYTER_H
 
 #define ITEMSIZE 10
-#define INTEGER_SZ 5
 
 #define match(x, y) !strcmp(x, y)
 
@@ -12,9 +11,12 @@
 #include <math.h>
 
 #include "string.h"
+#include "integer.h"
 #include "scan/buffer.h"
 #include "scan/scanner.h"
 #include "scan/token.h"
+
+#include "pytype/pyint.h"
 
 enum types { int_expr_t, str_expr_t,
              parenth_form_t, list_expr_t,
@@ -25,16 +27,15 @@ enum types { int_expr_t, str_expr_t,
              pytuple_t, pylist_t, };
 
 typedef struct list list;
-typedef struct integer integer;
 
 typedef struct int_expr {
     int type;
-    string *value;
+    char *value;
 } int_expr;
 
 typedef struct str_expr {
     int type;
-    string *value;
+    char *value;
 } str_expr;
 
 typedef struct parenth_form {
@@ -55,13 +56,13 @@ typedef struct power {
 
 typedef struct u_expr {
     int type;
-    string *op;
+    char *op;
     void *expr;
 } u_expr;
 
 typedef struct b_expr {
     int type;
-    string *op;
+    char *op;
     void *left;
     void *right;
 } b_expr;
@@ -94,11 +95,9 @@ struct list {
     struct list *next;
 };
 
-typedef struct pyint pyint;
-
 typedef struct pystr {
     int type;
-    string *value;
+    char *value;
 } pystr;
 
 typedef struct pybool {
@@ -116,14 +115,6 @@ typedef struct pylist {
     list *values;
 } pylist;
 
-struct integer {
-    int value;
-    struct integer *higher;
-    struct integer *lower;
-    char sign;
-    int index;
-};
-
 int is_alph(char );
 int is_num(char );
 int is_alphnum(char );
@@ -136,16 +127,16 @@ list *list_add(list *, list *);
 void list_sort(list *, int (*func)());
 void list_sort0(list *, int (*func)(), int size);
 
-void *INT_EXPR(string *);
-void *STR_EXPR(string *);
+void *INT_EXPR(char *);
+void *STR_EXPR(char *);
 void *POWER(void *primary, void *u__expr);
-void *U_EXPR(string *, void *);
-void *B_EXPR(void *, string *, void *);
+void *U_EXPR(char *, void *);
+void *B_EXPR(void *, char *, void *);
 void *NOT_TEST(void *);
 void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr);
 void *EXPRESSION_LIST(list *);
 void *PYINT(integer *);
-void *PYSTR(string *);
+void *PYSTR(char *);
 void *PYBOOL(int);
 void *PARENTH_FORM(list *);
 void *LIST_EXPR(list *);
@@ -176,9 +167,6 @@ char *lltoa(long long );
 pytuple *pytuple__init__();
 pytuple *pytuple__add__(pytuple *, pytuple *);
 
-#include "integer.h"
-
-#include "pytype/pyint.h"
 #include "pytype/pylist.h"
 
 #endif /* CPYTER_H */

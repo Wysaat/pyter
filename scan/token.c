@@ -1,37 +1,40 @@
-#include "../cpyter.h"
+#include <string.h>
+#include "token.h"
 
-int is_spctk(string *token) {
+int is_spctk(char *token) {
     int len = sizeof(spctks) / sizeof(*spctks), i;
     for (i = 0; i < len; i++)
-        if (string_eq(token, &spctks[i]))
+        if (!strcmp(token, spctks[i]))
             return 1;
     return 0;
 }
 
-int is_strprfx(string *token) {
+int is_strprfx(char *token) {
     int len = sizeof(strprfxes) / sizeof(*strprfxes), i;
     for (i = 0; i < len; i++)
-        if (string_eq(token, &strprfxes[i]))
+        if (!strcmp(token, strprfxes[i]))
             return 1;
     return 0;
 }
 
-int is_cmpop(string *token) {
+int is_cmpop(char *token) {
     int len = sizeof(cmpops) / sizeof(*cmpops), i;
     for (i = 0; i < len; i++)
-        if (string_eq(token, &cmpops[i]))
+        if (!strcmp(token, cmpops[i]))
             return 1;
     return 0;
 }
 
-string *tk_init(buffer *buff) {
-    char **retptr;
-    *retptr = (char *)malloc(buff_len(buff)+1);
-    int offs = 0;
-    buffer *ptr = buff;
-    while (ptr) {
-        strcpy(retptr+offs, ptr->value);
-        offs += strlen(ptr->value);
-    }
-    return retptr;
+int is_int(char *token) {
+    int i;
+    for (i = 0; i < strlen(token); i++)
+        if (token[i] < '0' || token[i] > '9')
+            return 0;
+    return 1;
+}
+
+int is_str(char *token) {
+    if (token[0] == '"' || token[0] == '\'')
+        return 1;
+    return 0;
 }

@@ -1,15 +1,7 @@
-#include "../cpyter.h"
-
-struct scanner {
-    string *line;
-    int ll; /* line length */
-    int ind; /* index in a line */
-    int ln;
-    int mlf; /* multi lines flag */
-    int rbf; /* rollback flag */
-    int eolf;
-    string *lasttk;
-};
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "scanner.h"
 
 scanner *sc_init() {
     scanner *retptr = (scanner *)malloc(sizeof(scanner));
@@ -26,59 +18,21 @@ char sc_nxtch(scanner *sc) {
 }
 
 char *sc_curchs(scanner *sc, int len) {
-    return strndup(sc->line+sc->ind, len);
-}
-
-void sc_inci(scanner *sc) {
-    sc->ind++;
+    char *retval = (char *)malloc(len+1);
+    strncpy(retval, sc->line+sc->ind, len);
+    retval[len] = 0;
+    return retval;
 }
 
 char sc_readch(scanner *sc) {
-    sc_inci(sc);
+    sc->ind++;
     return sc->line[sc->ind-1];
 }
 
-char sc_readchs(scanner *sc, int len) {
-    char *ret = sc_curchs(sc, len);
-    sc->ind += strlen(ret);
-    return ret;
-}
-
-string *sc_lasttk(scanner *sc) {
-    return sc->lasttk;
-}
-
-void sc_tkstore(scanner *sc, string *token) {
-    string_del(sc->lasttk);
-    sc->lasttk = token;
-}
-
-int sc_eolf_get(scanner *sc) {
-    return sc->eolf;
-}
-
-void sc_eolf_set(scanner *sc) {
-    sc->eolf = 1;
-}
-
-void sc_eolf_clr(scanner *sc) {
-    sc->eolf = 0;
-}
-
-int sc_mlf_get(scanner *sc) {
-    return sc->rbf;
-}
-
-int sc_rbf_get(scanner *sc) {
-    return sc->rbf;
-}
-
-void sc_rbf_set(scanner *sc) {
-    sc->rbf = 1;
-}
-
-void sc_rbf_clr(scanner *sc) {
-    sc->rbf = 0;
+char *sc_readchs(scanner *sc, int len) {
+    char *retval = sc_curchs(sc, len);
+    sc->ind += len;
+    return retval;
 }
 
 void sc_getline(scanner *sc, FILE *stream) {
@@ -86,12 +40,24 @@ void sc_getline(scanner *sc, FILE *stream) {
         printf(">>> ");
     char *line = 0;
     int read, len = 0;
-    int read = geline(&line, &len, stdin);
+    read = getline(&line, &len, stdin);
     if (read != -1) {
         sc->line = line;
         sc->ln++;
         sc->ll = read;
-        sc.ind = 0;
-        sc_eolf_clr(sc);
+        sc->ind = 0;
     }
+}
+
+void sc_dump(scanner *sc) {
+    printf("-----begin of scanner dump---------------------------\n");
+    printf("scanner->line is %s", sc->line);
+    printf("scanner->ll is %d\n", sc->ll);
+    printf("scanner->ind is %d\n", sc->ind);
+    printf("scanner->ln is %d\n", sc->ln);
+    printf("scanner->mlf is %d\n", sc->mlf);
+    printf("scanner->rbf is %d\n", sc->rbf);
+    printf("scanner->eolf is %d\n", sc->eolf);
+    printf("scanner->lasttk is %s\n", sc->lasttk);
+    printf("-----end of scanner dump-----------------------------\n");
 }

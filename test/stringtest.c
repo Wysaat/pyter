@@ -1,18 +1,21 @@
-#include "cpyter.h"
-#include "string.h"
+#include "../string.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int main()
 {
-    string *a = string__from__char__("Hello, world, it is in the stringtest.c file!");
-    string__print__(a);
-    string *b = string__cpy__(a);
-    int i;
-    for (i = 0; i < string__len__(a); i++) {
-        char *c = string__subscript__(a, i);
-        printf("%c", *c);
-    }
-    puts("");
-    string__del__(a);
-    string__print__(b);
+    char *a = "hello, world";
+    char *b = stradd(a, ", again");
+    char *c = strslice(a, 2, 8, 1);
+    char *d = strslice(a, 5, -2, 4);
+    char *e = strslice(a, 10, 1, 3);
+
+    puts(a);
+    puts(b);
+    puts(c);
+    puts(d);
+    puts(e);
+
     return 0;
 }
