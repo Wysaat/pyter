@@ -83,12 +83,7 @@ void *PYSTR(char *value) {
     return retptr;
 }
 
-void *PYBOOL(int value) {
-    pybool *retptr = (pybool *)malloc(sizeof(pybool));
-    retptr->type = pybool_t;
-    retptr->value = value;
-    return retptr;
-}
+
 
 void *PARENTH_FORM(list *expr_head) {
     parenth_form *retptr = (parenth_form *)malloc(sizeof(parenth_form));

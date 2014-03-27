@@ -10,6 +10,8 @@
 #include <string.h>
 #include <math.h>
 
+
+#include "types.h"
 #include "string.h"
 #include "integer.h"
 #include "scan/buffer.h"
@@ -17,14 +19,8 @@
 #include "scan/token.h"
 
 #include "pytype/pyint.h"
-
-enum types { int_expr_t, str_expr_t,
-             parenth_form_t, list_expr_t,
-             power_t, u_expr_t, b_expr_t, comparison_t, 
-             not_test_t, conditional_expression_t,
-             expression_list_t,
-             pyint_t, pystr_t, pybool_t,
-             pytuple_t, pylist_t, };
+#include "pytype/pystr.h"
+#include "pytype/pybool.h"
 
 typedef struct list list;
 
@@ -95,16 +91,6 @@ struct list {
     struct list *next;
 };
 
-typedef struct pystr {
-    int type;
-    char *value;
-} pystr;
-
-typedef struct pybool {
-    int type;
-    int value;
-} pybool;
-
 typedef struct pytuple {
     int type;
     list *values;
@@ -137,7 +123,7 @@ void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr);
 void *EXPRESSION_LIST(list *);
 void *PYINT(integer *);
 void *PYSTR(char *);
-void *PYBOOL(int);
+
 void *PARENTH_FORM(list *);
 void *LIST_EXPR(list *);
 
@@ -157,9 +143,6 @@ void print(void *);
 void *parse_u_expr(scanner *sc);
 void *parse_expression(scanner *sc);
 list *pa_exprs(scanner *, char *);
-
-pystr *pystr__mul__(pystr *, pyint *);
-pystr *pystr__add__(pystr *, pystr *);
 
 char *itoa(int );
 char *lltoa(long long );

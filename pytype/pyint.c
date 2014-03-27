@@ -1,4 +1,9 @@
-#include "../cpyter.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "../types.h"
+#include "pyint.h"
+#include "pystr.h"
+#include "pybool.h"
 
 pyint *pyint__init__() {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
@@ -54,11 +59,11 @@ pyint *pyint__rshift__(pyint *left, pyint *right) {
 }
 
 pybool *pyint__lt__(pyint *left, pyint *right) {
-	return PYBOOL(integer__lt__(left, right));
+	return PYBOOL(integer__lt__(left->value, right->value));
 }
 
 pybool *pyint__gt__(pyint *left, pyint *right) {
-	return PYBOOL(integer__gt__(left, right));
+	return PYBOOL(integer__gt__(left->value, right->value));
 }
 
 int pyint__cmp__(pyint *left, pyint *right) {
@@ -66,6 +71,17 @@ int pyint__cmp__(pyint *left, pyint *right) {
 }
 
 
+void pyint__print__(pyint *val) {
+	char *string = integer__str__(val->value);
+	printf("%s", string);
+	free(string);
+}
+
+void pyint__puts__(pyint *val) {
+	char *string = integer__str__(val->value);
+	puts(string);
+	free(string);
+}
 
 void pyint__dec__(pyint *val) {
     integer *new_value = integer__dec__(val->value);

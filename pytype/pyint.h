@@ -2,6 +2,7 @@
 #define PYTYPE_PYINT_H
 
 #include "../integer.h"
+#include "pybool.h"
 
 typedef struct pyint pyint;
 
@@ -20,11 +21,13 @@ pyint *pyint__mod__(pyint *, pyint *);
 pyint *pyint__lshift__(pyint *, pyint *);
 pyint *pyint__rshift__(pyint *, pyint *);
 pybool *pyint__lt__(pyint *, pyint *);
+pybool *pyint__gt__(pyint *, pyint *);
 int pyint__cmp__(pyint *, pyint *);
 
+void pyint__print__(pyint *);
+void pyint__puts__(pyint *);
 
-
-pyint *pyint__dec__(pyint *);
-pyint *pyint__inc__(pyint *);
+void pyint__dec__(pyint *);
+void pyint__inc__(pyint *);
 
 #endif /* PYTYPE_PYINT_H */
