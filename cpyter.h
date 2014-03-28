@@ -1,19 +1,16 @@
 #ifndef CPYTER_H
 #define CPYTER_H
 
-#define ITEMSIZE 10
-
-#define match(x, y) !strcmp(x, y)
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-
 #include "types.h"
 #include "string.h"
 #include "integer.h"
+#include "list.h"
+
 #include "scan/buffer.h"
 #include "scan/scanner.h"
 #include "scan/token.h"
@@ -21,6 +18,7 @@
 #include "pytype/pyint.h"
 #include "pytype/pystr.h"
 #include "pytype/pybool.h"
+#include "pytype/pytuple.h"
 
 typedef struct list list;
 
@@ -85,17 +83,6 @@ typedef struct expression_list {
     list *expr_head;
 } expression_list;
 
-struct list {
-    void *content;
-    struct list *prev;
-    struct list *next;
-};
-
-typedef struct pytuple {
-    int type;
-    list *values;
-} pytuple;
-
 typedef struct pylist {
     int type;
     list *values;
@@ -104,14 +91,6 @@ typedef struct pylist {
 int is_alph(char );
 int is_num(char );
 int is_alphnum(char );
-
-list *list_node();
-int list_is_empty(list *);
-void list_append_content(list *, void *);
-void list_append_list(list *, list *);
-list *list_add(list *, list *);
-void list_sort(list *, int (*func)());
-void list_sort0(list *, int (*func)(), int size);
 
 void *INT_EXPR(char *);
 void *STR_EXPR(char *);
@@ -146,9 +125,6 @@ list *pa_exprs(scanner *, char *);
 
 char *itoa(int );
 char *lltoa(long long );
-
-pytuple *pytuple__init__();
-pytuple *pytuple__add__(pytuple *, pytuple *);
 
 #include "pytype/pylist.h"
 

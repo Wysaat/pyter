@@ -1,4 +1,10 @@
-#include "cpyter.h"
+/*
+ * CAUTION: list_append_list, list_add SHOULD BE USED CAREFULLY.
+ */
+
+#include <stdlib.h>
+#include <string.h>
+#include "list.h"
 
 list *list_node() {
     list *retptr = (list *)malloc(sizeof(list));
@@ -8,12 +14,20 @@ list *list_node() {
     return retptr;
 }
 
-int list_is_empty(list *list) {
-    if (list->prev == 0 && list->next == 0 && list->content == 0)
+list *list_cpy(list *head) {
+    list *retptr, *ptr = head;
+}
+
+void list_del(list *head) {
+}
+
+int list_is_empty(list *head) {
+    if (head->prev == 0 && head->next == 0 && head->content == 0)
         return 1;
     return 0;
 }
 
+/* DON'T APPEND A LIST TO ITSELF */
 void list_append_list(list *list1, list *list2) {
     if (list_is_empty(list1))
         memcpy(list1, list2, sizeof(list));

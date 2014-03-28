@@ -235,9 +235,11 @@ void *b_exprEvaluate(b_expr *structure) {
         if (!strcmp(structure->op, "+"))
             return pystr__add__((pystr *)left_val, (pystr *)right_val);
     }
-    else if (*left_val == pytuple_t && *right_val == pytuple_t) {
+    else if (*left_val == pytuple_t) {
         if (!strcmp(structure->op, "+"))
             return pytuple__add__((pytuple *)left_val, (pytuple *)right_val);
+        else if(!strcmp(structure->op, "*"))
+            return pytuple__mul__((pytuple *)left_val, right_val);
     }
 }
 
