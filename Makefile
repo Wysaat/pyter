@@ -5,5 +5,7 @@ all:
 	pytype/pyint.c pytype/pystr.c pytype/pybool.c pytype/pylist.c pytype/pytuple.c \
 	scan/scanner.c scan/buffer.c scan/token.c -o $(OUT) -g -lm
 
+#	gcc test/listtest.c list.c -o test/listtest
+
 clean:
 	rm $(OUT)

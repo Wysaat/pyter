@@ -1,5 +1,6 @@
 /*
  * CAUTION: list_append_list, list_add SHOULD BE USED CAREFULLY.
+ *          Read the code before using the functions.
  */
 
 #include <stdlib.h>
@@ -15,10 +16,40 @@ list *list_node() {
 }
 
 list *list_cpy(list *head) {
-    list *retptr, *ptr = head;
+    list *retptr = list_node();
+    list *curptr = retptr;
+    list *ptr = head;
+    while (ptr) {
+        curptr->content = ptr->content;
+        ptr = ptr->next;
+        curptr->next = list_node();
+        curptr->next->prev = curptr;
+        curptr = curptr->next;
+    }
+    curptr->prev->next = 0;
+    free(curptr);
+    return retptr;
 }
 
+
+/* NOT deleting the content */
 void list_del(list *head) {
+    list *ptr = head, *tmp;
+    while (ptr) {
+        tmp = ptr;
+        ptr = ptr->next;
+        free(tmp);
+    }
+}
+
+list *list_add(list *list1, list *list2) {
+    list *retptr = list_cpy(list1);
+    list *to_add = list_cpy(list2);
+    list *ptr = retptr;
+    while (ptr->next) ptr = ptr->next;
+    ptr->next = to_add;
+    to_add->prev = ptr;
+    return retptr;
 }
 
 int list_is_empty(list *head) {
@@ -27,30 +58,38 @@ int list_is_empty(list *head) {
     return 0;
 }
 
-/* DON'T APPEND A LIST TO ITSELF */
+/* list2 is copied and the original list2 is freed */
 void list_append_list(list *list1, list *list2) {
-    if (list_is_empty(list1))
-        memcpy(list1, list2, sizeof(list));
+    if (list_is_empty(list1)) {
+        list1->content = list2->content;
+        // memcpy(list1, list2, sizeof(list));
+        if (list2->next) {
+            list1->next = list_cpy(list2->next);
+            list1->next->prev = list1;
+        }
+    }
     else {
         list *ptr = list1;
         while (ptr->next)
             ptr = ptr->next;
-        ptr->next = list2;
-        list2->prev = ptr;
+        list *to_append = list_cpy(list2);
+        ptr->next = to_append;
+        to_append->prev = ptr;
     }
+
+    list_del(list2);
 }
 
 void list_append_content(list *head, void *content) {
-    list *node = list_node();
-    node->content = content;
-    list_append_list(head, node);
-}
-
-list *list_add(list *left, list *right) {
-    list *retptr = list_node();
-    memcpy(retptr, left, sizeof(list));
-    list_append_list(retptr, right);
-    return retptr;
+    if (list_is_empty(head))
+        head->content = content;
+    else {
+        list *ptr = head;
+        while (ptr->next) ptr = ptr->next;
+        ptr->next = list_node();
+        ptr->next->content = content;
+        ptr->next->prev = ptr;
+    }
 }
 
 /*
