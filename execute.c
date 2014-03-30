@@ -20,6 +20,21 @@ void *STR_EXPR(char *token) {
     return retptr;
 }
 
+void *SET_EXPR(list *expr_head) {
+    set_expr *retptr = (set_expr *)malloc(sizeof(set_expr));
+    retptr->type = set_expr_t;
+    retptr->expr_head = expr_head;
+    return retptr;
+}
+
+void *DICT_EXPR(list *expr_head, list *expr_head2) {
+    dict_expr *retptr = (dict_expr *)malloc(sizeof(dict_expr));
+    retptr->type = dict_expr_t;
+    retptr->expr_head = expr_head;
+    retptr->expr_head2 = expr_head2;
+    return retptr;
+}
+
 void *POWER(void *primary, void *u_expr) {
     power *retptr = (power *)malloc(sizeof(power));
     retptr->type = power_t;
@@ -129,9 +144,32 @@ void *list_exprEvaluate(list_expr *structure) {
     retptr->type = pylist_t;
     retptr->values = list_node();
     list *ptr;
+    for (ptr = structure->expr_head; ptr; ptr = ptr->next)
+        list_append_content(retptr->values, evaluate(ptr->content));
+    return retptr;
+}
+
+void *set_exprEvaluate(set_expr *structure) {
+    pyset *retptr = (pyset *)malloc(sizeof(pyset));
+    retptr->type = pyset_t;
+    retptr->values = list_node();
+    list *ptr;
     for (ptr = structure->expr_head; ptr; ptr = ptr->next) {
         list_append_content(retptr->values, evaluate(ptr->content));
     }
+    return retptr;
+}
+
+void *dict_exprEvaluate(dict_expr *structure) {
+    pydict *retptr = (pydict *)malloc(sizeof(pydict));
+    retptr->type = pydict_t;
+    retptr->keys = list_node();
+    retptr->values = list_node();
+    list *ptr;
+    for (ptr = structure->expr_head; ptr; ptr = ptr->next)
+        list_append_content(retptr->keys, evaluate(ptr->content));
+    for (ptr = structure->expr_head2; ptr; ptr = ptr->next)
+        list_append_content(retptr->values, evaluate(ptr->content));
     return retptr;
 }
 
@@ -318,6 +356,10 @@ void *evaluate(void *structure) {
             return parenth_formEvaluate((parenth_form *)structure);
         case list_expr_t:
             return list_exprEvaluate((list_expr *)structure);
+        case set_expr_t:
+            return set_exprEvaluate((set_expr *)structure);
+        case dict_expr_t:
+            return dict_exprEvaluate((dict_expr *)structure);
         case power_t:
             return powerEvaluate((power *)structure);
         case u_expr_t:
@@ -340,7 +382,7 @@ void *evaluate(void *structure) {
 
 /* no '\n' append */
 void print_nnl(void *structure) {
-    list *ptr;
+    list *ptr, *ptr2;
     switch (*(int *)structure) {
         case pyint_t:
             printf("%s", integer__str__(((pyint *)structure)->value));
@@ -373,6 +415,27 @@ void print_nnl(void *structure) {
                     printf(", ");
             }
             printf("]");
+            break;
+        case pyset_t:
+            printf("{");
+            for (ptr = ((pyset *)structure)->values; ptr; ptr = ptr->next) {
+                print_nnl(ptr->content);
+                if (ptr->next)
+                    printf(", ");
+            }
+            printf("}");
+            break;
+        case pydict_t:
+            printf("{");
+            for (ptr = ((pydict *)structure)->keys, ptr2 = ((pydict *)structure)->values; 
+                    ptr; ptr = ptr->next, ptr2 = ptr2->next) {
+                print_nnl(ptr->content);
+                printf(": ");
+                print_nnl(ptr2->content);
+                if (ptr->next)
+                    printf(", ");
+            }
+            printf("}");
             break;
         default:
             printf("[print_nnl]: unsupported structure\n");

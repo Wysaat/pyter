@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "buffer.h"
@@ -44,7 +45,7 @@ int buff_len(buffer *buff) {
     if (!buff->value)
         return 0;
     buffer *ptr = buff;
-    int retval;
+    int retval = 0;
     while (ptr) {
         retval += strlen(ptr->value);
         ptr = ptr->next;

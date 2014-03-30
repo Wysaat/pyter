@@ -139,6 +139,47 @@ void *parse_atom(scanner *sc) {
                 return LIST_EXPR(expr_head);
         }
     }
+    else if (!strcmp(token, "{")) {
+        list *expr_head = list_node();
+        token = sc_read(sc);
+        if (!strcmp(token, "}"))
+            return SET_EXPR(expr_head);
+        rollback(sc);
+        void *expression = parse_expression(sc);
+        list_append_content(expr_head, expression);
+        token = sc_read(sc);
+        if (!strcmp(token, "}"))
+            return SET_EXPR(expr_head);
+        else if (!strcmp(token, ",")) {
+            token = sc_read(sc);
+            if (!strcmp(token, "}"))
+                return SET_EXPR(expr_head);
+            rollback(sc);
+            list_append_list(expr_head, pa_exprs(sc, "}"));
+            token = sc_read(sc);
+            if (!strcmp(token, "}"))
+                return SET_EXPR(expr_head);
+        }
+        else if (!strcmp(token, ":")) {
+            list *expr_head2 = list_node();
+            list_append_content(expr_head2, parse_expression(sc));
+            token = sc_read(sc);
+            if (!strcmp(token, "}"))
+                return DICT_EXPR(expr_head, expr_head2);
+            else if (!strcmp(token, ",")) {
+                token = sc_read(sc);
+                if (!strcmp(token, "}"))
+                    return DICT_EXPR(expr_head, expr_head2);
+                rollback(sc);
+                list **lists = pa_dict_items(sc);
+                list_append_list(expr_head, lists[0]);
+                list_append_list(expr_head2, lists[1]);
+                token = sc_read(sc);
+                if (!strcmp(token, "}"))
+                    return DICT_EXPR(expr_head, expr_head2);
+            }
+        }
+    }
 }
 
 void *parse_primary(scanner *sc) {
@@ -365,6 +406,34 @@ list *pa_exprs(scanner *sc, char *ending) {
         else {
             rollback(sc);
             return expr_head;
+        }
+    }
+}
+
+list **pa_dict_items(scanner *sc) {
+    char *token;
+    list **retptr = (list **)malloc(sizeof(list *));
+    list *expr_head = list_node();
+    list *expr_head2 = list_node();
+    retptr[0] = expr_head;
+    retptr[1] = expr_head2;
+
+    while (1) {
+        list_append_content(expr_head, parse_expression(sc));
+        token = sc_read(sc);
+        if (!strcmp(token, ":")) {
+            list_append_content(expr_head2, parse_expression(sc));
+        }
+        token = sc_read(sc);
+        if (!strcmp(token, ",")) {
+            token = sc_read(sc);
+            rollback(sc);
+            if (!strcmp(token, "}"))
+                return retptr;
+        }
+        else {
+            rollback(sc);
+            return retptr;
         }
     }
 }
