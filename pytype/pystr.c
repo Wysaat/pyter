@@ -42,6 +42,14 @@ pystr *pystr__add__(void *left, void *right) {
     return retptr;
 }
 
+pybool *pystr__eq__(void *lvoid, void *rvoid) {
+    pystr *left = (pystr *)lvoid;
+    pystr *right = (pystr *)rvoid;
+    if (!strcmp(left->value, right->value))
+        return PYBOOL(1);
+    return PYBOOL(0);
+}
+
 
 
 void pystr__print__(pystr *strptr) {

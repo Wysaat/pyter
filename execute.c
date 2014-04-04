@@ -4,6 +4,10 @@
 #include <math.h>
 
 #include "cpyter.h"
+#include "execute.h"
+
+#include "pytype/methods.h"
+#include "pytype/others.h"
 
 /* op should be copied(use memory.c function mem_cpy) */
 void *INT_EXPR(char *token) {
@@ -13,10 +17,31 @@ void *INT_EXPR(char *token) {
     return retptr;
 }
 
+void *FLOAT_EXPR(char *token) {
+    float_expr *retptr = (float_expr *)malloc(sizeof(float_expr));
+    retptr->type = float_expr_t;
+    retptr->value = strdup(token);
+    return retptr;
+}
+
 void *STR_EXPR(char *token) {
     str_expr *retptr = (str_expr *)malloc(sizeof(str_expr));
     retptr->type = str_expr_t;
     retptr->value = strdup(token);
+    return retptr;
+}
+
+void *PARENTH_FORM(list *expr_head) {
+    parenth_form *retptr = (parenth_form *)malloc(sizeof(parenth_form));
+    retptr->type = parenth_form_t;
+    retptr->expr_head = expr_head;
+    return retptr;
+}
+
+void *LIST_EXPR(list *expr_head) {
+    list_expr *retptr = (list_expr *)malloc(sizeof(list_expr));
+    retptr->type = list_expr_t;
+    retptr->expr_head = expr_head;
     return retptr;
 }
 
@@ -32,6 +57,38 @@ void *DICT_EXPR(list *expr_head, list *expr_head2) {
     retptr->type = dict_expr_t;
     retptr->expr_head = expr_head;
     retptr->expr_head2 = expr_head2;
+    return retptr;
+}
+
+void *SLICE_EXPR(void *start, void *stop, void *step) {
+    slice_expr *retptr = (slice_expr *)malloc(sizeof(slice_expr));
+    retptr->type = slice_expr_t;
+    retptr->start = start;
+    retptr->stop = stop;
+    retptr->step = step;
+    return retptr;
+}
+
+void *SUBSC_EXPR(void *value) {
+    subsc_expr *retptr = (subsc_expr *)malloc(sizeof(subsc_expr));
+    retptr->type = subsc_expr_t;
+    retptr->value = value;
+    return retptr;
+}
+
+void *SLICING(void *primary, slice_expr *slice) {
+    slicing *retptr = (slicing *)malloc(sizeof(slicing));
+    retptr->type = slicing_t;
+    retptr->primary = primary;
+    retptr->slice = slice;
+    return retptr;
+}
+
+void *SUBSCRIPTION(void *primary, subsc_expr *subsc) {
+    subscription *retptr = (subscription *)malloc(sizeof(subscription));
+    retptr->type = subscription_t;
+    retptr->primary = primary;
+    retptr->subsc = subsc;
     return retptr;
 }
 
@@ -98,26 +155,17 @@ void *PYSTR(char *value) {
     return retptr;
 }
 
-
-
-void *PARENTH_FORM(list *expr_head) {
-    parenth_form *retptr = (parenth_form *)malloc(sizeof(parenth_form));
-    retptr->type = parenth_form_t;
-    retptr->expr_head = expr_head;
-    return retptr;
-}
-
-void *LIST_EXPR(list *expr_head) {
-    list_expr *retptr = (list_expr *)malloc(sizeof(list_expr));
-    retptr->type = list_expr_t;
-    retptr->expr_head = expr_head;
-    return retptr;
-}
-
 void *int_exprEvaluate(int_expr *structure) {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
     retptr->type = pyint_t;
     retptr->value = integer__init__(structure->value);
+    return retptr;
+}
+
+void *float_exprEvaluate(float_expr *structure) {
+    pyfloat *retptr = (pyfloat *)malloc(sizeof(pyfloat));
+    retptr->type = pyfloat_t;
+    retptr->value = float_init(structure->value);
     return retptr;
 }
 
@@ -155,7 +203,9 @@ void *set_exprEvaluate(set_expr *structure) {
     retptr->values = list_node();
     list *ptr;
     for (ptr = structure->expr_head; ptr; ptr = ptr->next) {
-        list_append_content(retptr->values, evaluate(ptr->content));
+        void *val = evaluate(ptr->content);
+        if (list_find(retptr->values, val) < 0)
+            list_append_content(retptr->values, val);
     }
     return retptr;
 }
@@ -165,12 +215,43 @@ void *dict_exprEvaluate(dict_expr *structure) {
     retptr->type = pydict_t;
     retptr->keys = list_node();
     retptr->values = list_node();
-    list *ptr;
-    for (ptr = structure->expr_head; ptr; ptr = ptr->next)
-        list_append_content(retptr->keys, evaluate(ptr->content));
-    for (ptr = structure->expr_head2; ptr; ptr = ptr->next)
-        list_append_content(retptr->values, evaluate(ptr->content));
+    list *ptr = structure->expr_head, *ptr2 = structure->expr_head2;
+    void *key, *val;
+    int pos;
+    while (ptr) {
+        key = evaluate(ptr->content);
+        val = evaluate(ptr2->content);
+        if ((pos = list_find(retptr->keys, key)) >= 0)
+            list_replace(retptr->values, pos, val);
+        else {
+            list_append_content(retptr->keys, key);
+            list_append_content(retptr->values, val);
+        }
+        ptr = ptr->next;
+        ptr2 = ptr2->next;
+    }
     return retptr;
+}
+
+void *slice_exprEvaluate(slice_expr *structure) {
+    pyslice *retptr = (pyslice *)malloc(sizeof(pyslice));
+    retptr->type = pyslice_t;
+    retptr->start = evaluate(structure->start);
+    retptr->stop = evaluate(structure->stop);
+    retptr->step = evaluate(structure->step);
+    return retptr;
+}
+
+void *slicingEvaluate(slicing *structure) {
+    void *primary_val = evaluate(structure->primary);
+    void *slice_val = evaluate(structure->slice);
+    return __getitem__(primary_val, slice_val);
+}
+
+void *subscriptionEvaluate(subscription *structure) {
+    void *primary_val = evaluate(structure->primary);
+    void *subsc_val = evaluate(structure->subsc->value);
+    return __getitem__(primary_val, subsc_val);
 }
 
 void *powerEvaluate(power *structure) {
@@ -279,6 +360,12 @@ void *b_exprEvaluate(b_expr *structure) {
         else if(!strcmp(structure->op, "*"))
             return pytuple__mul__((pytuple *)left_val, right_val);
     }
+    else if (*left_val == pylist_t) {
+        if (!strcmp(structure->op, "+"))
+            return pylist__add__(left_val, right_val);
+        else if (!strcmp(structure->op, "*"))
+            return pylist__mul__(left_val, right_val);
+    }
 }
 
 void *not_testEvaluate(not_test *structure) {
@@ -360,6 +447,12 @@ void *evaluate(void *structure) {
             return set_exprEvaluate((set_expr *)structure);
         case dict_expr_t:
             return dict_exprEvaluate((dict_expr *)structure);
+        case slice_expr_t:
+            return slice_exprEvaluate((slice_expr *)structure);
+        case slicing_t:
+            return slicingEvaluate((slicing *)structure);
+        case subscription_t:
+            return subscriptionEvaluate((subscription *)structure);
         case power_t:
             return powerEvaluate((power *)structure);
         case u_expr_t:
@@ -446,4 +539,8 @@ void print_nnl(void *structure) {
 void print(void *structure) {
     print_nnl(structure);
     printf("\n");
+}
+
+int type(void *val) {
+    return *(int *)val;
 }

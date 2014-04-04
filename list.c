@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "list.h"
+#include "pytype/methods.h"
+#include "pytype/pybool.h"
 
 list *list_node() {
     list *retptr = (list *)malloc(sizeof(list));
@@ -134,4 +136,43 @@ void list_sort(list *head, int comp()) {
         size++;
     }
     list_sort0(head, comp, size);
+}
+
+/* the list must contain only pytypes */
+int list_find(list *head, void *val) {
+    if (list_is_empty(head))
+        return -1;
+    list *ptr;
+    int retval = 0;
+    for (ptr = head; ptr; ptr = ptr->next) {
+        if (is_true(__eq__(ptr->content, val)))
+            return retval;
+        retval++;
+    }
+    return -1;
+}
+
+/* the list must contain only pytypes */
+int list_eq(list *left, list *right) {
+    list *ptr1 = left, *ptr2 = right;
+    while (1) {
+        if (!ptr1 || !ptr2) {
+            if (ptr1 || ptr2)
+                return 0;
+            return 1;
+        }
+        if (!is_true(__eq__(ptr1->content, ptr2->content)))
+            return 0;
+        ptr1 = ptr1->next;
+        ptr2 = ptr2->next;
+    }
+}
+
+void list_replace(list *head, int pos, void *content) {
+    int ind;
+    list *ptr = head;
+    for (ind = 0; ind < pos; ind++)
+        ptr = ptr->next;
+    free(ptr->content);
+    ptr->content = content;
 }

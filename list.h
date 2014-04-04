@@ -22,4 +22,8 @@ void list_append_list(list *, list *);
 void list_sort(list *, int (*func)());
 void list_sort0(list *, int (*func)(), int size);
 
+int list_find(list *, void *);
+int list_eq(list *, list *);
+void list_replace(list *, int pos, void *);
+
 #endif /* LIST_H */

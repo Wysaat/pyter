@@ -5,13 +5,30 @@ void rollback(scanner *sc) {
 }
 
 char *sc_read_num_lit(scanner *sc, buffer *buff) {
-    int i = 0, dot_count = 0;
-    while ((sc_curch(sc) >= '0' && sc_curch(sc) <= '9') ||
-           (sc_curch(sc) == '.' && !dot_count)) {
-        if (sc_curch(sc) == '.') dot_count++;
-        buff_add(buff, sc_readch(sc)); /* sc_readch automatically increases index (call sc_inci) */
+    if (sc_curch(sc) == '.') {
+        buff_add(buff, sc_readch(sc));
+        while ((sc_curch(sc) >= '0' && sc_curch(sc) <= '9'))
+            buff_add(buff, sc_readch(sc));
+        if (sc_curch(sc) == 'j')
+            buff_add(buff, sc_readch(sc));
+        return buff_puts(buff);
     }
-    return buff_puts(buff);
+    while (sc_curch(sc) >= '0' && sc_curch(sc) <= '9')
+        buff_add(buff, sc_readch(sc));
+    if (sc_curch(sc) == '.') {
+        buff_add(buff, sc_readch(sc));
+        while (sc_curch(sc) >= '0' && sc_curch(sc) <= '9')
+            buff_add(buff, sc_readch(sc));
+        if (sc_curch(sc) == 'j')
+            buff_add(buff, sc_readch(sc));
+        return buff_puts(buff);
+    }
+    else if (sc_curch(sc) == 'j') {
+        buff_add(buff, sc_readch(sc));
+        return buff_puts(buff);
+    }
+    else
+        return buff_puts(buff);
 }
 
 char *sc_read_str_lit(scanner *sc, buffer *buff) {
@@ -89,9 +106,10 @@ int is_alphnum(char ch) {
 
 void *parse_atom(scanner *sc) {
     char *token = sc_read(sc);
-    if (is_int(token)) {
+    if (is_int(token))
         return INT_EXPR(token);
-    }
+    else if (is_float(token))
+        return FLOAT_EXPR(token);
     else if (is_str(token))
         return STR_EXPR(token);
     else if (!strcmp(token, "(")) {
@@ -183,8 +201,25 @@ void *parse_atom(scanner *sc) {
 }
 
 void *parse_primary(scanner *sc) {
+    char *token;
     void *primary = parse_atom(sc);
-    return primary;
+    while (1) {
+        token = sc_read(sc);
+        if (!strcmp(token, "[")) {
+            void *val = pa_sll_or_subs(sc);
+            token = sc_read(sc);
+            if (!strcmp(token, "]")) {
+                if (type(val) == slice_expr_t)
+                    primary = SLICING(primary, (slice_expr *)val);
+                else if (type(val) == subsc_expr_t)
+                    primary = SUBSCRIPTION(primary, (subsc_expr *)val);
+            }
+        }
+        else {
+            rollback(sc);
+            return primary;
+        }
+    }
 }
 
 void *parse_power(scanner *sc) {
@@ -438,6 +473,26 @@ list **pa_dict_items(scanner *sc) {
     }
 }
 
+void *pa_sll_or_subs(scanner *sc) {
+    char *token;
+    void *start, *stop, *step;
+
+    start = parse_expression(sc);
+    token = sc_read(sc);
+    if (!strcmp(token, ":")) {
+        stop = parse_expression(sc);
+        token = sc_read(sc);
+        if (!strcmp(token, ":")) {
+            step = parse_expression(sc);
+            return SLICE_EXPR(start, stop, step);
+        }
+    }
+    else {
+        rollback(sc);
+        return SUBSC_EXPR(start);
+    }
+}
+
 void *parse_expression_list(scanner *sc, char *ending) {
     return EXPRESSION_LIST(pa_exprs(sc, ending));
 }
@@ -448,17 +503,23 @@ int test1()
     sc_getline(sc, stdin);
     void *expr = parse_expression(sc);
     void *retval = evaluate(expr);
-    if (*(int *)retval == pylist_t)
-        pylist__sort__((pylist *)retval, pyint__cmp__);
+    // if (*(int *)retval == pylist_t)
+    //     pylist__sort__((pylist *)retval, pyint__cmp__);
     print(retval);
     return 0;
 }
 
 int test2()
 {
-    scanner *sc = sc_init();
-    sc_getline(sc, stdin);
-    void *expr = parse_atom(sc);
+    pyint *a, *b, *c;
+    a = pyint__init__();
+    b = pyint__init__();
+    c = pyint__init__();
+    a->value = integer__init__("10283");
+    b->value = integer__init__("1023432");
+    c->value = integer__init__("10283");
+    printf("a == c ? %d, a == b ? %d\n",
+              is_true(__eq__(a, b)), is_true(__eq__(a, c)));
     return 0;
 }
 

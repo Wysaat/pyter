@@ -2,6 +2,8 @@
 #include "../types.h"
 #include "pytuple.h"
 #include "pyint.h"
+#include "pybool.h"
+#include "../list.h"
 
 pytuple *pytuple__init__() {
     pytuple *retptr = (pytuple *)malloc(sizeof(pytuple));
@@ -30,4 +32,24 @@ pytuple *pytuple__mul__(pytuple *left, void *right) {
     pyint__del__(zero);
 
     return retptr;
+}
+
+pybool *pytuple__eq__(void *lvoid, void *rvoid) {
+    pytuple *left, *right;
+    left = (pytuple *)lvoid;
+    right = (pytuple *)rvoid;
+    return PYBOOL(list_eq(left->values, right->values));
+}
+
+void *pytuple__getitem__(void *lvoid, void *rvoid) {
+    pytuple *left = (pytuple *)lvoid;
+    pyint *right = (pyint *)rvoid;
+    list *ptr;
+
+    pyint *ind = pyint__init__();
+    ind->value = INTEGER_NODE();
+
+    for (ptr = left->values; is_true(pyint__lt__(ind, right)); pyint__inc__(ind))
+        ptr = ptr->next;
+    return ptr->content;
 }

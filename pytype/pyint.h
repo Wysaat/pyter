@@ -23,6 +23,8 @@ pyint *pyint__rshift__(pyint *, pyint *);
 pybool *pyint__lt__(pyint *, pyint *);
 pybool *pyint__gt__(pyint *, pyint *);
 int pyint__cmp__(pyint *, pyint *);
+pybool *pyint__eq__(void *, void *);
+pybool *pyint__ge__(void *, void *);
 
 void pyint__print__(pyint *);
 void pyint__puts__(pyint *);

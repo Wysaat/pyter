@@ -33,6 +33,19 @@ int is_int(char *token) {
     return 1;
 }
 
+int is_float(char *token) {
+    if (strlen(token < 2))
+        return 0;
+    if (token[strlen(token)-1] == 'j' ||
+        token[strlen(token)-1] == 'J')
+        return 0;
+    int i;
+    for (i = 0; i < strlen(token); i++)
+        if (token[i] == '.')
+            return 1;
+    return 0;
+}
+
 int is_str(char *token) {
     if (token[0] == '"' || token[0] == '\'')
         return 1;
