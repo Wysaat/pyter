@@ -6,6 +6,11 @@
 
 typedef struct list list;
 
+typedef struct identifier {
+    int type;
+    char *value;
+} identifier;
+
 typedef struct int_expr {
     int type;
     char *value;
@@ -15,6 +20,11 @@ typedef struct float_expr {
     int type;
     char *value;
 } float_expr;
+
+typedef struct imag_expr {
+    int type;
+    char *value;
+} imag_expr;
 
 typedef struct str_expr {
     int type;
@@ -107,10 +117,27 @@ typedef struct expression_list {
     list *expr_head;
 } expression_list;
 
+// typedef struct assignment_stmt {
+//     int type;
+//     expression_list *targets;
+//     expression_list *expressions;
+// } assignment_stmt;
+
+// typedef struct environment {
+//     list *val_dict;
+// } environment;
+
+// typedef struct val_dict_entry {
+//     char *id;
+//     void *value;
+// } val_dict;
+
 int type(void *);
 
+void *IDENTIFIER(char *);
 void *INT_EXPR(char *);
 void *FLOAT_EXPR(char *);
+void *IMAG_EXPR(char *);
 void *STR_EXPR(char *);
 void *POWER(void *primary, void *u__expr);
 void *PARENTH_FORM(list *);
@@ -126,7 +153,10 @@ void *B_EXPR(void *, char *, void *);
 void *NOT_TEST(void *);
 void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr);
 void *EXPRESSION_LIST(list *);
+// void *ASSIGNMENT_STMT(expression_list *, expression_list *);
 void *PYINT(integer *);
 void *PYSTR(char *);
+
+// environment *environment_init();
 
 #endif /* EXECUTE_H */

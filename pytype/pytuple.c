@@ -11,7 +11,9 @@ pytuple *pytuple__init__() {
     return retptr;
 }
 
-pytuple *pytuple__add__(pytuple *left, pytuple *right) {
+pytuple *pytuple__add__(void *lvoid, void *rvoid) {
+    pytuple *left = (pytuple *)lvoid;
+    pytuple *right = (pytuple *)rvoid;
     pytuple *retptr = pytuple__init__();
     retptr->values = list_add(left->values, right->values);
     return retptr;

@@ -1,6 +1,8 @@
 #include "../types.h"
 #include "../execute.h"
 #include "pyint.h"
+#include "pyfloat.h"
+#include "pycomplex.h"
 #include "pystr.h"
 #include "pybool.h"
 #include "pylist.h"
@@ -36,4 +38,52 @@ void *__getitem__(void *left, void *right)  {
     else if (type(left) == pytuple_t) {
         return pytuple__getitem__(left, right);
     }
+}
+
+void *__mul__(void *left, void *right) {
+    if (type(left) == pyint_t)
+        return pyint__mul__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__mul__(left, right);
+    else if (type(left) == pycomplex_t)
+        return pycomplex__mul__(left, right);
+    else if (type(left) == pystr_t)
+        return pystr__mul__(left, right);
+    else if (type(left) == pylist_t)
+        return pylist__mul__(left, right);
+    else if (type(left) == pytuple_t)
+        return pytuple__mul__(left, right);
+}
+
+void *__div__(void *left, void *right) {
+    if (type(left) == pyint_t)
+        return pyint__div__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__div__(left, right);
+    else if (type(left) == pycomplex_t)
+        return pycomplex__div__(left, right);
+}
+
+void *__add__(void *left, void *right) {
+    if (type(left) == pyint_t)
+        return pyint__add__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__add__(left, right);
+    else if (type(left) == pycomplex_t)
+        return pycomplex__add__(left, right);
+    else if (type(left) == pystr_t)
+        return pystr__add__(left, right);
+    else if (type(left) == pylist_t)
+        return pylist__add__(left, right);
+    else if (type(left) == pytuple_t)
+        return pytuple__add__(left, right);
+}
+
+void *__sub__(void *left, void *right) {
+    if (type(left) == pyint_t)
+        return pyint__sub__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__sub__(left, right);
+    else if (type(left) == pycomplex_t)
+        return pycomplex__sub__(left, right);
 }

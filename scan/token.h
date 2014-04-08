@@ -6,6 +6,7 @@ int is_strprfx(char *token);
 int is_cmpop(char *token);
 int is_int(char *token);
 int is_float(char *token);
+int is_imag(char *token);
 int is_str(char *token);
 
 /* "<>" is deprecated in Python 3 */

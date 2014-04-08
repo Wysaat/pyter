@@ -106,10 +106,14 @@ int is_alphnum(char ch) {
 
 void *parse_atom(scanner *sc) {
     char *token = sc_read(sc);
+    if (is_identifier(token))
+        return IDENTIFIER(token);
     if (is_int(token))
         return INT_EXPR(token);
     else if (is_float(token))
         return FLOAT_EXPR(token);
+    else if (is_imag(token))
+        return IMAG_EXPR(token);
     else if (is_str(token))
         return STR_EXPR(token);
     else if (!strcmp(token, "(")) {
@@ -494,8 +498,36 @@ void *pa_sll_or_subs(scanner *sc) {
 }
 
 void *parse_expression_list(scanner *sc, char *ending) {
-    return EXPRESSION_LIST(pa_exprs(sc, ending));
+    void *expression = parse_expression(sc);
+    char *token = sc_read(sc);
+    if (!strcmp(token, ",")) {
+        list *expressions = list_node();
+        list_append_content(expressions, expression);
+        token = sc_read(sc);
+        rollback(sc);
+        if (!strcmp(token, ending))
+            return EXPRESSION_LIST(expressions);
+        list_append_list(expressions, pa_exprs(sc, ending));
+        return EXPRESSION_LIST(expressions);
+    }
+    else {
+        rollback(sc);
+        return expression;
+    }
 }
+
+// void *parse_simple_stmt(scanner *sc) {
+//     void *expression_list1 = parse_expression_list(sc, ";");
+//     char *token = sc_read(sc);
+//     if (!strcmp(token, "=")) {
+//         void *expression_list2 = parse_expression_list(sc, ";");
+//         return assignment_stmt(expression_list1, expression_list2);
+//     }
+//     else {
+//         rollback(sc);
+//         return expression_list1;
+//     }
+// }
 
 int test1()
 {
@@ -511,20 +543,27 @@ int test1()
 
 int test2()
 {
-    pyint *a, *b, *c;
-    a = pyint__init__();
-    b = pyint__init__();
-    c = pyint__init__();
-    a->value = integer__init__("10283");
-    b->value = integer__init__("1023432");
-    c->value = integer__init__("10283");
-    printf("a == c ? %d, a == b ? %d\n",
-              is_true(__eq__(a, b)), is_true(__eq__(a, c)));
+    // environment *global_env = environment_init();
+    scanner *sc = sc_init();
+    sc_getline(sc, stdin);
+    void *exprs = parse_expression_list(sc, ";");
+    void *vals = evaluate(exprs);
+    print(vals);
     return 0;
+}
+
+void interpret()
+{
+    scanner *sc = sc_init();
+    while (1) {
+        sc_getline(sc, stdin);
+        void *exprs = parse_expression_list(sc, ";");
+        print(evaluate(exprs));
+    }
 }
 
 int main()
 {
-    test1();
+    interpret();
     return 0;
 }

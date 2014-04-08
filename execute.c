@@ -9,6 +9,13 @@
 #include "pytype/methods.h"
 #include "pytype/others.h"
 
+void *IDENTIFIER(char *token) {
+    identifier *retptr = (identifier *)malloc(sizeof(identifier));
+    retptr->type = identifier_t;
+    retptr->value = strdup(token);
+    return retptr;
+}
+
 /* op should be copied(use memory.c function mem_cpy) */
 void *INT_EXPR(char *token) {
     int_expr *retptr = (int_expr *)malloc(sizeof(int_expr));
@@ -20,6 +27,13 @@ void *INT_EXPR(char *token) {
 void *FLOAT_EXPR(char *token) {
     float_expr *retptr = (float_expr *)malloc(sizeof(float_expr));
     retptr->type = float_expr_t;
+    retptr->value = strdup(token);
+    return retptr;
+}
+
+void *IMAG_EXPR(char *token) {
+    imag_expr *retptr = (imag_expr *)malloc(sizeof(imag_expr));
+    retptr->type = imag_expr_t;
     retptr->value = strdup(token);
     return retptr;
 }
@@ -141,6 +155,14 @@ void *EXPRESSION_LIST(list *expr_head) {
     return retptr;
 }
 
+// void *ASSIGNMENT_STMT(expression_list *targets, expression_list *expressions) {
+//     assignment_stmt *retptr = (assignment_stmt *)malloc(sizeof(assignment_stmt));
+//     retptr->type = assignment_stmt_t;
+//     retptr->targets = targets;
+//     retptr->expressions = expressions;
+//     return retptr;
+// }
+
 void *PYINT(integer *value) {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
     retptr->type = pyint_t;
@@ -155,6 +177,15 @@ void *PYSTR(char *value) {
     return retptr;
 }
 
+// void *identifierEvaluate(identifier *structure, environment *global) {
+//     list *ptr;
+//     for (ptr = global->val_dict; ptr; ptr = ptr->next) {
+//         val_dict_entry *entry = (val_dict_entry *)ptr->content;
+//         if (entry->id == structure->value)
+//             return entry->value;
+//     }
+// }
+
 void *int_exprEvaluate(int_expr *structure) {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
     retptr->type = pyint_t;
@@ -165,7 +196,18 @@ void *int_exprEvaluate(int_expr *structure) {
 void *float_exprEvaluate(float_expr *structure) {
     pyfloat *retptr = (pyfloat *)malloc(sizeof(pyfloat));
     retptr->type = pyfloat_t;
-    retptr->value = float_init(structure->value);
+    retptr->value = atof(structure->value);
+    return retptr;
+}
+
+void *imag_exprEvaluate(imag_expr *structure) {
+    pycomplex *retptr = (pycomplex *)malloc(sizeof(pycomplex));
+    retptr->type = pycomplex_t;
+    char *mag = strdup(structure->value);
+    mag[strlen(mag)-1] = 0;
+    retptr->real = pyfloat__init__();
+    retptr->imag = float_exprEvaluate(FLOAT_EXPR(mag));
+    free(mag);
     return retptr;
 }
 
@@ -288,21 +330,22 @@ void *b_exprEvaluate(b_expr *structure) {
     int *left_val = evaluate(structure->left);
     int *right_val = evaluate(structure->right);
     integer *zero = INTEGER_NODE();
+    if (!strcmp(structure->op, "*"))
+        return __mul__(left_val, right_val);
+    else if (!strcmp(structure->op, "/"))
+        return __div__(left_val, right_val);
+    else if (!strcmp(structure->op, "+"))
+        return __add__(left_val, right_val);
+    else if (!strcmp(structure->op, "-"))
+        return __sub__(left_val, right_val);
+
     if (*left_val == pyint_t && *right_val == pyint_t) {
         integer *left = ((pyint *)left_val)->value;
         integer *right = ((pyint *)right_val)->value;
-        if (!strcmp(structure->op, "*"))
-            return pyint__mul__((pyint *)left_val, (pyint *)right_val);
-        else if (!strcmp(structure->op, "//"))
-            return pyint__div__((pyint *)left_val, (pyint *)right_val);
-        else if (!strcmp(structure->op, "/"))
+        if (!strcmp(structure->op, "//"))
             return pyint__div__((pyint *)left_val, (pyint *)right_val);
         else if (!strcmp(structure->op, "%"))
             return pyint__mod__((pyint *)left_val, (pyint *)right_val);
-        else if (!strcmp(structure->op, "+"))
-            return pyint__add__((pyint *)left_val, (pyint *)right_val);
-        else if (!strcmp(structure->op, "-"))
-            return pyint__sub__((pyint *)left_val, (pyint *)right_val);
         else if (!strcmp(structure->op, "<<"))
             return pyint__lshift__((pyint *)left_val, (pyint *)right_val);
         else if (!strcmp(structure->op, ">>"))
@@ -341,31 +384,6 @@ void *b_exprEvaluate(b_expr *structure) {
             return PYINT(0);
         }
     }
-    else if (*left_val == pystr_t && *right_val == pyint_t) {
-        if (!strcmp(structure->op, "*")) {
-            return pystr__mul__((pystr *)left_val, (pyint *)right_val);
-        }
-    }
-    else if (*left_val == pyint_t && *right_val == pystr_t) {
-        if (!strcmp(structure->op, "*"))
-            return pystr__mul__((pystr *)right_val, (pyint *)left_val);
-    }
-    else if (*left_val == pystr_t && *right_val == pystr_t) {
-        if (!strcmp(structure->op, "+"))
-            return pystr__add__((pystr *)left_val, (pystr *)right_val);
-    }
-    else if (*left_val == pytuple_t) {
-        if (!strcmp(structure->op, "+"))
-            return pytuple__add__((pytuple *)left_val, (pytuple *)right_val);
-        else if(!strcmp(structure->op, "*"))
-            return pytuple__mul__((pytuple *)left_val, right_val);
-    }
-    else if (*left_val == pylist_t) {
-        if (!strcmp(structure->op, "+"))
-            return pylist__add__(left_val, right_val);
-        else if (!strcmp(structure->op, "*"))
-            return pylist__mul__(left_val, right_val);
-    }
 }
 
 void *not_testEvaluate(not_test *structure) {
@@ -401,15 +419,6 @@ void *comparisonEvaluate(comparison *structure) {
 }
 
 void *conditional_expressionEvaluate(conditional_expression *structure) {
-    // int *retptr = (int *)malloc(sizeof(int));
-    // int *condptr = (int *)malloc(sizeof(int));
-    // retptr = evaluate(structure->or_test);
-    // condptr = evaluate(structure->or_test2);
-    // if (*condptr)
-    //     return retptr;
-    // retptr = evaluate(structure->expr);
-    // return retptr;
-
     void *retptr, *condptr;
     integer *zero = INTEGER_NODE();
     retptr = evaluate(structure->or_test);
@@ -427,16 +436,32 @@ void *conditional_expressionEvaluate(conditional_expression *structure) {
 void *expression_listEvaluate(expression_list *structure) {
     list *expr_ptr;
     list *value_list = list_node();
-    for (expr_ptr = structure->expr_head; expr_ptr != 0; expr_ptr = expr_ptr->next) {
-        list_append_content(value_list, evaluate(expr_ptr->next));
+    for (expr_ptr = structure->expr_head; expr_ptr; expr_ptr = expr_ptr->next) {
+        list_append_content(value_list, evaluate(expr_ptr->content));
     }
-    return value_list;
+    pytuple *retptr = pytuple__init__();
+    retptr->values = value_list;
+    return retptr;
 }
+
+// void assignment_stmtExecute(assignment_stmt *structure) {
+//     list *targets = structure->targets->expr_head;
+//     list *expressions = structure->expressions->expr_head;
+//     list *ptr1, *ptr2;
+//     for (ptr1 = targets, ptr2 = expressions; ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next)
+//         store(ptr1->content, evaluate(ptr2->content));
+// }
 
 void *evaluate(void *structure) {
     switch (*(int *)structure) {
+        // case identifier_t:
+        //     return identifierEvaluate((identifier *)structure, global_env);
         case int_expr_t:
             return int_exprEvaluate((int_expr *)structure);
+        case float_expr_t:
+            return float_exprEvaluate((float_expr *)structure);
+        case imag_expr_t:
+            return imag_exprEvaluate((imag_expr *)structure);
         case str_expr_t:
             return str_exprEvaluate((str_expr *)structure);
         case parenth_form_t:
@@ -479,6 +504,16 @@ void print_nnl(void *structure) {
     switch (*(int *)structure) {
         case pyint_t:
             printf("%s", integer__str__(((pyint *)structure)->value));
+            break;
+        case pyfloat_t:
+            printf("%le", ((pyfloat *)structure)->value);
+            break;
+        case pycomplex_t:
+            printf("(");
+            print_nnl(((pycomplex *)structure)->real);
+            printf("+");
+            print_nnl(((pycomplex *)structure)->imag);
+            printf("j)");
             break;
         case pystr_t:
             printf("'");

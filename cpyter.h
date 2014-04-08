@@ -19,6 +19,8 @@
 
 #include "pytype/methods.h"
 #include "pytype/pyint.h"
+#include "pytype/pyfloat.h"
+#include "pytype/pycomplex.h"
 #include "pytype/pystr.h"
 #include "pytype/pybool.h"
 #include "pytype/pylist.h"

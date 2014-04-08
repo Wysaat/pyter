@@ -1,5 +1,6 @@
 #include <string.h>
 #include "token.h"
+#include "../cpyter.h"
 
 int is_spctk(char *token) {
     int len = sizeof(spctks) / sizeof(*spctks), i;
@@ -25,6 +26,18 @@ int is_cmpop(char *token) {
     return 0;
 }
 
+int is_identifier(char *token) {
+    if (!is_alph(token[0]) && token[0] != '_')
+        return 0;
+    if (strlen(token) == 1)
+        return 1;
+    int i;
+    for (i = 1; i < strlen(token); i++)
+        if (!is_alphnum(token[i]) && token[i] != '_')
+            return 0;
+    return 1;
+}
+
 int is_int(char *token) {
     int i;
     for (i = 0; i < strlen(token); i++)
@@ -34,7 +47,7 @@ int is_int(char *token) {
 }
 
 int is_float(char *token) {
-    if (strlen(token < 2))
+    if (strlen(token) < 2)
         return 0;
     if (token[strlen(token)-1] == 'j' ||
         token[strlen(token)-1] == 'J')
@@ -44,6 +57,11 @@ int is_float(char *token) {
         if (token[i] == '.')
             return 1;
     return 0;
+}
+
+int is_imag(char *token) {
+    return (strlen(token) > 1 && !is_alph(token[0]) &&
+            (token[strlen(token)-1] == 'j' || token[strlen(token)-1] == 'J'));
 }
 
 int is_str(char *token) {

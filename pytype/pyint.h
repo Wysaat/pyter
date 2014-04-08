@@ -3,6 +3,7 @@
 
 #include "../integer.h"
 #include "pybool.h"
+#include "pyfloat.h"
 
 typedef struct pyint pyint;
 
@@ -13,10 +14,11 @@ struct pyint {
 
 pyint *pyint__init__();
 void pyint__del__(pyint *);
-pyint *pyint__add__(pyint *, pyint *);
-pyint *pyint__sub__(pyint *, pyint *);
-pyint *pyint__mul__(pyint *, pyint *);
-pyint *pyint__div__(pyint *, pyint *);
+pyfloat *pyint__float__(void *);
+void *pyint__add__(void *, void *);
+void *pyint__sub__(void *, void *);
+void *pyint__mul__(void *, void *);
+void *pyint__div__(void *, void *);
 pyint *pyint__mod__(pyint *, pyint *);
 pyint *pyint__lshift__(pyint *, pyint *);
 pyint *pyint__rshift__(pyint *, pyint *);

@@ -9,7 +9,7 @@ struct pytuple {
 };
 
 pytuple *pytuple__init__();
-pytuple *pytuple__add__(pytuple *, pytuple *);
+pytuple *pytuple__add__(void *, void *);
 pytuple *pytuple__mul__(pytuple *, void *);
 pybool *pytuple__eq__(void *, void *);
 void *pytuple__getitem__(void *, void *);

@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include "../types.h"
 #include "pyint.h"
+#include "pycomplex.h"
 #include "pystr.h"
 #include "pybool.h"
+#include "../execute.h"
+#include <math.h>
 
 pyint *pyint__init__() {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
@@ -16,28 +19,80 @@ void pyint__del__(pyint *val) {
     free(val);
 }
 
-pyint *pyint__add__(pyint *left, pyint *right) {
-    pyint *retptr = pyint__init__();
-    retptr->value = integer__add__(left->value, right->value);
+pyfloat *pyint__float__(void *vptr) {
+    pyint *intptr = (pyint *)vptr;
+    pyfloat *retptr = pyfloat__init__();
+    integer *integerp = intptr->value;
+    while (integerp) {
+        retptr->value += integerp->value * pow(1e1, INTEGER_SZ*integerp->index);
+        integerp = integerp->lower;
+    }
     return retptr;
 }
 
-pyint *pyint__sub__(pyint *left, pyint *right) {
-    pyint *retptr = pyint__init__();
-    retptr->value = integer__sub__(left->value, right->value);
-    return retptr;
+void *pyint__add__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    if (type(rvoid) == pyint_t) {
+        pyint *right = (pyint *)rvoid;
+        pyint *retptr = pyint__init__();
+        retptr->value = integer__add__(left->value, right->value);
+        return retptr;
+    }
+    else if (type(rvoid) == pyfloat_t || type(rvoid) == pycomplex_t) {
+        pyfloat *fleft = pyint__float__(left);
+        void *retptr = pyfloat__add__(fleft, rvoid);
+        pyfloat__del__(fleft);
+        return retptr;
+    }
 }
 
-pyint *pyint__mul__(pyint *left, pyint *right) {
-    pyint *retptr = pyint__init__();
-    retptr->value = integer__mul__(left->value, right->value);
-    return retptr;
+void *pyint__sub__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    if (type(rvoid) == pyint_t) {
+        pyint *right = (pyint *)rvoid;
+        pyint *retptr = pyint__init__();
+        retptr->value = integer__sub__(left->value, right->value);
+        return retptr;
+    }
+    else if (type(rvoid) == pyfloat_t || type(rvoid) == pycomplex_t) {
+        pyfloat *fleft = pyint__float__(left);
+        void *retptr = pyfloat__sub__(fleft, rvoid);
+        pyfloat__del__(fleft);
+        return retptr;
+    }
 }
 
-pyint *pyint__div__(pyint *left, pyint *right) {
-    pyint *retptr = pyint__init__();
-    retptr->value = integer__div__(left->value, right->value);
-    return retptr;
+void *pyint__mul__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    if (type(rvoid) == pyint_t) {
+        pyint *right = (pyint *)rvoid;
+        pyint *retptr = pyint__init__();
+        retptr->value = integer__mul__(left->value, right->value);
+        return retptr;
+    }
+    else if (type(rvoid) == pyfloat_t)
+        return pyfloat__mul__(rvoid, lvoid);
+    else if (type(rvoid) == pycomplex_t)
+        return pycomplex__mul__(rvoid, lvoid);
+    else if (type(rvoid) == pystr_t) {
+        return pystr__mul__(rvoid, lvoid);
+    }
+}
+
+void *pyint__div__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    if (type(rvoid) == pyint_t) {
+        pyint *right = (pyint *)rvoid;
+        pyint *retptr = pyint__init__();
+        retptr->value = integer__div__(left->value, right->value);
+        return retptr;
+    }
+    else if (type(rvoid) == pyfloat_t || type(rvoid) == pycomplex_t) {
+        pyfloat *fleft = pyint__float__(lvoid);
+        void *retptr = pyfloat__div__(fleft, rvoid);
+        pyfloat__del__(fleft);
+        return retptr;
+    }
 }
 
 pyint *pyint__mod__(pyint *left, pyint *right) {
