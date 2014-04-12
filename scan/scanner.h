@@ -6,6 +6,7 @@
 typedef struct scanner scanner;
 
 struct scanner {
+    FILE *stream;
     char *line;
     int ll;  /* line length */
     int ind;
@@ -16,14 +17,14 @@ struct scanner {
     char *lasttk; /* last token */
 };
 
-scanner *sc_init();
+scanner *sc_init(FILE *stream);
 char sc_curch(scanner *sc);
 char sc_nxtch(scanner *sc);
 char *sc_curchs(scanner *sc, int len);
 void sc_inci(scanner *sc);
 char sc_readch(scanner *sc);
 char *sc_readchs(scanner *sc, int len);
-void sc_getline(scanner *sc, FILE *stream);
+void sc_getline(scanner *sc);
 void sc_dump(scanner *sc);
 
 #endif /* SCAN_SCANNER_H */

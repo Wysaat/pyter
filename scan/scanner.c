@@ -3,9 +3,10 @@
 #include <string.h>
 #include "scanner.h"
 
-scanner *sc_init() {
+scanner *sc_init(FILE *stream) {
     scanner *retptr = (scanner *)malloc(sizeof(scanner));
     memset(retptr, 0, sizeof(scanner));
+    retptr->stream = stream;
     return retptr;
 }
 
@@ -35,22 +36,27 @@ char *sc_readchs(scanner *sc, int len) {
     return retval;
 }
 
-void sc_getline(scanner *sc, FILE *stream) {
-    if (stream == stdin)
+void sc_getline(scanner *sc) {
+    if (sc->stream == stdin)
         printf(">>> ");
     char *line = 0;
     int read, len = 0;
-    read = getline(&line, &len, stdin);
+    read = getline(&line, &len, sc->stream);
     if (read != -1) {
         sc->line = line;
         sc->ln++;
         sc->ll = read;
         sc->ind = 0;
+        sc->eolf = 0;
     }
+}
+
+int sc_indent(scanner *sc) {
 }
 
 void sc_dump(scanner *sc) {
     printf("-----begin of scanner dump---------------------------\n");
+    printf("scanner->stream is %p\n", sc->stream);
     printf("scanner->line is %s", sc->line);
     printf("scanner->ll is %d\n", sc->ll);
     printf("scanner->ind is %d\n", sc->ind);

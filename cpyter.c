@@ -44,39 +44,33 @@ char *sc_read_str_lit(scanner *sc, buffer *buff) {
 char *sc_rread(scanner *sc, buffer *buff) { /* raw read */
     int i, j, k = 0;
     char *token;
-    if (!sc->eolf) {
-        if (sc_curch(sc) == '\n') {
-            sc->eolf = 1;
-            return strdup("\n");
-        }
-        while (sc_curch(sc) == ' ' || sc_curch(sc) == '\t')
-            sc->ind++;
-        for (j = 3; j > 0; j--)
-            if (is_spctk(sc_curchs(sc, j)))
-                return sc_readchs(sc, j);
-        if (sc_curch(sc) == '.') {
-            if (sc_nxtch(sc) >= '0' && sc_nxtch(sc) <= '9')
-                return sc_read_num_lit(sc, buff);
-            buff_add(buff, sc_curch(sc));
-            return buff_puts(buff);
-        }
-        if (sc_curch(sc) >= '0' && sc_curch(sc) <= '9') {
+    while (sc_curch(sc) == ' ' || sc_curch(sc) == '\t')
+        sc->ind++;
+    if (sc_curch(sc) == '\n') {
+        sc->eolf = 1;
+        return strdup("\n");
+    }
+    for (j = 3; j > 0; j--)
+        if (is_spctk(sc_curchs(sc, j)))
+            return sc_readchs(sc, j);
+    if (sc_curch(sc) == '.') {
+        if (sc_nxtch(sc) >= '0' && sc_nxtch(sc) <= '9')
             return sc_read_num_lit(sc, buff);
-        }
-        if (sc_curch(sc) == '"' || sc_curch(sc) == '\'')
-            return sc_read_str_lit(sc, buff);
-        while (is_alphnum(sc_curch(sc)) || sc_curch(sc) == '_')
-            buff_add(buff, sc_readch(sc));
-        char *tk = buff_puts(buff);
-        if (is_strprfx(tk) && (sc_curch(sc) == '\'' || sc_curch(sc) == '"'))
-            return stradd(tk, sc_read_str_lit(sc, buff));
-        else
-            return tk;
+        buff_add(buff, sc_curch(sc));
+        return buff_puts(buff);
     }
-    else {
-        puts("in sc_rread end, NOT IMPLEMENTING EOL");
-        exit(0);
+    if (sc_curch(sc) >= '0' && sc_curch(sc) <= '9') {
+        return sc_read_num_lit(sc, buff);
     }
+    if (sc_curch(sc) == '"' || sc_curch(sc) == '\'')
+        return sc_read_str_lit(sc, buff);
+    while (is_alphnum(sc_curch(sc)) || sc_curch(sc) == '_')
+        buff_add(buff, sc_readch(sc));
+    char *tk = buff_puts(buff);
+    if (is_strprfx(tk) && (sc_curch(sc) == '\'' || sc_curch(sc) == '"'))
+        return stradd(tk, sc_read_str_lit(sc, buff));
+    else
+        return tk;
 }
 
 char *sc_read(scanner *sc) {
@@ -516,49 +510,112 @@ void *parse_expression_list(scanner *sc, char *ending) {
     }
 }
 
-// void *parse_simple_stmt(scanner *sc) {
-//     void *expression_list1 = parse_expression_list(sc, ";");
-//     char *token = sc_read(sc);
-//     if (!strcmp(token, "=")) {
-//         void *expression_list2 = parse_expression_list(sc, ";");
-//         return assignment_stmt(expression_list1, expression_list2);
-//     }
-//     else {
-//         rollback(sc);
-//         return expression_list1;
-//     }
-// }
-
-int test1()
-{
-    scanner *sc = sc_init();
-    sc_getline(sc, stdin);
-    void *expr = parse_expression(sc);
-    void *retval = evaluate(expr);
-    // if (*(int *)retval == pylist_t)
-    //     pylist__sort__((pylist *)retval, pyint__cmp__);
-    print(retval);
-    return 0;
+void *parse_simple_stmt(scanner *sc) {
+    void *expression_list1 = parse_expression_list(sc, ";");
+    char *token = sc_read(sc);
+    if (!strcmp(token, "=")) {
+        void *expression_list2 = parse_expression_list(sc, ";");
+        return ASSIGNMENT_STMT(expression_list1, expression_list2);
+    }
+    else {
+        rollback(sc);
+        return EXPRESSION_STMT(expression_list1);
+    }
 }
 
-int test2()
-{
-    // environment *global_env = environment_init();
-    scanner *sc = sc_init();
-    sc_getline(sc, stdin);
-    void *exprs = parse_expression_list(sc, ";");
-    void *vals = evaluate(exprs);
-    print(vals);
-    return 0;
+void *parse_stmt_list(scanner *sc) {
+    list *stmts = list_node();
+    while (1) {
+        list_append_content(stmts, parse_simple_stmt(sc));
+        char *token = sc_read(sc);
+        if (!strcmp(token, ";")) {
+            token = sc_read(sc);
+            if (!strcmp(token, "\n"))
+                return STMT_LIST(stmts);
+            rollback(sc);
+        }
+        else if (!strcmp(token, "\n"))
+            return STMT_LIST(stmts);
+    }
+}
+
+void *parse_suite(scanner *sc) {
+    char *token = sc_read(sc);
+    if (!strcmp(token, "\n")) {
+        if (sc_indent(sc)) {
+            list *stmts = list_node();
+            while (1) {
+                list_append_content(stmts, parse_stmt(sc));
+                if (sc_dedent(sc)) {
+                    return SUITE(stmts);
+                }
+            }
+        }
+    }
+    else {
+        return parse_stmt_list(sc);
+    }
+}
+
+void *parse_if_stmt(scanner *sc) {
+    list *condition_list = list_node();
+    list *suite_list = list_node();
+    char *token = sc_read(sc); // it should be "if"
+    list_append_content(condition_list, parse_expression(sc));
+    token = sc_read(sc);
+    if (!strcmp(token, ":")) {
+        list_append_content(suite_list, parse_suite(sc));
+        while (1) {
+            token = sc_read(sc);
+            if (!strcmp(token, "elif")) {
+                list_append_content(condition_list, parse_expression(sc));
+                token = sc_read(sc);
+                if (!strcmp(token, ":")) {
+                    list_append_content(suite_list, parse_suite(sc));
+                }
+            }
+            else if (!strcmp(token, "else")) {
+                list_append_content(suite_list, parse_suite(sc));
+                return IF_STMT(condition_list, suite_list);
+            }
+            else {
+                rollback(sc);
+                return IF_STMT(condition_list, suite_list);
+            }
+        }
+    }
+}
+
+void *parse_compound_stmt(scanner *sc) {
+    char *token = sc_read(sc);
+    rollback(sc);
+    if (!strcmp(token, "if"))
+        return parse_if_stmt(sc);
+}
+
+void *parse_stmt(scanner *sc) {
+    char *token = sc_read(sc);
+    rollback(sc);
+    if (!strcmp(token, "if") || !strcmp(token, "while") ||
+        !strcmp(token, "while") || !strcmp(token, "def") ||
+        !strcmp(token, "class"))
+        return parse_compound_stmt(sc);
+    return parse_stmt_list(sc);
 }
 
 void interpret()
 {
-    scanner *sc = sc_init();
+    environment *global_env = environment_init();
+    scanner *sc = sc_init(stdin);
     while (1) {
-        sc_getline(sc, stdin);
-        void *exprs = parse_expression_list(sc, ";");
-        print(evaluate(exprs));
+        sc_getline(sc);
+        stmt_list *stmt = parse_stmt_list(sc);
+        list *vallist = execute(stmt, global_env);
+        list *ptr;
+        for (ptr = vallist; ptr; ptr = ptr->next) {
+            if (ptr->content)
+                print(ptr->content);
+        }
     }
 }
 

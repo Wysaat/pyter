@@ -4,7 +4,7 @@ enum types { identifier_t, int_expr_t, float_expr_t, imag_expr_t, str_expr_t,
              power_t, u_expr_t, b_expr_t, comparison_t, 
              not_test_t, conditional_expression_t,
              expression_list_t,
-             assignment_stmt_t,
+             expression_stmt_t, assignment_stmt_t, stmt_list_t,
              pyint_t, pyfloat_t, pycomplex_t, pystr_t, pybool_t,
              pytuple_t, pylist_t, pyset_t, pydict_t,
              pyslice_t, };
