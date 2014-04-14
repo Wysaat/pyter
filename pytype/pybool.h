@@ -8,6 +8,8 @@ struct pybool {
 };
 
 void *PYBOOL(int);
+pybool *pybool__bool__(void *);
+
 int is_true(pybool *);
 
 #endif /* PYTYPE_PYBOOL_H */

@@ -41,6 +41,13 @@ list *pa_exprs(scanner *, char *);
 list **pa_dict_items(scanner *);
 void *pa_sll_or_subs(scanner *);
 
+void *parse_simple_stmt(scanner *);
+void *parse_stmt_list(scanner *);
+void *parse_suite(scanner *);
+void *parse_if_stmt(scanner *);
+void *parse_compound_stmt(scanner *);
+void *parse_stmt(scanner *);
+
 char *itoa(int );
 char *lltoa(long long );
 

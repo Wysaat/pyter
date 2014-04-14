@@ -2,6 +2,7 @@
 #include "types.h"
 #include "list.h"
 #include <stdlib.h>
+#include "pytype/methods.h"
 
 void *EXPRESSION_STMT(void *expression_list) {
     expression_stmt *retptr = (expression_stmt *)malloc(sizeof(expression_stmt));
@@ -38,6 +39,21 @@ void *STMT_LIST(list *stmts) {
     return retptr;
 }
 
+void *IF_STMT(list *condition_list, list *suite_list) {
+    if_stmt *retptr = (if_stmt *)malloc(sizeof(if_stmt));
+    retptr->type = if_stmt_t;
+    retptr->condition_list = condition_list;
+    retptr->suite_list = suite_list;
+    return retptr;
+}
+
+void *SUITE(list *stmts) {
+    suite *retptr = (suite *)malloc(sizeof(suite));
+    retptr->type = suite_t;
+    retptr->stmts = stmts;
+    return retptr;
+}
+
 void *expression_stmtExecute(void *structure, environment *env) {
     expression_stmt *stmt = (expression_stmt *)structure;
     return evaluate(stmt->expression_list, env);
@@ -62,6 +78,29 @@ void *stmt_listExecute(void *structure, environment *env) {
     return retlist;
 }
 
+void *if_stmtExecute(void *structure, environment *env) {
+    if_stmt *stmt= (if_stmt *)structure;
+    list *ptr1, *ptr2;
+    for (ptr1 = stmt->condition_list, ptr2 = stmt->suite_list;
+             ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next) {
+        /* MEMORY LEAKAGE */
+        if (is_true(__bool__(evaluate(ptr1->content, env))))
+            return execute(ptr2->content, env);
+    }
+    if (ptr2)
+        return execute(ptr2->content, env);
+    else
+        return 0;
+}
+
+void *suiteExecute(void *structure, environment *env) {
+    suite *stmt = (suite *)structure;
+    list *retlist = list_node(), *ptr;
+    for (ptr = stmt->stmts; ptr; ptr = ptr->next)
+        list_append_content(retlist, execute(ptr->content, env));
+    return retlist;
+}
+
 void *execute(void *structure, environment *env) {
     switch (type(structure)) {
         case expression_stmt_t:
@@ -70,5 +109,9 @@ void *execute(void *structure, environment *env) {
             return assignment_stmtExecute(structure, env);
         case stmt_list_t:
             return stmt_listExecute(structure, env);
+        case if_stmt_t:
+            return if_stmtExecute(structure, env);
+        case suite_t:
+            return suiteExecute(structure, env);
     }
 }

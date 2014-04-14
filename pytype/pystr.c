@@ -50,6 +50,10 @@ pybool *pystr__eq__(void *lvoid, void *rvoid) {
     return PYBOOL(0);
 }
 
+pybool *pystr__bool__(void *ptr) {
+    pystr *strptr = (pystr *)ptr;
+    return PYBOOL(strlen(strptr->value));
+}
 
 
 void pystr__print__(pystr *strptr) {

@@ -78,6 +78,10 @@ char *sc_read(scanner *sc) {
         sc->rbf = 0; /* clear rollback flag */
         return sc->lasttk;
     }
+    if (sc->eolf)
+        sc_getline(sc);
+    if (sc->indentf || sc->dedentf)
+        return 0;
     buffer *buff = buff_init();
     char *retptr = sc_rread(sc, buff);
     buff_del(buff);
@@ -542,17 +546,18 @@ void *parse_stmt_list(scanner *sc) {
 void *parse_suite(scanner *sc) {
     char *token = sc_read(sc);
     if (!strcmp(token, "\n")) {
-        if (sc_indent(sc)) {
+        if (!sc_read(sc) && sc->indentf--) {
             list *stmts = list_node();
             while (1) {
                 list_append_content(stmts, parse_stmt(sc));
-                if (sc_dedent(sc)) {
+                if (!sc_read(sc) && sc->dedentf--) {
                     return SUITE(stmts);
                 }
             }
         }
     }
     else {
+        rollback(sc);
         return parse_stmt_list(sc);
     }
 }
@@ -575,8 +580,11 @@ void *parse_if_stmt(scanner *sc) {
                 }
             }
             else if (!strcmp(token, "else")) {
-                list_append_content(suite_list, parse_suite(sc));
-                return IF_STMT(condition_list, suite_list);
+                token = sc_read(sc);
+                if (!strcmp(token, ":")) {
+                    list_append_content(suite_list, parse_suite(sc));
+                    return IF_STMT(condition_list, suite_list);
+                }
             }
             else {
                 rollback(sc);
@@ -608,13 +616,14 @@ void interpret()
     environment *global_env = environment_init();
     scanner *sc = sc_init(stdin);
     while (1) {
-        sc_getline(sc);
-        stmt_list *stmt = parse_stmt_list(sc);
-        list *vallist = execute(stmt, global_env);
-        list *ptr;
-        for (ptr = vallist; ptr; ptr = ptr->next) {
-            if (ptr->content)
-                print(ptr->content);
+        void *stmt = parse_stmt(sc);
+        void *vallist = execute(stmt, global_env);
+        if (vallist) {
+            list *ptr;
+            for (ptr = vallist; ptr; ptr = ptr->next) {
+                if (ptr->content)
+                    print(ptr->content);
+            }
         }
     }
 }

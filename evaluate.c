@@ -402,9 +402,9 @@ void *comparisonEvaluate(comparison *structure, environment *env) {
     int *val;
     for (ptr = structure->comparisons; ptr != 0; ptr = ptr->next) {
         val = evaluate(ptr->content, env);
-        if (*val == pyint_t && integer__eq__(((pyint *)val)->value, INTEGER_NODE()))
+        if (type(val) == pyint_t && integer__eq__(((pyint *)val)->value, INTEGER_NODE()))
             return PYBOOL(0);
-        else if (*val == pybool_t && ((pybool *)val)->value == 0)
+        else if (type(val) == pybool_t && ((pybool *)val)->value == 0)
             return PYBOOL(0);
     }
     return PYBOOL(1);

@@ -2,6 +2,7 @@
 #define SCAN_SCANNER_H
 
 #include <stdio.h>
+#include "../list.h"
 
 typedef struct scanner scanner;
 
@@ -15,6 +16,9 @@ struct scanner {
     int rbf; /* rollback flag */
     int eolf;
     char *lasttk; /* last token */
+    list *indentation_stack;
+    int indentf;
+    int dedentf;
 };
 
 scanner *sc_init(FILE *stream);

@@ -30,6 +30,18 @@ pyfloat *pyint__float__(void *vptr) {
     return retptr;
 }
 
+pybool *pyint__bool__(void *vptr) {
+    pyint *intptr = (pyint *)vptr;
+    integer *zero = INTEGER_NODE();
+    pybool *retptr;
+    if (integer__eq__(intptr->value, zero))
+        retptr = PYBOOL(0);
+    else
+        retptr = PYBOOL(1);
+    free(zero);
+    return retptr;
+}
+
 void *pyint__add__(void *lvoid, void *rvoid) {
     pyint *left = (pyint *)lvoid;
     if (type(rvoid) == pyint_t) {

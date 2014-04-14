@@ -11,6 +11,7 @@ void pystr__del__(pystr *);
 pystr *pystr__mul__(void *, void *);
 pystr *pystr__add__(void *, void *);
 pybool *pystr__eq__(void *, void *);
+pybool *pystr__bool__(void *);
 
 void pystr__print__(pystr *);
 void pystr__puts__(pystr *);

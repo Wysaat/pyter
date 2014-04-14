@@ -7,6 +7,11 @@ scanner *sc_init(FILE *stream) {
     scanner *retptr = (scanner *)malloc(sizeof(scanner));
     memset(retptr, 0, sizeof(scanner));
     retptr->stream = stream;
+    retptr->indentation_stack = list_node();
+    int *zero = (int *)malloc(sizeof(int));
+    *zero = 0;
+    retptr->indentation_stack->content = zero;
+    retptr->eolf = 1;
     return retptr;
 }
 
@@ -49,9 +54,44 @@ void sc_getline(scanner *sc) {
         sc->ind = 0;
         sc->eolf = 0;
     }
-}
 
-int sc_indent(scanner *sc) {
+    int i, indentation = 0;
+    /*  not supporting tab now */
+    for (i = 0; sc->line[i] == ' '; i++) {
+        indentation++;
+    }
+
+    list *ptr = sc->indentation_stack;
+    while (ptr->next)
+        ptr = ptr->next;
+    if (*(int *)ptr->content == indentation) {
+        sc->indentf = 0;
+        sc->dedentf = 0;
+    }
+    else if (*(int *)ptr->content < indentation) {
+        list *newnode = list_node();
+        int *intptr = (int *)malloc(sizeof(int));
+        *intptr = indentation;
+        newnode->content = intptr;
+        ptr->next = newnode;
+        newnode->prev = ptr;
+
+        sc->indentf = 1;
+        sc->dedentf = 0;
+    }
+    else {
+        sc->indentf = 0;
+        sc->dedentf = 0;
+        while (*(int *)ptr->content > indentation) {
+            sc->dedentf++;
+            ptr = ptr->prev;
+            if (!ptr)
+                break;
+            free(ptr->next->content);
+            free(ptr->next);
+            ptr->next = 0;
+        }
+    }
 }
 
 void sc_dump(scanner *sc) {

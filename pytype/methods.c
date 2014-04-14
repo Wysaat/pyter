@@ -87,3 +87,24 @@ void *__sub__(void *left, void *right) {
     else if (type(left) == pycomplex_t)
         return pycomplex__sub__(left, right);
 }
+
+pybool *__bool__(void *ptr) {
+    if (type(ptr) == pyint_t)
+        return pyint__bool__(ptr);
+    // else if (type(ptr) == pyfloat_t)
+    //     return pyfloat__bool__(ptr);
+    // else if (type(ptr) == pycomplex_t)
+    //     return pycomplex__bool__(ptr);
+    else if (type(ptr) == pystr_t)
+        return pystr__bool__(ptr);
+    else if (type(ptr) == pybool_t)
+        return pybool__bool__(ptr);
+    // else if (type(ptr) == pylist_t)
+    //     return pylist__bool__(ptr);
+    // else if (type(ptr) == pytuple_t)
+    //     return pytuple__bool__(ptr);
+    // else if (type(ptr) == pyset_t)
+    //     return pyset__bool__(ptr);
+    // else if (tpye(ptr) == pydict_t)
+    //     return pydict__bool__(ptr);
+}
