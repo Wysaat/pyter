@@ -7,6 +7,7 @@
 
 typedef struct list list;
 struct list {
+	int type;
     void *content;
     list *prev;
     list *next;

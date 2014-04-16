@@ -8,4 +8,5 @@ enum types { identifier_t, int_expr_t, float_expr_t, imag_expr_t, str_expr_t,
              if_stmt_t, suite_t,
              pyint_t, pyfloat_t, pycomplex_t, pystr_t, pybool_t,
              pytuple_t, pylist_t, pyset_t, pydict_t,
-             pyslice_t, };
+             pyslice_t,
+             list_t, };

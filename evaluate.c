@@ -549,15 +549,22 @@ void print_nnl(void *structure) {
             }
             printf("}");
             break;
-        default:
-            printf("[print_nnl]: unsupported structure\n");
     }
 }
 
 /* '\n' append */
 void print(void *structure) {
-    print_nnl(structure);
-    printf("\n");
+    if (!structure)
+         return;
+    if (type(structure) == list_t) {
+        list *vallist = (list *)structure, *ptr;
+        for (ptr = vallist; ptr; ptr = ptr->next)
+            print(ptr->content);
+    }
+    else {
+        print_nnl(structure);
+        printf("\n");
+    }
 }
 
 int type(void *val) {

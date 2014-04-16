@@ -8,9 +8,11 @@
 #include "list.h"
 #include "pytype/methods.h"
 #include "pytype/pybool.h"
+#include "types.h"
 
 list *list_node() {
     list *retptr = (list *)malloc(sizeof(list));
+    retptr->type = list_t;
     retptr->prev = 0;
     retptr->next = 0;
     retptr->content = 0;

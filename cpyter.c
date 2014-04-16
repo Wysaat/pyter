@@ -73,6 +73,10 @@ char *sc_rread(scanner *sc, buffer *buff) { /* raw read */
         return tk;
 }
 
+/*
+ * CAUTION: if you don't read, then rollback,
+ *          but shouldn't rollback when read indentations/dedentations!
+ */
 char *sc_read(scanner *sc) {
     if (sc->rbf) {
         sc->rbf = 0; /* clear rollback flag */
@@ -274,7 +278,7 @@ void *parse_shift_expr(scanner *sc) {
     void *expr = parse_a_expr(sc);
     while (1) {
         token = sc_read(sc);
-        if (!!strcmp(token, "<<") || !strcmp(token, ">>")) {
+        if (strcmp(token, "<<") || !strcmp(token, ">>")) {
             rollback(sc);
             return expr;
         }
@@ -287,7 +291,7 @@ void *parse_and_expr(scanner *sc) {
     void *expr = parse_shift_expr(sc);
     while (1) {
         token = sc_read(sc);
-        if (!!strcmp(token, "&")) {
+        if (strcmp(token, "&")) {
             rollback(sc);
             return expr;
         }
@@ -300,7 +304,7 @@ void *parse_xor_expr(scanner *sc) {
     void *expr = parse_and_expr(sc);
     while (1) {
         token = sc_read(sc);
-        if (!!strcmp(token, "^")) {
+        if (strcmp(token, "^")) {
             rollback(sc);
             return expr;
         }
@@ -313,7 +317,7 @@ void *parse_or_expr(scanner *sc) {
     void *expr = parse_xor_expr(sc);
     while (1) {
         token = sc_read(sc);
-        if (!!strcmp(token, "|")) {
+        if (strcmp(token, "|")) {
             rollback(sc);
             return expr;
         }
@@ -553,6 +557,7 @@ void *parse_suite(scanner *sc) {
                 if (!sc_read(sc) && sc->dedentf--) {
                     return SUITE(stmts);
                 }
+                rollback(sc);
             }
         }
     }
@@ -572,6 +577,9 @@ void *parse_if_stmt(scanner *sc) {
         list_append_content(suite_list, parse_suite(sc));
         while (1) {
             token = sc_read(sc);
+            if (!token) {
+                return IF_STMT(condition_list, suite_list);
+            }
             if (!strcmp(token, "elif")) {
                 list_append_content(condition_list, parse_expression(sc));
                 token = sc_read(sc);
@@ -611,25 +619,22 @@ void *parse_stmt(scanner *sc) {
     return parse_stmt_list(sc);
 }
 
-void interpret()
+void interpret(FILE *stream)
 {
     environment *global_env = environment_init();
-    scanner *sc = sc_init(stdin);
+    scanner *sc = sc_init(stream);
+    char *token;
     while (1) {
         void *stmt = parse_stmt(sc);
         void *vallist = execute(stmt, global_env);
-        if (vallist) {
-            list *ptr;
-            for (ptr = vallist; ptr; ptr = ptr->next) {
-                if (ptr->content)
-                    print(ptr->content);
-            }
-        }
+        print(vallist);
+        if (stream == stdin && type(stmt) != stmt_list_t)
+            token = sc_read(sc);  /* token should be "\n" */
     }
 }
 
 int main()
 {
-    interpret();
+    interpret(stdin);
     return 0;
 }
