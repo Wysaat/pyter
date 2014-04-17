@@ -602,18 +602,74 @@ void *parse_if_stmt(scanner *sc) {
     }
 }
 
+void *parse_while_stmt(scanner *sc) {
+    list *suite_list = list_node();
+    char *token = sc_read(sc);  // it should be "while"
+    void *condition = parse_expression(sc);
+    token = sc_read(sc);
+    if (!strcmp(token, ":")) {
+        list_append_content(suite_list, parse_suite(sc));
+        token = sc_read(sc);
+        if (!token)
+            return WHILE_STMT(condition, suite_list);
+        else if (!strcmp(token, "else")) {
+            token = sc_read(sc);
+            if (!strcmp(token, ":")) {
+                list_append_content(suite_list, parse_suite(sc));
+                return WHILE_STMT(condition, suite_list);
+            }
+        }
+        else {
+            rollback(sc);
+            return WHILE_STMT(condition, suite_list);
+        }
+    }
+}
+
+void *parse_for_stmt(scanner *sc) {
+    char *token = sc_read(sc);  // it should be "for"
+    list *suite_list = list_node();
+    void *targets = parse_expression_list(sc, "in");
+    token = sc_read(sc);
+    if (!strcmp(token, "in")) {
+        void *expressions = parse_expression_list(sc, ":");
+        token = sc_read(sc);
+        if (!strcmp(token, ":")) {
+            list_append_content(suite_list, parse_suite(sc));
+            token = sc_read(sc);
+            if (!token)
+                return FOR_STMT(targets, expressions, suite_list);
+            else if (!strcmp(token, "else")) {
+                token = sc_read(sc);
+                if (!strcmp(token, ":")) {
+                    list_append_content(suite_list, parse_suite(sc));
+                    return FOR_STMT(targets, expressions, suite_list);
+                }
+            }
+            else {
+                rollback(sc);
+                return FOR_STMT(targets, expressions, suite_list);
+            }
+        }
+    }
+}
+
 void *parse_compound_stmt(scanner *sc) {
     char *token = sc_read(sc);
     rollback(sc);
     if (!strcmp(token, "if"))
         return parse_if_stmt(sc);
+    else if (!strcmp(token, "while"))
+        return parse_while_stmt(sc);
+    else if (!strcmp(token, "for"))
+        return parse_for_stmt(sc);
 }
 
 void *parse_stmt(scanner *sc) {
     char *token = sc_read(sc);
     rollback(sc);
     if (!strcmp(token, "if") || !strcmp(token, "while") ||
-        !strcmp(token, "while") || !strcmp(token, "def") ||
+        !strcmp(token, "for") || !strcmp(token, "def") ||
         !strcmp(token, "class"))
         return parse_compound_stmt(sc);
     return parse_stmt_list(sc);
@@ -626,8 +682,7 @@ void interpret(FILE *stream)
     char *token;
     while (1) {
         void *stmt = parse_stmt(sc);
-        void *vallist = execute(stmt, global_env);
-        print(vallist);
+        execute(stmt, global_env, 1);
         if (stream == stdin && type(stmt) != stmt_list_t)
             token = sc_read(sc);  /* token should be "\n" */
     }

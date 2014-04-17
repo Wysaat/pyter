@@ -2,6 +2,9 @@
 #define ENVIRONMENT_H
 
 #include "list.h"
+#include "evaluate.h"
+
+typedef struct identifier identifier;
 
 typedef struct environment {
     list *val_dict;
@@ -14,5 +17,6 @@ typedef struct val_dict_entry {
 
 environment *environment_init();
 val_dict_entry *val_dict_entry_init(char *id, void *value);
+void store(environment *env, void *targets, void *values);
 
 #endif /* ENVIRONMENT_H */

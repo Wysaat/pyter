@@ -5,6 +5,8 @@
 #include "integer.h"
 #include "environment.h"
 
+typedef struct environment environment;
+
 typedef struct identifier {
     int type;
     char *value;

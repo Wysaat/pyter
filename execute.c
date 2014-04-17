@@ -3,6 +3,7 @@
 #include "list.h"
 #include <stdlib.h>
 #include "pytype/methods.h"
+#include "pytype/pylist.h"
 
 void *EXPRESSION_STMT(void *expression_list) {
     expression_stmt *retptr = (expression_stmt *)malloc(sizeof(expression_stmt));
@@ -14,22 +15,9 @@ void *EXPRESSION_STMT(void *expression_list) {
 void *ASSIGNMENT_STMT(void *targets, void *expressions) {
     assignment_stmt *retptr = (assignment_stmt *)malloc(sizeof(assignment_stmt));
     retptr->type = assignment_stmt_t;
-    if (type(targets) == expression_list_t) {
-        retptr->targets = targets;
-        retptr->expressions = expressions;
-        return retptr;
-    }
-    else {
-        list *list1 = list_node();
-        list *list2 = list_node();
-        list1->content = targets;
-        list2->content = expressions;
-        expression_list *_targets = EXPRESSION_LIST(list1);
-        expression_list *_expressions = EXPRESSION_LIST(list2);
-        retptr->targets = _targets;
-        retptr->expressions = _expressions;
-        return retptr;
-    }
+    retptr->targets = targets;
+    retptr->expressions = expressions;
+    return retptr;
 }
 
 void *STMT_LIST(list *stmts) {
@@ -47,6 +35,23 @@ void *IF_STMT(list *condition_list, list *suite_list) {
     return retptr;
 }
 
+void *WHILE_STMT(void *condition, list *suite_list) {
+    while_stmt *retptr = (while_stmt *)malloc(sizeof(while_stmt));
+    retptr->type = while_stmt_t;
+    retptr->condition = condition;
+    retptr->suite_list = suite_list;
+    return retptr;
+}
+
+void *FOR_STMT(void *targets, void *expressions, list *suite_list) {
+    for_stmt *retptr = (for_stmt *)malloc(sizeof(for_stmt));
+    retptr->type = for_stmt_t;
+    retptr->targets = targets;
+    retptr->expressions = expressions;
+    retptr->suite_list = suite_list;
+    return retptr;
+}
+
 void *SUITE(list *stmts) {
     suite *retptr = (suite *)malloc(sizeof(suite));
     retptr->type = suite_t;
@@ -54,64 +59,92 @@ void *SUITE(list *stmts) {
     return retptr;
 }
 
-void *expression_stmtExecute(void *structure, environment *env) {
+void expression_stmtExecute(void *structure, environment *env, int pf) {
     expression_stmt *stmt = (expression_stmt *)structure;
-    return evaluate(stmt->expression_list, env);
+    void *ptr = evaluate(stmt->expression_list, env);
+    if (pf)
+        print(ptr);
 }
 
-void *assignment_stmtExecute(void *structure, environment *env) {
+void assignment_stmtExecute(void *structure, environment *env, int pf) {
     assignment_stmt *stmt = (assignment_stmt *)structure;
-    list *targets = stmt->targets->expr_head;
-    list *expressions = stmt->expressions->expr_head;
-    list *ptr1, *ptr2;
-    for (ptr1 = targets, ptr2 = expressions; ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next)
-        store(env, ptr1->content, evaluate(ptr2->content, env));
-    return 0;
+    void *targets = stmt->targets;
+    void *values = evaluate(stmt->expressions, env);
+    store(env, targets, values);
 }
 
-void *stmt_listExecute(void *structure, environment *env) {
+void stmt_listExecute(void *structure, environment *env, int pf) {
     stmt_list *stmt = (stmt_list *)structure;
     list *ptr;
-    list *retlist = list_node();
     for (ptr = stmt->stmts; ptr; ptr = ptr->next)
-        list_append_content(retlist, execute(ptr->content, env));
-    return retlist;
+        execute(ptr->content, env, pf);
 }
 
-void *if_stmtExecute(void *structure, environment *env) {
+void if_stmtExecute(void *structure, environment *env, int pf) {
     if_stmt *stmt= (if_stmt *)structure;
     list *ptr1, *ptr2;
     for (ptr1 = stmt->condition_list, ptr2 = stmt->suite_list;
              ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next) {
         /* MEMORY LEAKAGE */
-        if (is_true(__bool__(evaluate(ptr1->content, env))))
-            return execute(ptr2->content, env);
+        if (is_true(__bool__(evaluate(ptr1->content, env)))) {
+            execute(ptr2->content, env, pf);
+            return;
+        }
     }
     if (ptr2)
-        return execute(ptr2->content, env);
-    else
-        return 0;
+        execute(ptr2->content, env, pf);
 }
 
-void *suiteExecute(void *structure, environment *env) {
+void while_stmtExecute(void *structure, environment *env, int pf) {
+    while_stmt *stmt = (while_stmt *)structure;
+    void *cond = evaluate(stmt->condition, env);
+    pybool *truth = __bool__(cond);
+    while (is_true(truth)) {
+        execute(stmt->suite_list->content, env, pf);
+        // __del__(cond);
+        // __del__(truth);
+        cond = evaluate(stmt->condition, env);
+        truth = __bool__(cond);
+    }
+    // __del__(cond);
+    // __del__(truth);
+    if (stmt->suite_list->next)
+        execute(stmt->suite_list->next->content, env, pf);
+}
+
+void for_stmtExecute(void *structure, environment *env, int pf) {
+    for_stmt *stmt = (for_stmt *)structure;
+
+}
+
+void suiteExecute(void *structure, environment *env, int pf) {
     suite *stmt = (suite *)structure;
-    list *retlist = list_node(), *ptr;
+    list *ptr;
     for (ptr = stmt->stmts; ptr; ptr = ptr->next)
-        list_append_content(retlist, execute(ptr->content, env));
-    return retlist;
+        execute(ptr->content, env, pf);
 }
 
-void *execute(void *structure, environment *env) {
+void execute(void *structure, environment *env, int pf) {
     switch (type(structure)) {
         case expression_stmt_t:
-            return expression_stmtExecute(structure, env);
+            expression_stmtExecute(structure, env, pf);
+            break;
         case assignment_stmt_t:
-            return assignment_stmtExecute(structure, env);
+            assignment_stmtExecute(structure, env, pf);
+            break;
         case stmt_list_t:
-            return stmt_listExecute(structure, env);
+            stmt_listExecute(structure, env, pf);
+            break;
         case if_stmt_t:
-            return if_stmtExecute(structure, env);
+            if_stmtExecute(structure, env, pf);
+        case while_stmt_t:
+            while_stmtExecute(structure, env, pf);
+            break;
+        case for_stmt_t:
+            for_stmtExecute(structure, env, pf);
+            break;
         case suite_t:
-            return suiteExecute(structure, env);
+            suiteExecute(structure, env, pf);
+            break;
     }
 }
