@@ -518,6 +518,38 @@ void *parse_expression_list(scanner *sc, char *ending) {
     }
 }
 
+/* actually parse_atom_list */
+void *parse_target_list(scanner *sc, char *ending) {
+    void *target = parse_atom(sc);
+    char *token = sc_read(sc);
+    if (!strcmp(token, ",")) {
+        token = sc_read(sc);
+        rollback(sc);
+        if (!strcmp(token, ending))
+            return target;
+        list *targets = list_node();
+        list_append_content(targets, target);
+        while (1) {
+            list_append_content(targets, parse_atom(sc));
+            token = sc_read(sc);
+            if (!strcmp(token, ",")) {
+                token = sc_read(sc);
+                rollback(sc);
+                if (!strcmp(token, ending))
+                    return EXPRESSION_LIST(targets);
+            }
+            else {
+                rollback(sc);
+                return EXPRESSION_LIST(targets);
+            }
+        }
+    }
+    else {
+        rollback(sc);
+        return target;
+    }
+}
+
 void *parse_simple_stmt(scanner *sc) {
     void *expression_list1 = parse_expression_list(sc, ";");
     char *token = sc_read(sc);
@@ -629,7 +661,7 @@ void *parse_while_stmt(scanner *sc) {
 void *parse_for_stmt(scanner *sc) {
     char *token = sc_read(sc);  // it should be "for"
     list *suite_list = list_node();
-    void *targets = parse_expression_list(sc, "in");
+    void *targets = parse_target_list(sc, "in");
     token = sc_read(sc);
     if (!strcmp(token, "in")) {
         void *expressions = parse_expression_list(sc, ":");

@@ -114,7 +114,19 @@ void while_stmtExecute(void *structure, environment *env, int pf) {
 
 void for_stmtExecute(void *structure, environment *env, int pf) {
     for_stmt *stmt = (for_stmt *)structure;
-
+    /* MEMORY LEAKAGE: values_list needs __del__ when leaving. */
+    void *values_list = evaluate(stmt->expressions, env);
+    if (type(values_list) == pylist_t ||
+        type(values_list) == pytuple_t ||
+        type(values_list) == pyset_t) {
+        list *ptr;
+        for (ptr = ((pylist *)values_list)->values; ptr; ptr = ptr->next) {
+            store(env, stmt->targets, ptr->content);
+            execute(stmt->suite_list->content, env, pf);
+        }
+        if (stmt->suite_list->next)
+            execute(stmt->suite_list->next->content, env, pf);
+    }
 }
 
 void suiteExecute(void *structure, environment *env, int pf) {
@@ -137,6 +149,7 @@ void execute(void *structure, environment *env, int pf) {
             break;
         case if_stmt_t:
             if_stmtExecute(structure, env, pf);
+            break;
         case while_stmt_t:
             while_stmtExecute(structure, env, pf);
             break;

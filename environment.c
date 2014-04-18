@@ -28,7 +28,6 @@ void store(environment *env, void *targets, void *values) {
         }
         list *ptr;
         for (ptr = env->val_dict; ptr; ptr = ptr->next) {
-            // while (1) ;
             val_dict_entry *entry = (val_dict_entry *)ptr->content;
             if (!strcmp(entry->id, id->value)) {
                 /* ...

@@ -53,5 +53,6 @@ void assignment_stmtExecute(void *structure, environment *env, int pf);
 void stmt_listExecute(void *structure, environment *env, int pf);
 void if_stmtExecute(void *structure, environment *env, int pf);
 void while_stmtExecute(void *structure, environment *env, int pf);
+void for_stmtExecute(void *structure, environment *env, int pf);
 void suiteExecute(void *structure, environment *env, int pf);
 void execute(void *structure, environment *env, int pf);
