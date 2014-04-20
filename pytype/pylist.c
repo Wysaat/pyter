@@ -85,3 +85,44 @@ void *pylist__getitem__(void *lvoid, void *rvoid) {
         return retptr;
     }
 }
+
+void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
+    pylist *left = (pylist *)lvoid;
+    list *ptr;
+    pyint *ind = pyint__init__();
+    ind->value = INTEGER_NODE();
+    if (type(rvoid) == pyint_t) {
+        pyint *right = (pyint *)rvoid;
+        for (ptr = left->values; is_true(pyint__lt__(ind, right)); pyint__inc__(ind))
+            ptr = ptr->next;
+        pyint__del__(ind);
+        ptr->content = value;
+    }
+    else if (type(rvoid) == pyslice_t) {
+        pyslice *right = (pyslice *)rvoid;
+        pyint *one = pyint__init__();
+        one->value = INTEGER_NODE();
+        one->value->value = 1;
+        list *ptr2;
+        if (pyint__eq__(right->step, one)) {
+            for (ptr = left->values; is_true(pyint__lt__(ind, right->start)); pyint__inc__(ind))
+                ptr = ptr->next;
+            ptr = ptr->prev;
+            ind->value->value = 0;
+            for (ptr2 = left->values; is_true(pyint__lt__(ind, right->stop)); pyint__inc__(ind))
+                ptr2 = ptr2->next;
+            if (type(value) == pylist_t) {
+                list *to_add = list_cpy(((pylist *)value)->values);
+                ptr->next = to_add;
+                to_add->prev = ptr;
+                list *ptr3 = to_add;
+                while (ptr3->next)
+                    ptr3 = ptr3->next;
+                ptr3->next = ptr2;
+                ptr2->prev = ptr3;
+                pyint__del__(one);
+                pyint__del__(ind);
+            }
+        }
+    }
+}

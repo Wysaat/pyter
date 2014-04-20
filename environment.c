@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "types.h"
 #include "pytype/pylist.h"
+#include "pytype/methods.h"
 
 environment *environment_init() {
     environment *retptr = (environment *)malloc(sizeof(environment));
@@ -17,8 +18,6 @@ val_dict_entry *val_dict_entry_init(char *id, void *value) {
     return retptr;
 }
 
-
-/* problem is here */
 void store(environment *env, void *targets, void *values) {
     if (type(targets) == identifier_t) {
         identifier *id = (identifier *)targets;
@@ -30,13 +29,19 @@ void store(environment *env, void *targets, void *values) {
         for (ptr = env->val_dict; ptr; ptr = ptr->next) {
             val_dict_entry *entry = (val_dict_entry *)ptr->content;
             if (!strcmp(entry->id, id->value)) {
-                /* ...
-                Put code to delete old entry->value here.
-                ... */
                 entry->value = values;
+                return;
             }
         }
         list_append_content(env->val_dict, val_dict_entry_init(id->value, values));
+    }
+    else if (type(targets) == subscription_t) {
+        subscription *subsc = (subscription *)targets;
+        __setitem__(evaluate(subsc->primary, env), evaluate(subsc->subsc->value, env), values);
+    }
+    else if (type(targets) == slicing_t) {
+        slicing *slic = (slicing *)targets;
+        __setitem__(evaluate(slic->primary, env), evaluate(slic->slice, env), values);
     }
     else if (type(targets) == expression_list_t ||
              type(targets) == list_expr_t || type(targets) == parenth_form_t) {

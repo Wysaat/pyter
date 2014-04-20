@@ -40,6 +40,12 @@ void *__getitem__(void *left, void *right)  {
     }
 }
 
+void __setitem__(void *left, void *right, void *value) {
+    if (type(left) == pylist_t) {
+        pylist__setitem__(left, right, value);
+    }
+}
+
 void *__mul__(void *left, void *right) {
     if (type(left) == pyint_t)
         return pyint__mul__(left, right);
