@@ -77,6 +77,12 @@ typedef struct subscription {
     subsc_expr *subsc;
 } subscription;
 
+typedef struct call {
+    int type;
+    void *primary;
+    void *arguments;
+} call;
+
 typedef struct power {
     int type;
     void *primary;
@@ -134,6 +140,7 @@ void *SLICE_EXPR(void *start, void *stop, void *step);
 void *SUBSC_EXPR(void *);
 void *SLICING(void *primary, slice_expr *);
 void *SUBSCRIPTION(void *primary, subsc_expr *);
+void *CALL(void *primary, void *arguments);
 void *U_EXPR(char *, void *);
 void *B_EXPR(void *, char *, void *);
 void *NOT_TEST(void *);
@@ -154,6 +161,7 @@ void *dict_exprEvaluate(dict_expr *, environment *);
 void *slice_exprEvaluate(slice_expr *, environment *);
 void *slicingEvaluate(slicing *, environment *);
 void *subscriptionEvaluate(subscription *, environment *);
+void *callEvaluate(call *, environment *);
 void *powerEvaluate(power *, environment *);
 void *u_exprEvaluate(u_expr *, environment *);
 void *b_exprEvaluate(b_expr *, environment *);

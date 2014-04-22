@@ -106,6 +106,14 @@ void *SUBSCRIPTION(void *primary, subsc_expr *subsc) {
     return retptr;
 }
 
+void *CALL(void *primary, void *arguments) {
+    call *retptr = (call *)malloc(sizeof(call));
+    retptr->type = call_t;
+    retptr->primary = primary;
+    retptr->arguments = arguments;
+    return retptr;
+}
+
 void *POWER(void *primary, void *u_expr) {
     power *retptr = (power *)malloc(sizeof(power));
     retptr->type = power_t;
@@ -288,6 +296,12 @@ void *subscriptionEvaluate(subscription *structure, environment *env) {
     return __getitem__(primary_val, subsc_val);
 }
 
+void *callEvaluate(call *structure, environment *env) {
+    void *primary_val = evaluate(structure->primary, env);
+    void *argument_vals = evaluate(structure->arguments, env);
+    return __call__(primary_val, argument_vals);
+}
+
 void *powerEvaluate(power *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
     void *u_expr_val = evaluate(structure->u_expr, env);
@@ -462,6 +476,8 @@ void *evaluate(void *structure, environment *env) {
             return slicingEvaluate((slicing *)structure, env);
         case subscription_t:
             return subscriptionEvaluate((subscription *)structure, env);
+        case call_t:
+            return callEvaluate((call *)structure, env);
         case power_t:
             return powerEvaluate((power *)structure, env);
         case u_expr_t:

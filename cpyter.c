@@ -221,6 +221,13 @@ void *parse_primary(scanner *sc) {
                     primary = SUBSCRIPTION(primary, (subsc_expr *)val);
             }
         }
+        else if (!strcmp(token, "(")) {
+            void *arguments = parse_expression_list(sc, ")");
+            token = sc_read(sc);
+            if (!strcmp(token, ")")) {
+                primary = CALL(primary, arguments);
+            }
+        }
         else {
             rollback(sc);
             return primary;
@@ -686,6 +693,38 @@ void *parse_for_stmt(scanner *sc) {
     }
 }
 
+void *parse_funcdef(scanner *sc) {
+    puts("enter parse_funcdef");
+    identifier *id;
+    list *parameters = list_node();
+    char *token = sc_read(sc);  // it should be "def"
+    token = sc_read(sc);
+    if (is_identifier(token)) {
+        id = IDENTIFIER(token);
+        token = sc_read(sc);
+        if (!strcmp(token, "(")) {
+            while (1) {
+                puts("in the while-loop");
+                token = sc_read(sc);
+                list_append_content(parameters, IDENTIFIER(token));
+                token = sc_read(sc);
+                if (!strcmp(token, ",")) {
+                    token = sc_read(sc);
+                    if (!strcmp(token, ")"))
+                        break;
+                    rollback(sc);
+                }
+                else if (!strcmp(token, ")"))
+                    break;
+            }
+            token = sc_read(sc);
+            if (!strcmp(token, ":")) {
+                return FUNCDEF(id, parameters, parse_suite(sc));
+            }
+        }
+    }
+}
+
 void *parse_compound_stmt(scanner *sc) {
     char *token = sc_read(sc);
     rollback(sc);
@@ -695,6 +734,8 @@ void *parse_compound_stmt(scanner *sc) {
         return parse_while_stmt(sc);
     else if (!strcmp(token, "for"))
         return parse_for_stmt(sc);
+    else if (!strcmp(token, "def"))
+        return parse_funcdef(sc);
 }
 
 void *parse_stmt(scanner *sc) {

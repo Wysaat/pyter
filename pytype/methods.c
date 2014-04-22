@@ -9,6 +9,7 @@
 #include "pytuple.h"
 #include "pyset.h"
 #include "pydict.h"
+#include "pyfunction.h"
 #include <stdio.h>
 
 pybool *__eq__(void *left, void *right) {
@@ -113,4 +114,9 @@ pybool *__bool__(void *ptr) {
     //     return pyset__bool__(ptr);
     // else if (tpye(ptr) == pydict_t)
     //     return pydict__bool__(ptr);
+}
+
+void *__call__(void *left, void *right) {
+    if (type(left) == pyfunction_t)
+        return pyfunction__call__(left, right);
 }

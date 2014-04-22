@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "pytype/methods.h"
 #include "pytype/pylist.h"
+#include "pytype/pyfunction.h"
 
 void *EXPRESSION_STMT(void *expression_list) {
     expression_stmt *retptr = (expression_stmt *)malloc(sizeof(expression_stmt));
@@ -49,6 +50,15 @@ void *FOR_STMT(void *targets, void *expressions, list *suite_list) {
     retptr->targets = targets;
     retptr->expressions = expressions;
     retptr->suite_list = suite_list;
+    return retptr;
+}
+
+void *FUNCDEF(identifier *id, list *parameters, void *fsuite) {
+    funcdef *retptr = (funcdef *)malloc(sizeof(funcdef));
+    retptr->type = funcdef_t;
+    retptr->id = id;
+    retptr->parameters = parameters;
+    retptr->fsuite = fsuite;
     return retptr;
 }
 
@@ -129,6 +139,16 @@ void for_stmtExecute(void *structure, environment *env, int pf) {
     }
 }
 
+void funcdefExecute(void *structure, environment *env, int pf) {
+    funcdef *stmt = (funcdef *)structure;
+    pyfunction *func = (pyfunction *)malloc(sizeof(pyfunction));
+    func->type = pyfunction_t;
+    func->id = stmt->id;
+    func->parameters = stmt->parameters;
+    func->fsuite = stmt->fsuite;
+    store(env, stmt->id, func);
+}
+
 void suiteExecute(void *structure, environment *env, int pf) {
     suite *stmt = (suite *)structure;
     list *ptr;
@@ -155,6 +175,9 @@ void execute(void *structure, environment *env, int pf) {
             break;
         case for_stmt_t:
             for_stmtExecute(structure, env, pf);
+            break;
+        case funcdef_t:
+            funcdefExecute(structure, env, pf);
             break;
         case suite_t:
             suiteExecute(structure, env, pf);

@@ -104,7 +104,7 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
         one->value = INTEGER_NODE();
         one->value->value = 1;
         list *ptr2;
-        if (pyint__eq__(right->step, one)) {
+        if (is_true(pyint__eq__(right->step, one))) {
             for (ptr = left->values; is_true(pyint__lt__(ind, right->start)); pyint__inc__(ind))
                 ptr = ptr->next;
             ptr = ptr->prev;
@@ -121,6 +121,28 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
                 ptr3->next = ptr2;
                 ptr2->prev = ptr3;
                 pyint__del__(one);
+                pyint__del__(ind);
+            }
+        }
+        else {
+            pyint *zero = pyint__init__(); zero->value = INTEGER_NODE();
+            pyint *delt, *mo;
+            if (type(value) == pylist_t) {
+                pylist *to_add = (pylist *)value;
+                for (ptr = left->values, ptr2 = to_add->values; is_true(pyint__lt__(ind, right->stop)); 
+                          pyint__inc__(ind), ptr = ptr->next) {
+                    if (is_true(pyint__ge__(ind, right->start))) {
+                        delt = pyint__sub__(ind, right->start);
+                        mo = pyint__mod__(delt, right->step);
+                        if (is_true(pyint__eq__(mo, zero))) {
+                            ptr->content = ptr2->content;
+                            ptr2 = ptr2->next;
+                        }
+                        pyint__del__(mo);
+                        pyint__del__(delt);
+                    }
+                }
+                pyint__del__(zero);
                 pyint__del__(ind);
             }
         }

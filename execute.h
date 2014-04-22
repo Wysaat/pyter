@@ -36,6 +36,13 @@ typedef struct for_stmt {
     list *suite_list;
 } for_stmt;
 
+typedef struct funcdef {
+    int type;
+    identifier *id;
+    list *parameters;
+    void *fsuite;
+} funcdef;
+
 typedef struct suite {
     int type;
     list *stmts;
@@ -47,6 +54,7 @@ void *STMT_LIST(list *);
 void *IF_STMT(list *condition_list, list *suite_list);
 void *WHILE_STMT(void *condition, list *suite_list);
 void *FOR_STMT(void *targets, void *expressions, list *suite_list);
+void *FUNCDEF(identifier *id, list *parameters, void *fsuite);
 void *SUITE(list *stmts);
 void expression_stmtExecute(void *structure, environment *env, int pf);
 void assignment_stmtExecute(void *structure, environment *env, int pf);
