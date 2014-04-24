@@ -5,9 +5,11 @@
 #include "pytype/pylist.h"
 #include "pytype/methods.h"
 
-environment *environment_init() {
+environment *environment_init(environment *outer) {
     environment *retptr = (environment *)malloc(sizeof(environment));
     retptr->val_dict = list_node();
+    retptr->outer = outer;
+    retptr->ret = 0;
     return retptr;
 }
 

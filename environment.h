@@ -5,10 +5,14 @@
 #include "evaluate.h"
 
 typedef struct identifier identifier;
+typedef struct environment environment;
 
-typedef struct environment {
+/* CAUTION val_dict could be an empty list */
+struct environment {
     list *val_dict;
-} environment;
+    environment *outer;
+    void *ret;
+};
 
 typedef struct val_dict_entry {
     char *id;

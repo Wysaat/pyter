@@ -222,10 +222,17 @@ void *parse_primary(scanner *sc) {
             }
         }
         else if (!strcmp(token, "(")) {
-            void *arguments = parse_expression_list(sc, ")");
             token = sc_read(sc);
             if (!strcmp(token, ")")) {
-                primary = CALL(primary, arguments);
+                primary = CALL(primary, 0);
+            }
+            else {
+                rollback(sc);
+                void *arguments = parse_expression_list(sc, ")");
+                token = sc_read(sc);
+                if (!strcmp(token, ")")) {
+                    primary = CALL(primary, arguments);
+                }
             }
         }
         else {
@@ -558,15 +565,28 @@ void *parse_target_list(scanner *sc, char *ending) {
 }
 
 void *parse_simple_stmt(scanner *sc) {
-    void *expression_list1 = parse_expression_list(sc, ";");
     char *token = sc_read(sc);
-    if (!strcmp(token, "=")) {
-        void *expression_list2 = parse_expression_list(sc, ";");
-        return ASSIGNMENT_STMT(expression_list1, expression_list2);
+    if (!strcmp(token, "return")) {
+        token = sc_read(sc);
+        rollback(sc);
+        if (!strcmp(token, "\n") || !strcmp(token, ";")) {
+            return RETURN_STMT(0);
+        }
+        void *expressions = parse_expression_list(sc, ";");
+        return RETURN_STMT(expressions);
     }
     else {
         rollback(sc);
-        return EXPRESSION_STMT(expression_list1);
+        void *expression_list1 = parse_expression_list(sc, ";");
+        token = sc_read(sc);
+        if (!strcmp(token, "=")) {
+            void *expression_list2 = parse_expression_list(sc, ";");
+            return ASSIGNMENT_STMT(expression_list1, expression_list2);
+        }
+        else {
+            rollback(sc);
+            return EXPRESSION_STMT(expression_list1);
+        }
     }
 }
 
@@ -694,7 +714,6 @@ void *parse_for_stmt(scanner *sc) {
 }
 
 void *parse_funcdef(scanner *sc) {
-    puts("enter parse_funcdef");
     identifier *id;
     list *parameters = list_node();
     char *token = sc_read(sc);  // it should be "def"
@@ -703,19 +722,22 @@ void *parse_funcdef(scanner *sc) {
         id = IDENTIFIER(token);
         token = sc_read(sc);
         if (!strcmp(token, "(")) {
-            while (1) {
-                puts("in the while-loop");
-                token = sc_read(sc);
-                list_append_content(parameters, IDENTIFIER(token));
-                token = sc_read(sc);
-                if (!strcmp(token, ",")) {
+            token = sc_read(sc);
+            if (strcmp(token, ")")) {
+                rollback(sc);
+                while (1) {
                     token = sc_read(sc);
-                    if (!strcmp(token, ")"))
+                    list_append_content(parameters, IDENTIFIER(token));
+                    token = sc_read(sc);
+                    if (!strcmp(token, ",")) {
+                        token = sc_read(sc);
+                        if (!strcmp(token, ")"))
+                            break;
+                        rollback(sc);
+                    }
+                    else if (!strcmp(token, ")"))
                         break;
-                    rollback(sc);
                 }
-                else if (!strcmp(token, ")"))
-                    break;
             }
             token = sc_read(sc);
             if (!strcmp(token, ":")) {
@@ -750,7 +772,7 @@ void *parse_stmt(scanner *sc) {
 
 void interpret(FILE *stream)
 {
-    environment *global_env = environment_init();
+    environment *global_env = environment_init(0);
     scanner *sc = sc_init(stream);
     char *token;
     while (1) {

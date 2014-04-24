@@ -177,12 +177,19 @@ void *PYSTR(char *value) {
     return retptr;
 }
 
-void *identifierEvaluate(identifier *structure, environment *global) {
+/* CAUTION env->val_dict could be an empty list */
+void *identifierEvaluate(identifier *structure, environment *env) {
     list *ptr;
-    for (ptr = global->val_dict; ptr; ptr = ptr->next) {
-        val_dict_entry *entry = (val_dict_entry *)ptr->content;
-        if (!strcmp(entry->id, structure->value))
-            return entry->value;
+    environment *env_ptr;
+    for (env_ptr = env; env_ptr; env_ptr = env_ptr->outer) {
+        if (!list_is_empty(env_ptr->val_dict)) {
+            for (ptr = env_ptr->val_dict; ptr; ptr = ptr->next) {
+                val_dict_entry *entry = (val_dict_entry *)ptr->content;
+                if (!strcmp(entry->id, structure->value)) {
+                    return entry->value;
+                }
+            }
+        }
     }
 }
 
@@ -298,8 +305,13 @@ void *subscriptionEvaluate(subscription *structure, environment *env) {
 
 void *callEvaluate(call *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
-    void *argument_vals = evaluate(structure->arguments, env);
-    return __call__(primary_val, argument_vals);
+    if (structure->arguments) {
+        void *argument_vals = evaluate(structure->arguments, env);
+        return __call__(primary_val, argument_vals);
+    }
+    else {
+        return __call__(primary_val, 0);
+    }
 }
 
 void *powerEvaluate(power *structure, environment *env) {

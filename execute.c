@@ -21,6 +21,13 @@ void *ASSIGNMENT_STMT(void *targets, void *expressions) {
     return retptr;
 }
 
+void *RETURN_STMT(void *expressions) {
+    return_stmt *retptr = (return_stmt *)malloc(sizeof(return_stmt));
+    retptr->type = return_stmt_t;
+    retptr->expressions = expressions;
+    return retptr;
+}
+
 void *STMT_LIST(list *stmts) {
     stmt_list *retptr=  (stmt_list *)malloc(sizeof(stmt_list));
     retptr->type = stmt_list_t;
@@ -83,11 +90,17 @@ void assignment_stmtExecute(void *structure, environment *env, int pf) {
     store(env, targets, values);
 }
 
+void return_stmtExecute(void *structure, environment *env, int pf) {
+    return_stmt *stmt = (return_stmt *)structure;
+    env->ret = evaluate(stmt->expressions, env);
+}
+
 void stmt_listExecute(void *structure, environment *env, int pf) {
     stmt_list *stmt = (stmt_list *)structure;
     list *ptr;
-    for (ptr = stmt->stmts; ptr; ptr = ptr->next)
+    for (ptr = stmt->stmts; ptr; ptr = ptr->next) {
         execute(ptr->content, env, pf);
+    }
 }
 
 void if_stmtExecute(void *structure, environment *env, int pf) {
@@ -146,6 +159,7 @@ void funcdefExecute(void *structure, environment *env, int pf) {
     func->id = stmt->id;
     func->parameters = stmt->parameters;
     func->fsuite = stmt->fsuite;
+    func->env = env;
     store(env, stmt->id, func);
 }
 
@@ -156,13 +170,22 @@ void suiteExecute(void *structure, environment *env, int pf) {
         execute(ptr->content, env, pf);
 }
 
+/*
+ * CAUTION: break!!! NEVER forget BREAK!!!
+ * hours have been wasted !!!
+ */
 void execute(void *structure, environment *env, int pf) {
+    if (env->ret)
+        return;
     switch (type(structure)) {
         case expression_stmt_t:
             expression_stmtExecute(structure, env, pf);
             break;
         case assignment_stmt_t:
             assignment_stmtExecute(structure, env, pf);
+            break;
+        case return_stmt_t:
+            return_stmtExecute(structure, env, pf);
             break;
         case stmt_list_t:
             stmt_listExecute(structure, env, pf);

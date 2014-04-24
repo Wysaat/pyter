@@ -1,5 +1,6 @@
 #include "../evaluate.h"
 #include "../list.h"
+#include "../environment.h"
 
 typedef struct pyfunction pyfunction;
 
@@ -8,6 +9,7 @@ struct pyfunction {
     identifier *id;
     list *parameters;
     void *fsuite;
+    environment *env;
 };
 
 void *pyfunction__call__(void *, void *);

@@ -12,6 +12,11 @@ typedef struct assignment_stmt {
     void *expressions;
 } assignment_stmt;
 
+typedef struct return_stmt {
+    int type;
+    void *expressions;
+} return_stmt;
+
 typedef struct stmt_list {
     int type;
     list *stmts;
@@ -50,6 +55,7 @@ typedef struct suite {
 
 void *EXPRESSION_STMT(void *);
 void *ASSIGNMENT_STMT(void *, void *);
+void *RETURN_STMT(void *);
 void *STMT_LIST(list *);
 void *IF_STMT(list *condition_list, list *suite_list);
 void *WHILE_STMT(void *condition, list *suite_list);
@@ -58,6 +64,7 @@ void *FUNCDEF(identifier *id, list *parameters, void *fsuite);
 void *SUITE(list *stmts);
 void expression_stmtExecute(void *structure, environment *env, int pf);
 void assignment_stmtExecute(void *structure, environment *env, int pf);
+void return_stmtExecute(void *structure, environment *env, int pf);
 void stmt_listExecute(void *structure, environment *env, int pf);
 void if_stmtExecute(void *structure, environment *env, int pf);
 void while_stmtExecute(void *structure, environment *env, int pf);
