@@ -119,6 +119,12 @@ typedef struct conditional_expression {
     void *expr;
 } conditional_expression;
 
+typedef struct lambda_expr {
+    int type;
+    list *parameters;
+    void *expr;
+} lambda_expr;
+
 typedef struct expression_list {
     int type;
     list *expr_head;
@@ -145,6 +151,7 @@ void *U_EXPR(char *, void *);
 void *B_EXPR(void *, char *, void *);
 void *NOT_TEST(void *);
 void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr);
+void *LAMBDA_EXPR(list *parameters, void *expr);
 void *EXPRESSION_LIST(list *);
 void *PYINT(integer *);
 void *PYSTR(char *);
@@ -168,6 +175,7 @@ void *b_exprEvaluate(b_expr *, environment *);
 void *not_testEvaluate(not_test *, environment *);
 void *comparisonEvaluate(comparison *, environment *);
 void *conditional_expressionEvaluate(conditional_expression *, environment *);
+void *lambda_exprEvaluate(lambda_expr *, environment *);
 void *expression_listEvaluate(expression_list *, environment *);
 void *evaluate(void *, environment *);
 void print_nnl(void *);

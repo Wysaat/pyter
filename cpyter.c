@@ -436,8 +436,36 @@ void *parse_conditional_expression(scanner *sc) {
         return CONDITIONAL_EXPRESSION(or_test, or_test2, parse_expression(sc));
 }
 
+void *parse_lambda_expr(scanner *sc) {
+    char *token = sc_read(sc);  // it should be lambda
+    list *parameters = list_node();
+    token = sc_read(sc);
+    if (strcmp(token, ":")) {
+        rollback(sc);
+        while (1) {
+            token = sc_read(sc);
+            list_append_content(parameters, IDENTIFIER(token));
+            token = sc_read(sc);
+            if (!strcmp(token, ",")) {
+                token = sc_read(sc);
+                if (!strcmp(token, ":"))
+                    break;
+                rollback(sc);
+            }
+            else if (!strcmp(token, ":"))
+                break;
+        }
+    }
+    return LAMBDA_EXPR(parameters, parse_expression(sc));
+}
+
 /* no lambda expression support */
 void *parse_expression(scanner *sc) {
+    char *token = sc_read(sc);
+    rollback(sc);
+    if (!strcmp(token, "lambda")) {
+        return parse_lambda_expr(sc);
+    }
     return parse_conditional_expression(sc);
 }
 

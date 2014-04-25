@@ -156,6 +156,13 @@ void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr) {
     return expression;
 }
 
+void *LAMBDA_EXPR(list *parameters, void *expr) {
+    lambda_expr *retptr = (lambda_expr *)malloc(sizeof(lambda_expr));
+    retptr->type = lambda_expr_t;
+    retptr->parameters = parameters;
+    retptr->expr = expr;
+}
+
 void *EXPRESSION_LIST(list *expr_head) {
     expression_list *retptr = (expression_list *)malloc(sizeof(expression_list));
     retptr->type = expression_list_t;
@@ -451,6 +458,16 @@ void *conditional_expressionEvaluate(conditional_expression *structure, environm
     return retptr;
 }
 
+void *lambda_exprEvaluate(lambda_expr *structure, environment *env) {
+    pyfunction *retptr = (pyfunction *)malloc(sizeof(pyfunction));
+    retptr->type = pyfunction_t;
+    retptr->id = 0;
+    retptr->parameters = structure->parameters;
+    retptr->fsuite = RETURN_STMT(structure->expr);
+    retptr->env = env;
+    return retptr;
+}
+
 void *expression_listEvaluate(expression_list *structure, environment *env) {
     list *expr_ptr;
     list *value_list = list_node();
@@ -502,6 +519,8 @@ void *evaluate(void *structure, environment *env) {
             return not_testEvaluate((not_test *)structure, env);
         case conditional_expression_t:
             return conditional_expressionEvaluate((conditional_expression *)structure, env);
+        case lambda_expr_t:
+            return lambda_exprEvaluate((lambda_expr *)structure, env);
         case expression_list_t:
             return expression_listEvaluate((expression_list *)structure, env);
         default:
@@ -576,6 +595,12 @@ void print_nnl(void *structure) {
                     printf(", ");
             }
             printf("}");
+            break;
+        case pyfunction_t:
+            if (((pyfunction *)structure)->id)
+                printf("<function %s at %p>", ((pyfunction *)structure)->id->value, structure);
+            else
+                printf("<function %s at %p>", "<lambda>", structure);
             break;
     }
 }

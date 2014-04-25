@@ -28,6 +28,7 @@
 #include "pytype/pytuple.h"
 #include "pytype/pyset.h"
 #include "pytype/pydict.h"
+#include "pytype/pyfunction.h"
 
 #include "environment.h"
 
