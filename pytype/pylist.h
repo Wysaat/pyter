@@ -4,10 +4,12 @@
 #include "../list.h"
 #include "pybool.h"
 
-typedef struct pylist {
+typedef struct pylist pylist;
+
+struct pylist {
     int type;
     list *values;
-} pylist;
+};
 
 pylist *pylist__init__();
 pylist *pylist__add__(void *, void *);

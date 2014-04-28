@@ -1,3 +1,6 @@
+#ifndef PYTYPE_OTHERS_H
+#define PYTYPE_OTHERS_H
+
 typedef struct pyslice pyslice;
 struct pyslice {
     int type;
@@ -5,3 +8,5 @@ struct pyslice {
     pyint *stop;
     pyint *step;
 };
+
+#endif /* PYTYPE_OTHERS_H */

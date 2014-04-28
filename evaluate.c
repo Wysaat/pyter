@@ -6,9 +6,6 @@
 #include "cpyter.h"
 #include "evaluate.h"
 
-#include "pytype/methods.h"
-#include "pytype/others.h"
-
 void *IDENTIFIER(char *token) {
     identifier *retptr = (identifier *)malloc(sizeof(identifier));
     retptr->type = identifier_t;
@@ -71,6 +68,14 @@ void *DICT_EXPR(list *expr_head, list *expr_head2) {
     retptr->type = dict_expr_t;
     retptr->expr_head = expr_head;
     retptr->expr_head2 = expr_head2;
+    return retptr;
+}
+
+void *ATTRIBUTEREF(void *primary, identifier *id) {
+    attributeref *retptr = (attributeref *)malloc(sizeof(attributeref));
+    retptr->type = attributeref_t;
+    retptr->primary = primary;
+    retptr->id = id;
     return retptr;
 }
 
@@ -289,6 +294,23 @@ void *dict_exprEvaluate(dict_expr *structure, environment *env) {
     return retptr;
 }
 
+void *attributerefEvaluate(attributeref *structure, environment *env) {
+    void *primary_val = evaluate(structure->primary, env);
+    list *ptr;
+    if (type(primary_val) == instance_t) {
+        instance *inst = (instance *)primary_val;
+        if (!list_is_empty(inst->env->val_dict)) {
+            for (ptr = inst->env->val_dict; ptr; ptr = ptr->next) {
+                val_dict_entry *entry = (val_dict_entry *)ptr->content;
+                if (!strcmp(entry->id, structure->id->value)) {
+                    return entry->value;
+                }
+            }
+        }
+        return __getattribute__(inst->class, inst, PYSTR(structure->id->value));
+    }
+}
+
 void *slice_exprEvaluate(slice_expr *structure, environment *env) {
     pyslice *retptr = (pyslice *)malloc(sizeof(pyslice));
     retptr->type = pyslice_t;
@@ -499,6 +521,8 @@ void *evaluate(void *structure, environment *env) {
             return set_exprEvaluate((set_expr *)structure, env);
         case dict_expr_t:
             return dict_exprEvaluate((dict_expr *)structure, env);
+        case attributeref_t:
+            return attributerefEvaluate((attributeref *)structure, env);
         case slice_expr_t:
             return slice_exprEvaluate((slice_expr *)structure, env);
         case slicing_t:

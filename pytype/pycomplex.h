@@ -1,3 +1,6 @@
+#ifndef PYTYPE_PYCOMPLEX_H
+#define PYTYPE_PYCOMPLEX_H
+
 #include "pyfloat.h"
 
 typedef struct pycomplex pycomplex;
@@ -12,3 +15,5 @@ pycomplex *pycomplex__add__(void *, void *);
 pycomplex *pycomplex__sub__(void *, void *);
 pycomplex *pycomplex__mul__(void *, void *);
 pycomplex *pycomplex__div__(void *, void *);
+
+#endif /* PYTYPE_PYCOMPLEX_H */

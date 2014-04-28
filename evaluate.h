@@ -1,5 +1,5 @@
-#ifndef EXECUTE_H
-#define EXECUTE_H
+#ifndef EVALUATE_H
+#define EVALUATE_H
 
 #include "list.h"
 #include "integer.h"
@@ -52,6 +52,12 @@ typedef struct list_expr {
     int type;
     list *expr_head;
 } list_expr;
+
+typedef struct attributeref {
+    int type;
+    void *primary;
+    identifier *id;
+} attributeref;
 
 typedef struct slice_expr {
     int type;
@@ -142,6 +148,7 @@ void *PARENTH_FORM(list *);
 void *LIST_EXPR(list *);
 void *SET_EXPR(list *);
 void *DICT_EXPR(list *, list *);
+void *ATTRIBUTEREF(void *primary, identifier *id);
 void *SLICE_EXPR(void *start, void *stop, void *step);
 void *SUBSC_EXPR(void *);
 void *SLICING(void *primary, slice_expr *);
@@ -165,6 +172,7 @@ void *parenth_formEvaluate(parenth_form *, environment *);
 void *list_exprEvaluate(list_expr *, environment *);
 void *set_exprEvaluate(set_expr *, environment *);
 void *dict_exprEvaluate(dict_expr *, environment *);
+void *attributerefEvaluate(attributeref *, environment *);
 void *slice_exprEvaluate(slice_expr *, environment *);
 void *slicingEvaluate(slicing *, environment *);
 void *subscriptionEvaluate(subscription *, environment *);
@@ -181,4 +189,4 @@ void *evaluate(void *, environment *);
 void print_nnl(void *);
 void print(void *);
 
-#endif /* EXECUTE_H */
+#endif /* EVALUATE_H */

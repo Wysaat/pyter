@@ -1,3 +1,6 @@
+#ifndef EXECUTE_H
+#define EXECUTE_H
+
 #include "evaluate.h"
 #include "environment.h"
 
@@ -48,6 +51,12 @@ typedef struct funcdef {
     void *fsuite;
 } funcdef;
 
+typedef struct classdef {
+    int type;
+    identifier *id;
+    void *_suite;
+} classdef;
+
 typedef struct suite {
     int type;
     list *stmts;
@@ -61,6 +70,7 @@ void *IF_STMT(list *condition_list, list *suite_list);
 void *WHILE_STMT(void *condition, list *suite_list);
 void *FOR_STMT(void *targets, void *expressions, list *suite_list);
 void *FUNCDEF(identifier *id, list *parameters, void *fsuite);
+void *CLASSDEF(identifier *id, void *_suite);
 void *SUITE(list *stmts);
 void expression_stmtExecute(void *structure, environment *env, int pf);
 void assignment_stmtExecute(void *structure, environment *env, int pf);
@@ -69,5 +79,9 @@ void stmt_listExecute(void *structure, environment *env, int pf);
 void if_stmtExecute(void *structure, environment *env, int pf);
 void while_stmtExecute(void *structure, environment *env, int pf);
 void for_stmtExecute(void *structure, environment *env, int pf);
+void funcdefExecute(void *structure, environment *env, int pf);
+void classdefExecute(void *structure, environment *env, int pf);
 void suiteExecute(void *structure, environment *env, int pf);
 void execute(void *structure, environment *env, int pf);
+
+#endif /* EXECUTE_H */

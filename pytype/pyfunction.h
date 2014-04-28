@@ -1,3 +1,6 @@
+#ifndef PYTYPE_PYFUNCTION_H
+#define PYTYPE_PYFUNCTION_H
+
 #include "../evaluate.h"
 #include "../list.h"
 #include "../environment.h"
@@ -10,6 +13,9 @@ struct pyfunction {
     list *parameters;
     void *fsuite;
     environment *env;
+    void *bound;
 };
 
 void *pyfunction__call__(void *, void *);
+
+#endif /* PYTYPE_PYFUNCTION_H */

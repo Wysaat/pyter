@@ -1,3 +1,6 @@
+#ifndef PYTYPE_PYTUPLE_H
+#define PYTYPE_PYTUPLE_H
+
 #include "../list.h"
 #include "pyint.h"
 #include "pybool.h"
@@ -13,3 +16,5 @@ pytuple *pytuple__add__(void *, void *);
 pytuple *pytuple__mul__(pytuple *, void *);
 pybool *pytuple__eq__(void *, void *);
 void *pytuple__getitem__(void *, void *);
+
+#endif /* PYTYPE_PYTUPLE_H */

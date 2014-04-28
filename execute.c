@@ -5,6 +5,7 @@
 #include "pytype/methods.h"
 #include "pytype/pylist.h"
 #include "pytype/pyfunction.h"
+#include "pytype/pyclass.h"
 
 void *EXPRESSION_STMT(void *expression_list) {
     expression_stmt *retptr = (expression_stmt *)malloc(sizeof(expression_stmt));
@@ -66,6 +67,14 @@ void *FUNCDEF(identifier *id, list *parameters, void *fsuite) {
     retptr->id = id;
     retptr->parameters = parameters;
     retptr->fsuite = fsuite;
+    return retptr;
+}
+
+void *CLASSDEF(identifier *id, void *_suite) {
+    classdef *retptr = (classdef *)malloc(sizeof(classdef));
+    retptr->type = classdef_t;
+    retptr->id = id;
+    retptr->_suite = _suite;
     return retptr;
 }
 
@@ -160,7 +169,18 @@ void funcdefExecute(void *structure, environment *env, int pf) {
     func->parameters = stmt->parameters;
     func->fsuite = stmt->fsuite;
     func->env = env;
+    func->bound = 0;
     store(env, stmt->id, func);
+}
+
+void classdefExecute(void *structure, environment *env, int pf) {
+    classdef *stmt = (classdef *)structure;
+    pyclass *class = (pyclass *)malloc(sizeof(pyclass));
+    class->type = pyclass_t;
+    class->id = stmt->id->value;
+    class->env = environment_init(env);
+    execute(stmt->_suite, class->env, 0);
+    store(env, stmt->id, class);
 }
 
 void suiteExecute(void *structure, environment *env, int pf) {
@@ -201,6 +221,9 @@ void execute(void *structure, environment *env, int pf) {
             break;
         case funcdef_t:
             funcdefExecute(structure, env, pf);
+            break;
+        case classdef_t:
+            classdefExecute(structure, env, pf);
             break;
         case suite_t:
             suiteExecute(structure, env, pf);

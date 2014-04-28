@@ -1,3 +1,6 @@
+#ifndef PYTYPE_PYSTR_H
+#define PYTYPE_PYSTR_H
+
 #include "pybool.h"
 
 typedef struct pystr pystr;
@@ -15,3 +18,5 @@ pybool *pystr__bool__(void *);
 
 void pystr__print__(pystr *);
 void pystr__puts__(pystr *);
+
+#endif /* PYTYPE_PYSTR_H */

@@ -1,4 +1,8 @@
+#ifndef PYTYPE_METHODS_H
+#define PYTYPE_METHODS_H
+
 #include "pybool.h"
+#include "pystr.h"
 #include "../environment.h"
 
 pybool *__eq__(void *, void *);
@@ -10,3 +14,6 @@ void *__add__(void *, void *);
 void *__sub__(void *, void *);
 pybool *__bool__(void *);
 void *__call__(void *, void *);
+void *__getattribute__(void *, void *, pystr *);
+
+#endif /* PYTYPE_METHODS_H */

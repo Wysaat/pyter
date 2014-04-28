@@ -56,7 +56,7 @@ char *sc_rread(scanner *sc, buffer *buff) { /* raw read */
     if (sc_curch(sc) == '.') {
         if (sc_nxtch(sc) >= '0' && sc_nxtch(sc) <= '9')
             return sc_read_num_lit(sc, buff);
-        buff_add(buff, sc_curch(sc));
+        buff_add(buff, sc_readch(sc));
         return buff_puts(buff);
     }
     if (sc_curch(sc) >= '0' && sc_curch(sc) <= '9') {
@@ -96,7 +96,6 @@ char *sc_read(scanner *sc) {
 int is_num(char ch) {
     return ch >= '0' && ch <= '9';
 }
-
 
 int is_alph(char ch) {
     return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
@@ -211,7 +210,11 @@ void *parse_primary(scanner *sc) {
     void *primary = parse_atom(sc);
     while (1) {
         token = sc_read(sc);
-        if (!strcmp(token, "[")) {
+        if (!strcmp(token, ".")) {
+            token = sc_read(sc);
+            primary = ATTRIBUTEREF(primary, IDENTIFIER(token));
+        }
+        else if (!strcmp(token, "[")) {
             void *val = pa_sll_or_subs(sc);
             token = sc_read(sc);
             if (!strcmp(token, "]")) {
@@ -775,6 +778,19 @@ void *parse_funcdef(scanner *sc) {
     }
 }
 
+void *parse_classdef(scanner *sc) {
+    identifier *id;
+    char *token = sc_read(sc);  // it should be "class"
+    token = sc_read(sc);
+    if (is_identifier(token)) {
+        id = IDENTIFIER(token);
+        token = sc_read(sc);
+        if (!strcmp(token, ":")) {
+            return CLASSDEF(id, parse_suite(sc));
+        }
+    }
+}
+
 void *parse_compound_stmt(scanner *sc) {
     char *token = sc_read(sc);
     rollback(sc);
@@ -786,6 +802,8 @@ void *parse_compound_stmt(scanner *sc) {
         return parse_for_stmt(sc);
     else if (!strcmp(token, "def"))
         return parse_funcdef(sc);
+    else if (!strcmp(token, "class"))
+        return parse_classdef(sc);
 }
 
 void *parse_stmt(scanner *sc) {

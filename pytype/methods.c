@@ -10,6 +10,7 @@
 #include "pyset.h"
 #include "pydict.h"
 #include "pyfunction.h"
+#include "pyclass.h"
 #include <stdio.h>
 
 pybool *__eq__(void *left, void *right) {
@@ -119,4 +120,20 @@ pybool *__bool__(void *ptr) {
 void *__call__(void *left, void *right) {
     if (type(left) == pyfunction_t)
         return pyfunction__call__(left, right);
+    else if (type(left) == pyclass_t)
+        return pyclass__call__(left, right);
+}
+
+/*
+ * DON'T DELETE IT
+ * see how you got wrong
+ */
+// void *___getattribute__(void *first, void *second, pystr *attr) {
+//     if (type(first) == pyclass_t)
+//         return pyclass__getattribute__(first, second, attr);
+// }
+
+void *__getattribute__(void *first, void *second, pystr *attr) {
+    if (type(first) == pyclass_t)
+        return pyclass__getattribute__(first, second, attr);
 }

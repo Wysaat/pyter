@@ -29,6 +29,8 @@
 #include "pytype/pyset.h"
 #include "pytype/pydict.h"
 #include "pytype/pyfunction.h"
+#include "pytype/pyclass.h"
+#include "pytype/others.h"
 
 #include "environment.h"
 
