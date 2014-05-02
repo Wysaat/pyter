@@ -11,5 +11,6 @@ enum types { identifier_t, int_expr_t, float_expr_t, imag_expr_t, str_expr_t,
              pytuple_t, pylist_t, pyset_t, pydict_t,
              pyslice_t,
              pyfunction_t, pyclass_t,
+             pybuiltin_function_t,
              list_t,
              instance_t };

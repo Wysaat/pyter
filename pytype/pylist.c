@@ -6,6 +6,7 @@
 pylist *pylist__init__() {
     pylist *retptr = (pylist *)malloc(sizeof(pylist));
     retptr->type = pylist_t;
+    retptr->values = list_node();
     return retptr;
 }
 
@@ -17,7 +18,7 @@ pylist *pylist__add__(void *lvoid, void *rvoid) {
     pylist *left = (pylist *)lvoid;
     pylist *right = (pylist *)rvoid;
     pylist *retptr = pylist__init__();
-    retptr->values = list_add(left->values, right->values);
+    list_append_list(retptr->values, list_add(left->values, right->values));
     return retptr;
 }
 
@@ -29,7 +30,6 @@ pylist *pylist__mul__(void *lvoid, void *rvoid) {
     pylist *left = (pylist *)lvoid;
     pyint *times = (pyint *)rvoid;
     pylist *retptr = pylist__init__();
-    retptr->values = list_node();
 
     pyint *zero = pyint__init__();
     zero->value = INTEGER_NODE();
@@ -64,7 +64,6 @@ void *pylist__getitem__(void *lvoid, void *rvoid) {
     }
     else if (type(rvoid) == (pyslice_t)) {
         pylist *retptr = pylist__init__();
-        retptr->values = list_node();
         pyint *zero = pyint__init__(); zero->value = INTEGER_NODE();
         pyint *delt, *mo;
         pyslice *right = (pyslice *)rvoid;

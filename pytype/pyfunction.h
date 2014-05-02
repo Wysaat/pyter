@@ -17,5 +17,6 @@ struct pyfunction {
 };
 
 void *pyfunction__call__(void *, void *);
+// void *pyfunction__init__(identifier *id, list *parameters, void *fsuite, environment *env);
 
 #endif /* PYTYPE_PYFUNCTION_H */

@@ -242,6 +242,8 @@ void *parenth_formEvaluate(parenth_form *structure, environment *env) {
     retptr->type = pytuple_t;
     retptr->values = list_node();
     list *ptr;
+    if (list_is_empty(structure->expr_head))
+        return retptr;
     for (ptr = structure->expr_head; ptr; ptr = ptr->next) {
         list_append_content(retptr->values, evaluate(ptr->content, env));
     }
@@ -253,6 +255,8 @@ void *list_exprEvaluate(list_expr *structure, environment *env) {
     retptr->type = pylist_t;
     retptr->values = list_node();
     list *ptr;
+    if (list_is_empty(structure->expr_head))
+        return retptr;
     for (ptr = structure->expr_head; ptr; ptr = ptr->next)
         list_append_content(retptr->values, evaluate(ptr->content, env));
     return retptr;
@@ -303,11 +307,27 @@ void *attributerefEvaluate(attributeref *structure, environment *env) {
             for (ptr = inst->env->val_dict; ptr; ptr = ptr->next) {
                 val_dict_entry *entry = (val_dict_entry *)ptr->content;
                 if (!strcmp(entry->id, structure->id->value)) {
+                    if (type(entry->value) == pyfunction_t)
+                        ((pyfunction *)entry->value)->bound = 0;
                     return entry->value;
                 }
             }
         }
         return __getattribute__(inst->class, inst, PYSTR(structure->id->value));
+    }
+    else if (type(primary_val) == pyclass_t) {
+        pyclass *class = (pyclass *)primary_val;
+        if (!list_is_empty(class->env->val_dict)) {
+            for (ptr = class->env->val_dict; ptr; ptr = ptr->next) {
+                val_dict_entry *entry = (val_dict_entry *)ptr->content;
+                if (!strcmp(entry->id, structure->id->value)) {
+                    if (type(entry->value) == pyfunction_t)
+                        ((pyfunction *)entry->value)->bound = 0;
+                    return entry->value;
+                }
+            }
+        }
+        return __getattribute__(class->class, class, PYSTR(structure->id->value));
     }
 }
 
@@ -336,6 +356,12 @@ void *callEvaluate(call *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
     if (structure->arguments) {
         void *argument_vals = evaluate(structure->arguments, env);
+        if (type(structure->arguments) == parenth_form_t) {
+            pytuple *args = pytuple__init__();
+            args->values = list_node();
+            args->values->content = argument_vals;
+            return __call__(primary_val, args);
+        }
         return __call__(primary_val, argument_vals);
     }
     else {
@@ -583,20 +609,22 @@ void print_nnl(void *structure) {
             break;
         case pytuple_t:
             printf("(");
-            for (ptr = ((pytuple *)structure)->values; ptr; ptr = ptr->next) {
-                print_nnl(ptr->content);
-                if (ptr->next)
-                    printf(", ");
-            }
+            if (!list_is_empty(((pytuple *)structure)->values))
+                for (ptr = ((pytuple *)structure)->values; ptr; ptr = ptr->next) {
+                    print_nnl(ptr->content);
+                    if (ptr->next)
+                        printf(", ");
+                }
             printf(")");
             break;
         case pylist_t:
             printf("[");
-            for (ptr = ((pylist *)structure)->values; ptr; ptr = ptr->next) {
-                print_nnl(ptr->content);
-                if (ptr->next)
-                    printf(", ");
-            }
+            if (!list_is_empty(((pylist *)structure)->values))
+                for (ptr = ((pylist *)structure)->values; ptr; ptr = ptr->next) {
+                    print_nnl(ptr->content);
+                    if (ptr->next)
+                        printf(", ");
+                }
             printf("]");
             break;
         case pyset_t:
@@ -632,12 +660,7 @@ void print_nnl(void *structure) {
 /* '\n' append */
 void print(void *structure) {
     if (!structure)
-         return;
-    if (type(structure) == list_t) {
-        list *vallist = (list *)structure, *ptr;
-        for (ptr = vallist; ptr; ptr = ptr->next)
-            print(ptr->content);
-    }
+        return;
     else {
         print_nnl(structure);
         printf("\n");

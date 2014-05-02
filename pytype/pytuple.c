@@ -8,6 +8,7 @@
 pytuple *pytuple__init__() {
     pytuple *retptr = (pytuple *)malloc(sizeof(pytuple));
     retptr->type = pytuple_t;
+    retptr->values = list_node();
     return retptr;
 }
 
@@ -15,13 +16,12 @@ pytuple *pytuple__add__(void *lvoid, void *rvoid) {
     pytuple *left = (pytuple *)lvoid;
     pytuple *right = (pytuple *)rvoid;
     pytuple *retptr = pytuple__init__();
-    retptr->values = list_add(left->values, right->values);
+    list_append_list(retptr->values, list_add(left->values, right->values));
     return retptr;
 }
 
 pytuple *pytuple__mul__(pytuple *left, void *right) {
     pytuple *retptr = pytuple__init__();
-    retptr->values = list_node();
     pyint *times = (pyint *)right;
     pyint *zero = pyint__init__();
     zero->value = INTEGER_NODE();

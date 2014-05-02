@@ -131,7 +131,7 @@ void while_stmtExecute(void *structure, environment *env, int pf) {
     while_stmt *stmt = (while_stmt *)structure;
     void *cond = evaluate(stmt->condition, env);
     pybool *truth = __bool__(cond);
-    while (is_true(truth)) {
+    while (is_true(truth) && !env->ret) {
         execute(stmt->suite_list->content, env, pf);
         // __del__(cond);
         // __del__(truth);
@@ -175,11 +175,10 @@ void funcdefExecute(void *structure, environment *env, int pf) {
 
 void classdefExecute(void *structure, environment *env, int pf) {
     classdef *stmt = (classdef *)structure;
-    pyclass *class = (pyclass *)malloc(sizeof(pyclass));
-    class->type = pyclass_t;
-    class->id = stmt->id->value;
-    class->env = environment_init(env);
+    pyclass *class = pyclass__init__(stmt->id->value);
+    class->env->outer = env;
     execute(stmt->_suite, class->env, 0);
+    class->env->outer = 0;
     store(env, stmt->id, class);
 }
 

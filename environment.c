@@ -4,6 +4,7 @@
 #include "types.h"
 #include "pytype/pylist.h"
 #include "pytype/methods.h"
+#include "pytype/pyclass.h"
 
 environment *environment_init(environment *outer) {
     environment *retptr = (environment *)malloc(sizeof(environment));
@@ -44,6 +45,14 @@ void store(environment *env, void *targets, void *values) {
     else if (type(targets) == slicing_t) {
         slicing *slic = (slicing *)targets;
         __setitem__(evaluate(slic->primary, env), evaluate(slic->slice, env), values);
+    }
+    else if (type(targets) == attributeref_t) {
+        attributeref *attribref = (attributeref *)targets;
+        void *ptr = evaluate(attribref->primary, env);
+        if (type(ptr) == instance_t)
+            __setattr__(((instance *)ptr)->class, ptr, PYSTR(attribref->id->value), values);
+        else if (type(ptr) == pyclass_t)
+            __setattr__(((pyclass *)ptr)->class, ptr, PYSTR(attribref->id->value), values);
     }
     else if (type(targets) == expression_list_t ||
              type(targets) == list_expr_t || type(targets) == parenth_form_t) {

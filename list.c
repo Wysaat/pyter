@@ -21,6 +21,8 @@ list *list_node() {
 
 list *list_cpy(list *head) {
     list *retptr = list_node();
+    if (list_is_empty(head))
+        return retptr;
     list *curptr = retptr;
     list *ptr = head;
     while (ptr) {
@@ -47,6 +49,10 @@ void list_del(list *head) {
 }
 
 list *list_add(list *list1, list *list2) {
+    if (list_is_empty(list1))
+        return list_cpy(list2);
+    if (list_is_empty(list2))
+        return list_cpy(list1);
     list *retptr = list_cpy(list1);
     list *to_add = list_cpy(list2);
     list *ptr = retptr;
@@ -64,21 +70,22 @@ int list_is_empty(list *head) {
 
 /* list2 is copied and the original list2 is freed */
 void list_append_list(list *list1, list *list2) {
-    if (list_is_empty(list1)) {
-        list1->content = list2->content;
-        // memcpy(list1, list2, sizeof(list));
-        if (list2->next) {
-            list1->next = list_cpy(list2->next);
-            list1->next->prev = list1;
+    if (!list_is_empty(list2)) {
+        if (list_is_empty(list1)) {
+            list1->content = list2->content;
+            if (list2->next) {
+                list1->next = list_cpy(list2->next);
+                list1->next->prev = list1;
+            }
         }
-    }
-    else {
-        list *ptr = list1;
-        while (ptr->next)
-            ptr = ptr->next;
-        list *to_append = list_cpy(list2);
-        ptr->next = to_append;
-        to_append->prev = ptr;
+        else {
+            list *ptr = list1;
+            while (ptr->next)
+                ptr = ptr->next;
+            list *to_append = list_cpy(list2);
+            ptr->next = to_append;
+            to_append->prev = ptr;
+        }
     }
 
     list_del(list2);
@@ -102,6 +109,8 @@ void list_append_content(list *head, void *content) {
  * in place sort
  */
 void list_sort0(list *head, int comp(), int size) {
+    if (list_is_empty(head))
+        return;
     list *ptr = head->next;
     list *left = head->next, *right;
     list *split = head;
@@ -131,6 +140,8 @@ void list_sort0(list *head, int comp(), int size) {
 }
 
 void list_sort(list *head, int comp()) {
+    if (list_is_empty(head))
+        return;
     list *ptr = head;
     int size = 0;
     while (ptr) {
@@ -156,6 +167,12 @@ int list_find(list *head, void *val) {
 
 /* the list must contain only pytypes */
 int list_eq(list *left, list *right) {
+    if (list_is_empty(left) && list_is_empty(right))
+        return 1;
+    if (list_is_empty(left))
+        return 0;
+    if (list_is_empty(right))
+        return 0;
     list *ptr1 = left, *ptr2 = right;
     while (1) {
         if (!ptr1 || !ptr2) {

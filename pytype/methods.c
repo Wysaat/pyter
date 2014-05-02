@@ -11,6 +11,7 @@
 #include "pydict.h"
 #include "pyfunction.h"
 #include "pyclass.h"
+#include "py__builtins__.h"
 #include <stdio.h>
 
 pybool *__eq__(void *left, void *right) {
@@ -122,6 +123,8 @@ void *__call__(void *left, void *right) {
         return pyfunction__call__(left, right);
     else if (type(left) == pyclass_t)
         return pyclass__call__(left, right);
+    else if (type(left) == pybuiltin_function_t)
+        return pybuiltin_function__call__(left, right);
 }
 
 /*
@@ -136,4 +139,11 @@ void *__call__(void *left, void *right) {
 void *__getattribute__(void *first, void *second, pystr *attr) {
     if (type(first) == pyclass_t)
         return pyclass__getattribute__(first, second, attr);
+}
+
+void __setattr__(void *first, void *second, pystr *attr, void *val) {
+    puts("entering __setattr__");
+    printf("type(first) is %d\n", type(first));
+    if (type(first) == pyclass_t)
+        pyclass__setattr__(first, second, attr, val);
 }

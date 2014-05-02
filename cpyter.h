@@ -34,6 +34,8 @@
 
 #include "environment.h"
 
+#include "__builtins__.h"
+
 int is_alph(char );
 int is_num(char );
 int is_alphnum(char );

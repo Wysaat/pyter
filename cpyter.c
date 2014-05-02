@@ -821,6 +821,9 @@ void interpret(FILE *stream)
     environment *global_env = environment_init(0);
     scanner *sc = sc_init(stream);
     char *token;
+
+    def_print(global_env);
+
     while (1) {
         void *stmt = parse_stmt(sc);
         execute(stmt, global_env, 1);
