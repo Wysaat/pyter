@@ -13,7 +13,9 @@ struct pyfunction {
     list *parameters;
     void *fsuite;
     environment *env;
+    environment *local_env; /* for generators */
     void *bound;
+    int yield;  /* for generators */
 };
 
 void *pyfunction__call__(void *, void *);

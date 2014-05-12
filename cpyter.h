@@ -41,12 +41,21 @@ int is_num(char );
 int is_alphnum(char );
 
 void *parse_u_expr(scanner *sc);
+void *parse_conditional_expression(scanner *sc);
+void *parse_lambda_expr(scanner *sc);
+void *parse_lambda_expr_nocond(scanner *sc);
 void *parse_expression(scanner *sc);
+void *parse_expression_nocond(scanner *sc);
 list *pa_exprs(scanner *, char *);
 list **pa_dict_items(scanner *);
 void *pa_sll_or_subs(scanner *);
 void *parse_expression_list(scanner *sc, char *ending);
-
+void *parse_target_list(scanner *sc, char *ending);
+void *parse_comp_for(scanner *sc, void *expression);
+void *parse_comp_if(scanner *sc, void *expression);
+void *parse_comp_iter(scanner *sc, void *expression);
+void parse_comp_for_2(scanner *sc, list *comp_iters);
+void parse_comp_if_2(scanner *sc, list *comp_iters);
 void *parse_simple_stmt(scanner *);
 void *parse_stmt_list(scanner *);
 void *parse_suite(scanner *);

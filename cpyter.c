@@ -120,7 +120,21 @@ void *parse_atom(scanner *sc) {
     else if (!strcmp(token, "(")) {
         list *expr_head = list_node();
         token = sc_read(sc);
-        if (!strcmp(token, ")"))
+        if (!strcmp(token, "yield")) {
+            token = sc_read(sc);
+            if (!strcmp(token, ")")) {
+                sc->yield = 1;
+                return YIELD_ATOM(0);
+            }
+            rollback(sc);
+            void *expressions = parse_expression_list(sc, ")");
+            token = sc_read(sc);
+            if (!strcmp(token, ")")) {
+                sc->yield = 1;
+                return YIELD_ATOM(expressions);
+            }
+        }
+        else if (!strcmp(token, ")"))
             return PARENTH_FORM(expr_head);
         rollback(sc);
         void *expression = parse_expression(sc);
@@ -160,6 +174,19 @@ void *parse_atom(scanner *sc) {
             token = sc_read(sc);
             if (!strcmp(token, "]"))
                 return LIST_EXPR(expr_head);
+        }
+        else if (!strcmp(token, "for")) {
+            rollback(sc);
+            void *to_add = LIST_EXPR(expr_head);
+            void *right_side = B_EXPR(IDENTIFIER(0), "+", to_add);
+            void *stmt = ASSIGNMENT_STMT(IDENTIFIER(0), right_side);
+            list *stmts = list_node();
+            list_append_content(stmts, ASSIGNMENT_STMT(IDENTIFIER(0), LIST_EXPR(list_node())));
+            list_append_content(stmts, parse_comp_for(sc, stmt));
+            token = sc_read(sc);
+            if (!strcmp(token, "]")) {
+                return LIST_COMPREHENSION(SUITE(stmts));
+            }
         }
     }
     else if (!strcmp(token, "{")) {
@@ -462,7 +489,29 @@ void *parse_lambda_expr(scanner *sc) {
     return LAMBDA_EXPR(parameters, parse_expression(sc));
 }
 
-/* no lambda expression support */
+void *parse_lambda_expr_nocond(scanner *sc) {
+    char *token = sc_read(sc);  // it should be lambda
+    list *parameters = list_node();
+    token = sc_read(sc);
+    if (strcmp(token, ":")) {
+        rollback(sc);
+        while (1) {
+            token = sc_read(sc);
+            list_append_content(parameters, IDENTIFIER(token));
+            token = sc_read(sc);
+            if (!strcmp(token, ",")) {
+                token = sc_read(sc);
+                if (!strcmp(token, ":"))
+                    break;
+                rollback(sc);
+            }
+            else if (!strcmp(token, ":"))
+                break;
+        }
+    }
+    return LAMBDA_EXPR(parameters, parse_expression_nocond(sc));
+}
+
 void *parse_expression(scanner *sc) {
     char *token = sc_read(sc);
     rollback(sc);
@@ -472,8 +521,12 @@ void *parse_expression(scanner *sc) {
     return parse_conditional_expression(sc);
 }
 
-/* no lambda expression support */
 void *parse_expression_nocond(scanner *sc) {
+    char *token = sc_read(sc);
+    rollback(sc);
+    if (!strcmp(token, "lambda")) {
+        return parse_lambda_expr_nocond(sc);
+    }
     return parse_or_test(sc);
 }
 
@@ -595,6 +648,46 @@ void *parse_target_list(scanner *sc, char *ending) {
     }
 }
 
+void *parse_comp_for(scanner *sc, void *stmt) {
+    char *token = sc_read(sc);  // it should be "for"
+    list *suite_list = list_node();
+    void *targets = parse_target_list(sc, "in");
+    token = sc_read(sc);
+    if (!strcmp(token, "in")) {
+        void *or_test_expr = parse_or_test(sc);
+        token = sc_read(sc);
+        rollback(sc);
+        if (!strcmp(token, "for") || !strcmp(token, "if"))
+            list_append_content(suite_list, parse_comp_iter(sc, stmt));
+        else
+            list_append_content(suite_list, stmt);
+        return FOR_STMT(targets, or_test_expr, suite_list);
+    }
+}
+
+void *parse_comp_if(scanner *sc, void *stmt) {
+    char *token = sc_read(sc);  // it should be "if"
+    list *condition_list = list_node();
+    list *suite_list = list_node();
+    list_append_content(condition_list, parse_expression_nocond(sc));
+    token = sc_read(sc);
+    rollback(sc);
+    if (!strcmp(token, "for") || !strcmp(token, "if"))
+        list_append_content(suite_list, parse_comp_iter(sc, stmt));
+    else
+        list_append_content(suite_list, stmt);
+    return IF_STMT(condition_list, suite_list);
+}
+
+void *parse_comp_iter(scanner *sc, void *stmt) {
+    char *token = sc_read(sc);
+    rollback(sc);
+    if (!strcmp(token, "for"))
+        return parse_comp_for(sc, stmt);
+    else if (!strcmp(token, "if"))
+        return parse_comp_if(sc, stmt);
+}
+
 void *parse_simple_stmt(scanner *sc) {
     char *token = sc_read(sc);
     if (!strcmp(token, "return")) {
@@ -605,6 +698,25 @@ void *parse_simple_stmt(scanner *sc) {
         }
         void *expressions = parse_expression_list(sc, ";");
         return RETURN_STMT(expressions);
+    }
+    else if (!strcmp(token, "yield")) {
+        token = sc_read(sc);
+        rollback(sc);
+        if (!strcmp(token, "\n") || !strcmp(token, ";")) {
+            sc->yield = 1;
+            return YIELD_STMT(0);
+        }
+        sc->yield = 1;
+        return YIELD_STMT(parse_expression_list(sc, ";"));
+    }
+    else if (!strcmp(token, "break")) {
+        return BREAK_STMT();
+    }
+    else if (!strcmp(token, "continue")) {
+        return CONTINUE_STMT();
+    }
+    else if (!strcmp(token, "pass")) {
+        return PASS_STMT();
     }
     else {
         rollback(sc);
@@ -772,7 +884,10 @@ void *parse_funcdef(scanner *sc) {
             }
             token = sc_read(sc);
             if (!strcmp(token, ":")) {
-                return FUNCDEF(id, parameters, parse_suite(sc));
+                void *_suite = parse_suite(sc);
+                int yield = sc->yield;
+                sc->yield = 0;
+                return FUNCDEF(id, parameters, _suite, yield);
             }
         }
     }
@@ -823,6 +938,7 @@ void interpret(FILE *stream)
     char *token;
 
     def_print(global_env);
+    def_next(global_env);
 
     while (1) {
         void *stmt = parse_stmt(sc);

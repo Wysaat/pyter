@@ -8,9 +8,9 @@
 
 environment *environment_init(environment *outer) {
     environment *retptr = (environment *)malloc(sizeof(environment));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->val_dict = list_node();
     retptr->outer = outer;
-    retptr->ret = 0;
     return retptr;
 }
 
@@ -29,11 +29,22 @@ void store(environment *env, void *targets, void *values) {
             return;
         }
         list *ptr;
-        for (ptr = env->val_dict; ptr; ptr = ptr->next) {
-            val_dict_entry *entry = (val_dict_entry *)ptr->content;
-            if (!strcmp(entry->id, id->value)) {
-                entry->value = values;
-                return;
+        if (id->value) {
+            for (ptr = env->val_dict; ptr; ptr = ptr->next) {
+                val_dict_entry *entry = (val_dict_entry *)ptr->content;
+                if (entry->id && !strcmp(entry->id, id->value)) {
+                    entry->value = values;
+                    return;
+                }
+            }
+        }
+        else { /* nameless identifer, for comprehensions */
+            for (ptr = env->val_dict; ptr; ptr = ptr->next) {
+                val_dict_entry *entry = (val_dict_entry *)ptr->content;
+                if (!entry->id) {
+                    entry->value = values;
+                    return;
+                }
             }
         }
         list_append_content(env->val_dict, val_dict_entry_init(id->value, values));
@@ -62,4 +73,11 @@ void store(environment *env, void *targets, void *values) {
              ptr2 = ((pylist *)values)->values; ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next)
             store(env, ptr1->content, ptr2->content);
     }
+}
+
+environment *environment_copy(environment *env) {
+    environment *retptr = environment_init(0);
+    retptr->val_dict = list_cpy(env->val_dict);
+    retptr->outer = env->outer;
+    return retptr;
 }

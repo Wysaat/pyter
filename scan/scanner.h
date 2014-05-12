@@ -19,6 +19,7 @@ struct scanner {
     list *indentation_stack;
     int indentf;
     int dedentf;
+    int yield;  /* for yield */
 };
 
 scanner *sc_init(FILE *stream);

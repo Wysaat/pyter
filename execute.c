@@ -2,6 +2,7 @@
 #include "types.h"
 #include "list.h"
 #include <stdlib.h>
+#include <string.h>
 #include "pytype/methods.h"
 #include "pytype/pylist.h"
 #include "pytype/pyfunction.h"
@@ -9,6 +10,7 @@
 
 void *EXPRESSION_STMT(void *expression_list) {
     expression_stmt *retptr = (expression_stmt *)malloc(sizeof(expression_stmt));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = expression_stmt_t;
     retptr->expression_list = expression_list;
     return retptr;
@@ -16,6 +18,7 @@ void *EXPRESSION_STMT(void *expression_list) {
 
 void *ASSIGNMENT_STMT(void *targets, void *expressions) {
     assignment_stmt *retptr = (assignment_stmt *)malloc(sizeof(assignment_stmt));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = assignment_stmt_t;
     retptr->targets = targets;
     retptr->expressions = expressions;
@@ -24,13 +27,41 @@ void *ASSIGNMENT_STMT(void *targets, void *expressions) {
 
 void *RETURN_STMT(void *expressions) {
     return_stmt *retptr = (return_stmt *)malloc(sizeof(return_stmt));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = return_stmt_t;
     retptr->expressions = expressions;
     return retptr;
 }
 
+void *YIELD_STMT(void *expressions) {
+    yield_stmt *retptr = (yield_stmt *)malloc(sizeof(yield_stmt));
+    memset(retptr, 0, sizeof(*retptr));
+    retptr->type = yield_stmt_t;
+    retptr->expressions = expressions;
+    return retptr;
+}
+
+void *BREAK_STMT() {
+    break_stmt *retptr = (break_stmt *)malloc(sizeof(break_stmt));
+    retptr->type = break_stmt_t;
+    return retptr;
+}
+
+void *CONTINUE_STMT() {
+    continue_stmt *retptr = (continue_stmt *)malloc(sizeof(continue_stmt));
+    retptr->type = continue_stmt_t;
+    return retptr;
+}
+
+void *PASS_STMT() {
+    pass_stmt *retptr = (pass_stmt *)malloc(sizeof(pass_stmt));
+    retptr->type = pass_stmt_t;
+    return retptr;
+}
+
 void *STMT_LIST(list *stmts) {
-    stmt_list *retptr=  (stmt_list *)malloc(sizeof(stmt_list));
+    stmt_list *retptr = (stmt_list *)malloc(sizeof(stmt_list));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = stmt_list_t;
     retptr->stmts = stmts;
     return retptr;
@@ -38,6 +69,7 @@ void *STMT_LIST(list *stmts) {
 
 void *IF_STMT(list *condition_list, list *suite_list) {
     if_stmt *retptr = (if_stmt *)malloc(sizeof(if_stmt));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = if_stmt_t;
     retptr->condition_list = condition_list;
     retptr->suite_list = suite_list;
@@ -46,6 +78,7 @@ void *IF_STMT(list *condition_list, list *suite_list) {
 
 void *WHILE_STMT(void *condition, list *suite_list) {
     while_stmt *retptr = (while_stmt *)malloc(sizeof(while_stmt));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = while_stmt_t;
     retptr->condition = condition;
     retptr->suite_list = suite_list;
@@ -54,6 +87,7 @@ void *WHILE_STMT(void *condition, list *suite_list) {
 
 void *FOR_STMT(void *targets, void *expressions, list *suite_list) {
     for_stmt *retptr = (for_stmt *)malloc(sizeof(for_stmt));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = for_stmt_t;
     retptr->targets = targets;
     retptr->expressions = expressions;
@@ -61,17 +95,20 @@ void *FOR_STMT(void *targets, void *expressions, list *suite_list) {
     return retptr;
 }
 
-void *FUNCDEF(identifier *id, list *parameters, void *fsuite) {
+void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield) {
     funcdef *retptr = (funcdef *)malloc(sizeof(funcdef));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = funcdef_t;
     retptr->id = id;
     retptr->parameters = parameters;
     retptr->fsuite = fsuite;
+    retptr->yield = yield;
     return retptr;
 }
 
 void *CLASSDEF(identifier *id, void *_suite) {
     classdef *retptr = (classdef *)malloc(sizeof(classdef));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = classdef_t;
     retptr->id = id;
     retptr->_suite = _suite;
@@ -80,6 +117,7 @@ void *CLASSDEF(identifier *id, void *_suite) {
 
 void *SUITE(list *stmts) {
     suite *retptr = (suite *)malloc(sizeof(suite));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = suite_t;
     retptr->stmts = stmts;
     return retptr;
@@ -102,6 +140,17 @@ void assignment_stmtExecute(void *structure, environment *env, int pf) {
 void return_stmtExecute(void *structure, environment *env, int pf) {
     return_stmt *stmt = (return_stmt *)structure;
     env->ret = evaluate(stmt->expressions, env);
+}
+
+void break_stmtExecute(void *structure, environment *env, int pf) {
+    env->_break = 1;
+}
+
+void continue_stmtExecute(void *structure, environment *env, int pf) {
+    env->_continue = 1;
+}
+
+void pass_stmtExecute(void *structure, environment *env, int pf) {
 }
 
 void stmt_listExecute(void *structure, environment *env, int pf) {
@@ -133,20 +182,23 @@ void while_stmtExecute(void *structure, environment *env, int pf) {
     pybool *truth = __bool__(cond);
     while (is_true(truth) && !env->ret) {
         execute(stmt->suite_list->content, env, pf);
-        // __del__(cond);
-        // __del__(truth);
+        if (env->_break)
+            break;
+        if (env->_continue)
+            env->_continue = 0;
         cond = evaluate(stmt->condition, env);
         truth = __bool__(cond);
     }
-    // __del__(cond);
-    // __del__(truth);
+    if (env->_break) {
+        env->_break = 0;
+        return;
+    }
     if (stmt->suite_list->next)
         execute(stmt->suite_list->next->content, env, pf);
 }
 
 void for_stmtExecute(void *structure, environment *env, int pf) {
     for_stmt *stmt = (for_stmt *)structure;
-    /* MEMORY LEAKAGE: values_list needs __del__ when leaving. */
     void *values_list = evaluate(stmt->expressions, env);
     if (type(values_list) == pylist_t ||
         type(values_list) == pytuple_t ||
@@ -155,6 +207,14 @@ void for_stmtExecute(void *structure, environment *env, int pf) {
         for (ptr = ((pylist *)values_list)->values; ptr; ptr = ptr->next) {
             store(env, stmt->targets, ptr->content);
             execute(stmt->suite_list->content, env, pf);
+            if (env->_break)
+                break;
+            if (env->_continue)
+                env->_continue = 0;
+        }
+        if (env->_break) {
+            env->_break = 0;
+            return;
         }
         if (stmt->suite_list->next)
             execute(stmt->suite_list->next->content, env, pf);
@@ -170,6 +230,7 @@ void funcdefExecute(void *structure, environment *env, int pf) {
     func->fsuite = stmt->fsuite;
     func->env = env;
     func->bound = 0;
+    func->yield = stmt->yield;
     store(env, stmt->id, func);
 }
 
@@ -194,7 +255,7 @@ void suiteExecute(void *structure, environment *env, int pf) {
  * hours have been wasted !!!
  */
 void execute(void *structure, environment *env, int pf) {
-    if (env->ret)
+    if (env->ret || env->_break || env->_continue)
         return;
     switch (type(structure)) {
         case expression_stmt_t:
@@ -205,6 +266,15 @@ void execute(void *structure, environment *env, int pf) {
             break;
         case return_stmt_t:
             return_stmtExecute(structure, env, pf);
+            break;
+        case break_stmt_t:
+            break_stmtExecute(structure, env, pf);
+            break;
+        case continue_stmt_t:
+            continue_stmtExecute(structure, env, pf);
+            break;
+        case pass_stmt_t:
+            pass_stmtExecute(structure, env, pf);
             break;
         case stmt_list_t:
             stmt_listExecute(structure, env, pf);

@@ -3,6 +3,8 @@
 #include "pytuple.h"
 #include "../execute.h"
 #include "../evaluate.h"
+#include "../gen_execute.h"
+#include "pygenerator.h"
 
 // void *pyfunction__init__(identifier *id, list *parameters, void *fsuite, environment *env) {
 //     pyfunction *retptr = (pyfunction *)malloc(sizeof(pyfunction));
@@ -36,10 +38,10 @@ void *pyfunction__call__(void *lptr, void *right) {
         }
     }
 
+    if (func->yield)
+        return pygenerator_init(copy(func->fsuite), local_env);
+
     execute(func->fsuite, local_env, 0);
 
-    if (local_env->ret)
-        return local_env->ret;
-    else
-        return 0;
+    return local_env->ret;
 }

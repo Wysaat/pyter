@@ -142,8 +142,6 @@ void *__getattribute__(void *first, void *second, pystr *attr) {
 }
 
 void __setattr__(void *first, void *second, pystr *attr, void *val) {
-    puts("entering __setattr__");
-    printf("type(first) is %d\n", type(first));
     if (type(first) == pyclass_t)
         pyclass__setattr__(first, second, attr, val);
 }

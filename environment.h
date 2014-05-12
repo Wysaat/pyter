@@ -12,6 +12,9 @@ struct environment {
     list *val_dict;
     environment *outer;
     void *ret;
+    void *yield;
+    int _break;
+    int _continue;
 };
 
 typedef struct val_dict_entry {
@@ -19,8 +22,9 @@ typedef struct val_dict_entry {
     void *value;
 } val_dict_entry;
 
-environment *environment_init();
+environment *environment_init(environment *outer);
 val_dict_entry *val_dict_entry_init(char *id, void *value);
 void store(environment *env, void *targets, void *values);
+environment *environment_copy(environment *env);
 
 #endif /* ENVIRONMENT_H */

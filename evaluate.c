@@ -8,14 +8,19 @@
 
 void *IDENTIFIER(char *token) {
     identifier *retptr = (identifier *)malloc(sizeof(identifier));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = identifier_t;
-    retptr->value = strdup(token);
+    if (token)
+        retptr->value = strdup(token);
+    else /* nameless identifier, for comprehensions */
+        retptr->value = 0;
     return retptr;
 }
 
 /* op should be copied(use memory.c function mem_cpy) */
 void *INT_EXPR(char *token) {
     int_expr *retptr = (int_expr *)malloc(sizeof(int_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = int_expr_t;
     retptr->value = strdup(token);
     return retptr;
@@ -23,6 +28,7 @@ void *INT_EXPR(char *token) {
 
 void *FLOAT_EXPR(char *token) {
     float_expr *retptr = (float_expr *)malloc(sizeof(float_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = float_expr_t;
     retptr->value = strdup(token);
     return retptr;
@@ -30,6 +36,7 @@ void *FLOAT_EXPR(char *token) {
 
 void *IMAG_EXPR(char *token) {
     imag_expr *retptr = (imag_expr *)malloc(sizeof(imag_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = imag_expr_t;
     retptr->value = strdup(token);
     return retptr;
@@ -37,6 +44,7 @@ void *IMAG_EXPR(char *token) {
 
 void *STR_EXPR(char *token) {
     str_expr *retptr = (str_expr *)malloc(sizeof(str_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = str_expr_t;
     retptr->value = strdup(token);
     return retptr;
@@ -44,6 +52,7 @@ void *STR_EXPR(char *token) {
 
 void *PARENTH_FORM(list *expr_head) {
     parenth_form *retptr = (parenth_form *)malloc(sizeof(parenth_form));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = parenth_form_t;
     retptr->expr_head = expr_head;
     return retptr;
@@ -51,6 +60,7 @@ void *PARENTH_FORM(list *expr_head) {
 
 void *LIST_EXPR(list *expr_head) {
     list_expr *retptr = (list_expr *)malloc(sizeof(list_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = list_expr_t;
     retptr->expr_head = expr_head;
     return retptr;
@@ -58,6 +68,7 @@ void *LIST_EXPR(list *expr_head) {
 
 void *SET_EXPR(list *expr_head) {
     set_expr *retptr = (set_expr *)malloc(sizeof(set_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = set_expr_t;
     retptr->expr_head = expr_head;
     return retptr;
@@ -65,14 +76,32 @@ void *SET_EXPR(list *expr_head) {
 
 void *DICT_EXPR(list *expr_head, list *expr_head2) {
     dict_expr *retptr = (dict_expr *)malloc(sizeof(dict_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = dict_expr_t;
     retptr->expr_head = expr_head;
     retptr->expr_head2 = expr_head2;
     return retptr;
 }
 
+void *LIST_COMPREHENSION(suite *_suite) {
+    list_comprehension *retptr = (list_comprehension *)malloc(sizeof(list_comprehension));
+    memset(retptr, 0, sizeof(*retptr));
+    retptr->type = list_comprehension_t;
+    retptr->_suite = _suite;
+    return retptr;
+}
+
+void *YIELD_ATOM(void *expressions) {
+    yield_atom *retptr = (yield_atom *)malloc(sizeof(yield_atom));
+    memset(retptr, 0, sizeof(*retptr));
+    retptr->type = yield_atom_t;
+    retptr->expressions = expressions;
+    retptr->yielded = 0;
+}
+
 void *ATTRIBUTEREF(void *primary, identifier *id) {
     attributeref *retptr = (attributeref *)malloc(sizeof(attributeref));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = attributeref_t;
     retptr->primary = primary;
     retptr->id = id;
@@ -81,6 +110,7 @@ void *ATTRIBUTEREF(void *primary, identifier *id) {
 
 void *SLICE_EXPR(void *start, void *stop, void *step) {
     slice_expr *retptr = (slice_expr *)malloc(sizeof(slice_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = slice_expr_t;
     retptr->start = start;
     retptr->stop = stop;
@@ -90,6 +120,7 @@ void *SLICE_EXPR(void *start, void *stop, void *step) {
 
 void *SUBSC_EXPR(void *value) {
     subsc_expr *retptr = (subsc_expr *)malloc(sizeof(subsc_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = subsc_expr_t;
     retptr->value = value;
     return retptr;
@@ -97,6 +128,7 @@ void *SUBSC_EXPR(void *value) {
 
 void *SLICING(void *primary, slice_expr *slice) {
     slicing *retptr = (slicing *)malloc(sizeof(slicing));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = slicing_t;
     retptr->primary = primary;
     retptr->slice = slice;
@@ -105,6 +137,7 @@ void *SLICING(void *primary, slice_expr *slice) {
 
 void *SUBSCRIPTION(void *primary, subsc_expr *subsc) {
     subscription *retptr = (subscription *)malloc(sizeof(subscription));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = subscription_t;
     retptr->primary = primary;
     retptr->subsc = subsc;
@@ -113,6 +146,7 @@ void *SUBSCRIPTION(void *primary, subsc_expr *subsc) {
 
 void *CALL(void *primary, void *arguments) {
     call *retptr = (call *)malloc(sizeof(call));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = call_t;
     retptr->primary = primary;
     retptr->arguments = arguments;
@@ -121,6 +155,7 @@ void *CALL(void *primary, void *arguments) {
 
 void *POWER(void *primary, void *u_expr) {
     power *retptr = (power *)malloc(sizeof(power));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = power_t;
     retptr->primary = primary;
     retptr->u_expr = u_expr;
@@ -129,6 +164,7 @@ void *POWER(void *primary, void *u_expr) {
 
 void *U_EXPR(char *op, void *expr) {
     u_expr *retptr = (u_expr *)malloc(sizeof(u_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = u_expr_t;
     retptr->op = strdup(op);
     retptr->expr = expr;
@@ -136,33 +172,37 @@ void *U_EXPR(char *op, void *expr) {
 }
 
 void *B_EXPR(void *left, char *op, void *right) {
-    b_expr *expr = (b_expr *)malloc(sizeof(b_expr));
-    expr->type = b_expr_t;
-    expr->op = strdup(op);
-    expr->left = left;
-    expr->right = right;
-    return expr;
+    b_expr *retptr = (b_expr *)malloc(sizeof(b_expr));
+    memset(retptr, 0, sizeof(*retptr));
+    retptr->type = b_expr_t;
+    retptr->op = strdup(op);
+    retptr->left = left;
+    retptr->right = right;
+    return retptr;
 }
 
 void *NOT_TEST(void *expr) {
-    not_test *test = (not_test *)malloc(sizeof(not_test));
-    test->type = not_test_t;
-    test->expr = expr;
-    return test;
+    not_test *retptr = (not_test *)malloc(sizeof(not_test));
+    memset(retptr, 0, sizeof(*retptr));
+    retptr->type = not_test_t;
+    retptr->expr = expr;
+    return retptr;
 }
 
 void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr) {
-    conditional_expression *expression = \
+    conditional_expression *retptr = \
         (conditional_expression *)malloc(sizeof(conditional_expression));
-    expression->type = conditional_expression_t;
-    expression->or_test = or_test;
-    expression->or_test2 = or_test2;
-    expression->expr = expr;
-    return expression;
+    memset(retptr, 0, sizeof(*retptr));
+    retptr->type = conditional_expression_t;
+    retptr->or_test = or_test;
+    retptr->or_test2 = or_test2;
+    retptr->expr = expr;
+    return retptr;
 }
 
 void *LAMBDA_EXPR(list *parameters, void *expr) {
     lambda_expr *retptr = (lambda_expr *)malloc(sizeof(lambda_expr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = lambda_expr_t;
     retptr->parameters = parameters;
     retptr->expr = expr;
@@ -170,13 +210,17 @@ void *LAMBDA_EXPR(list *parameters, void *expr) {
 
 void *EXPRESSION_LIST(list *expr_head) {
     expression_list *retptr = (expression_list *)malloc(sizeof(expression_list));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = expression_list_t;
     retptr->expr_head = expr_head;
+    retptr->value_list = 0;
+    retptr->expr_ptr = 0;
     return retptr;
 }
 
 void *PYINT(integer *value) {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = pyint_t;
     retptr->value = value;
     return retptr;
@@ -184,6 +228,7 @@ void *PYINT(integer *value) {
 
 void *PYSTR(char *value) {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
+    memset(retptr, 0, sizeof(*retptr));
     retptr->type = pystr_t;
     retptr->value = strdup(value);
     return retptr;
@@ -193,12 +238,26 @@ void *PYSTR(char *value) {
 void *identifierEvaluate(identifier *structure, environment *env) {
     list *ptr;
     environment *env_ptr;
-    for (env_ptr = env; env_ptr; env_ptr = env_ptr->outer) {
-        if (!list_is_empty(env_ptr->val_dict)) {
-            for (ptr = env_ptr->val_dict; ptr; ptr = ptr->next) {
-                val_dict_entry *entry = (val_dict_entry *)ptr->content;
-                if (!strcmp(entry->id, structure->value)) {
-                    return entry->value;
+    if (structure->value) {
+        for (env_ptr = env; env_ptr; env_ptr = env_ptr->outer) {
+            if (!list_is_empty(env_ptr->val_dict)) {
+                for (ptr = env_ptr->val_dict; ptr; ptr = ptr->next) {
+                    val_dict_entry *entry = (val_dict_entry *)ptr->content;
+                    if (entry->id && !strcmp(entry->id, structure->value)) {
+                        return entry->value;
+                    }
+                }
+            }
+        }
+    }
+    else { /* nameless identifer, for comprehensions */
+        for (env_ptr = env; env_ptr; env_ptr = env_ptr->outer) {
+            if (!list_is_empty(env_ptr->val_dict)) {
+                for (ptr = env_ptr->val_dict; ptr; ptr = ptr->next) {
+                    val_dict_entry *entry = (val_dict_entry *)ptr->content;
+                    if (!entry->id) {
+                        return entry->value;
+                    }
                 }
             }
         }
@@ -261,6 +320,18 @@ void *list_exprEvaluate(list_expr *structure, environment *env) {
         list_append_content(retptr->values, evaluate(ptr->content, env));
     return retptr;
 }
+
+void *list_comprehensionEvaluate(list_comprehension *structure, environment *env) {
+    environment *local_env = environment_init(env);
+    execute(structure->_suite, local_env, 0);
+    list *ptr;
+    for (ptr = local_env->val_dict; ptr; ptr = ptr->next) {
+        val_dict_entry *entry = (val_dict_entry *)ptr->content;
+        if (!entry->id)
+            return entry->value;
+    }
+}
+
 
 void *set_exprEvaluate(set_expr *structure, environment *env) {
     pyset *retptr = (pyset *)malloc(sizeof(pyset));
@@ -527,7 +598,10 @@ void *expression_listEvaluate(expression_list *structure, environment *env) {
     return retptr;
 }
 
+
 void *evaluate(void *structure, environment *env) {
+    if (!structure)
+        return pyNone_init();
     switch (*(int *)structure) {
         case identifier_t:
             return identifierEvaluate((identifier *)structure, env);
@@ -543,6 +617,8 @@ void *evaluate(void *structure, environment *env) {
             return parenth_formEvaluate((parenth_form *)structure, env);
         case list_expr_t:
             return list_exprEvaluate((list_expr *)structure, env);
+        case list_comprehension_t:
+            return list_comprehensionEvaluate((list_comprehension *)structure, env);
         case set_expr_t:
             return set_exprEvaluate((set_expr *)structure, env);
         case dict_expr_t:
