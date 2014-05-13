@@ -228,19 +228,6 @@ void for_stmt_gen_execute(void *structure, environment *env, int pf) {
     stmt->values_list = 0;
 }
 
-void funcdef_gen_execute(void *structure, environment *env, int pf) {
-    funcdef *stmt = (funcdef *)structure;
-    pyfunction *func = (pyfunction *)malloc(sizeof(pyfunction));
-    func->type = pyfunction_t;
-    func->id = stmt->id;
-    func->parameters = stmt->parameters;
-    func->fsuite = stmt->fsuite;
-    func->env = env;
-    func->bound = 0;
-    func->yield = stmt->yield;
-    store(env, stmt->id, func);
-}
-
 void classdef_gen_execute(void *structure, environment *env, int pf) {
     classdef *stmt = (classdef *)structure;
     pyclass *class = pyclass__init__(stmt->id->value);
@@ -302,7 +289,7 @@ void gen_execute(void *structure, environment *env, int pf) {
             for_stmt_gen_execute(structure, env, pf);
             break;
         case funcdef_t:
-            funcdef_gen_execute(structure, env, pf);
+            funcdefExecute(structure, env, pf);
             break;
         case classdef_t:
             classdef_gen_execute(structure, env, pf);

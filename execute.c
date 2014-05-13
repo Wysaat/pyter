@@ -95,7 +95,8 @@ void *FOR_STMT(void *targets, void *expressions, list *suite_list) {
     return retptr;
 }
 
-void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield) {
+void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield, list *assign_targets,
+              list *assign_expr_list) {
     funcdef *retptr = (funcdef *)malloc(sizeof(funcdef));
     memset(retptr, 0, sizeof(*retptr));
     retptr->type = funcdef_t;
@@ -103,6 +104,8 @@ void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield) {
     retptr->parameters = parameters;
     retptr->fsuite = fsuite;
     retptr->yield = yield;
+    retptr->assign_targets = assign_targets;
+    retptr->assign_expr_list = assign_expr_list;
     return retptr;
 }
 
@@ -224,13 +227,18 @@ void for_stmtExecute(void *structure, environment *env, int pf) {
 void funcdefExecute(void *structure, environment *env, int pf) {
     funcdef *stmt = (funcdef *)structure;
     pyfunction *func = (pyfunction *)malloc(sizeof(pyfunction));
+    memset(func, 0, sizeof(pyfunction));
     func->type = pyfunction_t;
     func->id = stmt->id;
     func->parameters = stmt->parameters;
     func->fsuite = stmt->fsuite;
-    func->env = env;
     func->bound = 0;
     func->yield = stmt->yield;
+    func->env = env;
+    func->assign_targets = stmt->assign_targets;
+    if (!list_is_empty(stmt->assign_targets))
+        func->assign_values = evaluate(stmt->assign_expr_list);
+
     store(env, stmt->id, func);
 }
 

@@ -162,6 +162,8 @@ typedef struct lambda_expr {
     int type;
     list *parameters;
     void *expr;
+    list *assign_targets;
+    expression_list *assign_expr_list;
 } lambda_expr;
 
 typedef struct expression_list {
@@ -195,7 +197,7 @@ void *U_EXPR(char *, void *);
 void *B_EXPR(void *, char *, void *);
 void *NOT_TEST(void *);
 void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr);
-void *LAMBDA_EXPR(list *parameters, void *expr);
+void *LAMBDA_EXPR(list *parameters, void *expr, list *assign_targets, expression_list *assign_expr_list);
 void *EXPRESSION_LIST(list *);
 void *PYINT(integer *);
 void *PYSTR(char *);

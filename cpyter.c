@@ -469,47 +469,74 @@ void *parse_conditional_expression(scanner *sc) {
 void *parse_lambda_expr(scanner *sc) {
     char *token = sc_read(sc);  // it should be lambda
     list *parameters = list_node();
+    list *assign_targets = list_node(), *assign_exprs = list_node();
+    expression_list *assign_expr_list;
     token = sc_read(sc);
     if (strcmp(token, ":")) {
         rollback(sc);
         while (1) {
             token = sc_read(sc);
-            list_append_content(parameters, IDENTIFIER(token));
-            token = sc_read(sc);
-            if (!strcmp(token, ",")) {
+            if (is_identifier(token)) {
+                identifier *target = IDENTIFIER(token);
+                list_append_content(parameters, target);
                 token = sc_read(sc);
-                if (!strcmp(token, ":"))
+                if (!strcmp(token, "=")) {
+                    list_append_content(assign_targets, target);
+                    list_append_content(assign_exprs, parse_expression(sc));
+                    token = sc_read(sc);
+                }
+                if (!strcmp(token, ",")) {
+                    token = sc_read(sc);
+                    if (!strcmp(token, ":"))
+                        break;
+                    rollback(sc);
+                }
+                else if (!strcmp(token, ":"))
                     break;
-                rollback(sc);
             }
-            else if (!strcmp(token, ":"))
-                break;
         }
     }
-    return LAMBDA_EXPR(parameters, parse_expression(sc));
+    if (list_is_empty(assign_exprs))
+        assign_expr_list = EXPRESSION_LIST(assign_exprs);
+    else
+        assign_expr_list = 0;
+    return LAMBDA_EXPR(parameters, parse_expression(sc), assign_targets, assign_expr_list);
 }
 
 void *parse_lambda_expr_nocond(scanner *sc) {
     char *token = sc_read(sc);  // it should be lambda
     list *parameters = list_node();
+    list *assign_targets = list_node(), *assign_exprs = list_node();
     token = sc_read(sc);
     if (strcmp(token, ":")) {
         rollback(sc);
         while (1) {
             token = sc_read(sc);
-            list_append_content(parameters, IDENTIFIER(token));
-            token = sc_read(sc);
-            if (!strcmp(token, ",")) {
+            if (is_identifier(token)) {
+                identifier *target = IDENTIFIER(token);
+                list_append_content(parameters, target);
                 token = sc_read(sc);
-                if (!strcmp(token, ":"))
+                if (!strcmp(token, "=")) {
+                    list_append_content(assign_targets, target);
+                    list_append_content(assign_exprs, parse_expression(sc));
+                    token = sc_read(sc);
+                }
+                if (!strcmp(token, ",")) {
+                    token = sc_read(sc);
+                    if (!strcmp(token, ":"))
+                        break;
+                    rollback(sc);
+                }
+                else if (!strcmp(token, ":"))
                     break;
-                rollback(sc);
             }
-            else if (!strcmp(token, ":"))
-                break;
         }
     }
-    return LAMBDA_EXPR(parameters, parse_expression_nocond(sc));
+    if (list_is_empty(assign_exprs))
+        assign_expr_list = EXPRESSION_LIST(assign_exprs);
+    else
+        assign_expr_list = 0;
+    return LAMBDA_EXPR(parameters, parse_expression_nocond(sc), assign_targets, assign_expr_list);
 }
 
 void *parse_expression(scanner *sc) {
@@ -857,8 +884,9 @@ void *parse_for_stmt(scanner *sc) {
 }
 
 void *parse_funcdef(scanner *sc) {
-    identifier *id;
+    identifier *id, *target;
     list *parameters = list_node();
+    list *assign_targets = list_node(), *assign_exprs = list_node();
     char *token = sc_read(sc);  // it should be "def"
     token = sc_read(sc);
     if (is_identifier(token)) {
@@ -870,16 +898,24 @@ void *parse_funcdef(scanner *sc) {
                 rollback(sc);
                 while (1) {
                     token = sc_read(sc);
-                    list_append_content(parameters, IDENTIFIER(token));
-                    token = sc_read(sc);
-                    if (!strcmp(token, ",")) {
+                    if (is_identifier(token)) {
+                        target = IDENTIFIER(token);
+                        list_append_content(parameters, target);
                         token = sc_read(sc);
-                        if (!strcmp(token, ")"))
+                        if (!strcmp(token, "=")) {
+                            list_append_content(assign_targets, target);
+                            list_append_content(assign_exprs, parse_expression(sc));
+                            token = sc_read(sc);
+                        }
+                        if (!strcmp(token, ",")) {
+                            token = sc_read(sc);
+                            if (!strcmp(token, ")"))
+                                break;
+                            rollback(sc);
+                        }
+                        else if (!strcmp(token, ")"))
                             break;
-                        rollback(sc);
                     }
-                    else if (!strcmp(token, ")"))
-                        break;
                 }
             }
             token = sc_read(sc);
@@ -887,7 +923,11 @@ void *parse_funcdef(scanner *sc) {
                 void *_suite = parse_suite(sc);
                 int yield = sc->yield;
                 sc->yield = 0;
-                return FUNCDEF(id, parameters, _suite, yield);
+                if (!list_is_empty(assign_exprs))
+                    assign_expr_list = EXPRESSION_LIST(assign_exprs);
+                else
+                    assign_expr_list = 0;
+                return FUNCDEF(id, parameters, _suite, yield, assign_targets, assign_expr_list);
             }
         }
     }

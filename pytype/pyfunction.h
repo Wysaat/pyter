@@ -4,6 +4,7 @@
 #include "../evaluate.h"
 #include "../list.h"
 #include "../environment.h"
+#include "pytuple.h"
 
 typedef struct pyfunction pyfunction;
 
@@ -13,9 +14,10 @@ struct pyfunction {
     list *parameters;
     void *fsuite;
     environment *env;
-    environment *local_env; /* for generators */
     void *bound;
     int yield;  /* for generators */
+    list *assign_targets;
+    pytuple *assign_values;
 };
 
 void *pyfunction__call__(void *, void *);

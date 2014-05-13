@@ -30,7 +30,6 @@ void *b_expr_gen_evaluate(b_expr *, environment *);
 void *not_test_gen_evaluate(not_test *, environment *);
 void *comparison_gen_evaluate(comparison *, environment *);
 void *conditional_expression_gen_evaluate(conditional_expression *, environment *);
-void *lambda_expr_gen_evaluate(lambda_expr *, environment *);
 void *expression_list_gen_evaluate(expression_list *, environment *);
 void *gen_evaluate(void *, environment *);
 void print_nnl(void *);

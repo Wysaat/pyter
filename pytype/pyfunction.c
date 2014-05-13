@@ -5,22 +5,14 @@
 #include "../evaluate.h"
 #include "../gen_execute.h"
 #include "pygenerator.h"
-
-// void *pyfunction__init__(identifier *id, list *parameters, void *fsuite, environment *env) {
-//     pyfunction *retptr = (pyfunction *)malloc(sizeof(pyfunction));
-//     retptr->type = pyfunction_t;
-//     retptr->id = id;
-//     retptr->parameters = parameters;
-//     retptr->fsuite = fsuite;
-//     retptr->env = env;
-//     retptr->bound = 0;
-//     return retptr;
-// }
+#include "../list.h"
 
 void *pyfunction__call__(void *lptr, void *right) {
     pyfunction *func = (pyfunction *)lptr;
-    environment *local_env = environment_init(func->env);
     list *ptr1, *ptr2;
+    environment *local_env = environment_init(func->env);
+    if (!list_is_empty(func->assign_targets))
+        store(local_env, func->assign_targets, func->assign_values);
 
     ptr1 = func->parameters;
     if (func->bound) {

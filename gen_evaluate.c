@@ -569,16 +569,6 @@ void *conditional_expression_gen_evaluate(conditional_expression *structure, env
     return retptr;
 }
 
-void *lambda_expr_gen_evaluate(lambda_expr *structure, environment *env) {
-    pyfunction *retptr = (pyfunction *)malloc(sizeof(pyfunction));
-    retptr->type = pyfunction_t;
-    retptr->id = 0;
-    retptr->parameters = structure->parameters;
-    retptr->fsuite = RETURN_STMT(structure->expr);
-    retptr->env = env;
-    return retptr;
-}
-
 void *expression_list_gen_evaluate(expression_list *structure, environment *env) {
     if (!structure->value_list)
         structure->value_list = list_node();
@@ -645,7 +635,7 @@ void *gen_evaluate(void *structure, environment *env) {
         case conditional_expression_t:
             return conditional_expression_gen_evaluate((conditional_expression *)structure, env);
         case lambda_expr_t:
-            return lambda_expr_gen_evaluate((lambda_expr *)structure, env);
+            return lambda_exprEvaluate((lambda_expr *)structure, env);
         case expression_list_t:
             return expression_list_gen_evaluate((expression_list *)structure, env);
         default:

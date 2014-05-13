@@ -200,12 +200,15 @@ void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr) {
     return retptr;
 }
 
-void *LAMBDA_EXPR(list *parameters, void *expr) {
+void *LAMBDA_EXPR(list *parameters, void *expr, list *assign_targets, expression_list *assign_expr_list) {
     lambda_expr *retptr = (lambda_expr *)malloc(sizeof(lambda_expr));
     memset(retptr, 0, sizeof(*retptr));
     retptr->type = lambda_expr_t;
     retptr->parameters = parameters;
     retptr->expr = expr;
+    retptr->assign_targets = assign_targets;
+    retptr->assign_expr_list = assign_expr_list;
+    return retptr;
 }
 
 void *EXPRESSION_LIST(list *expr_head) {
@@ -579,11 +582,17 @@ void *conditional_expressionEvaluate(conditional_expression *structure, environm
 
 void *lambda_exprEvaluate(lambda_expr *structure, environment *env) {
     pyfunction *retptr = (pyfunction *)malloc(sizeof(pyfunction));
+    memset(retptr, 0, sizeof(pyfunction));
     retptr->type = pyfunction_t;
     retptr->id = 0;
     retptr->parameters = structure->parameters;
     retptr->fsuite = RETURN_STMT(structure->expr);
     retptr->env = env;
+    retptr->assign_targets = structure->assign_targets;
+    if (!list_is_empty(assign_targets))
+        retptr->assign_values = evaluate(structure->assign_expr_list);
+    else
+        retptr->assign_values = 0;
     return retptr;
 }
 
