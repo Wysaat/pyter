@@ -95,8 +95,8 @@ void *FOR_STMT(void *targets, void *expressions, list *suite_list) {
     return retptr;
 }
 
-void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield, list *assign_targets,
-              list *assign_expr_list) {
+void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield, 
+                  expression_list *assign_target_list, expression_list *assign_expr_list) {
     funcdef *retptr = (funcdef *)malloc(sizeof(funcdef));
     memset(retptr, 0, sizeof(*retptr));
     retptr->type = funcdef_t;
@@ -104,7 +104,7 @@ void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield, list *a
     retptr->parameters = parameters;
     retptr->fsuite = fsuite;
     retptr->yield = yield;
-    retptr->assign_targets = assign_targets;
+    retptr->assign_target_list = assign_target_list;
     retptr->assign_expr_list = assign_expr_list;
     return retptr;
 }
@@ -235,9 +235,9 @@ void funcdefExecute(void *structure, environment *env, int pf) {
     func->bound = 0;
     func->yield = stmt->yield;
     func->env = env;
-    func->assign_targets = stmt->assign_targets;
-    if (!list_is_empty(stmt->assign_targets))
-        func->assign_values = evaluate(stmt->assign_expr_list);
+    func->assign_target_list = stmt->assign_target_list;
+    if (stmt->assign_target_list)
+        func->assign_values = evaluate(stmt->assign_expr_list, env);
 
     store(env, stmt->id, func);
 }

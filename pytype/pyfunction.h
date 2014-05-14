@@ -16,7 +16,7 @@ struct pyfunction {
     environment *env;
     void *bound;
     int yield;  /* for generators */
-    list *assign_targets;
+    expression_list *assign_target_list;
     pytuple *assign_values;
 };
 

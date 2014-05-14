@@ -272,6 +272,38 @@ void *parse_primary(scanner *sc) {
     }
 }
 
+void *parse_argument_list(scanner *sc, char *ending) {
+    void *expression = parse_expression(sc);
+    char *token;
+    list *target_list = list_node(),
+         *expr_list = list_node(),
+         *expressions = list_node();
+    if (type(expression) == identifier_t) {
+        token = sc_read(sc);
+        if (!strcmp(token, "=")) {
+            list_append_content(target_list, expression);
+            list_append_content(expr_list, parse_expression(sc));
+        }
+        else
+            rollback(sc);
+    }
+    token = sc_read(sc);
+    if (!strcmp(token, ",")) {
+        list *expressions = list_node();
+        list_append_content(expressions, expression);
+        token = sc_read(sc);
+        rollback(sc);
+        if (!strcmp(token, ending))
+            return EXPRESSION_LIST(expressions);
+        list_append_list(expressions, pa_exprs(sc, ending));
+        return EXPRESSION_LIST(expressions);
+    }
+    else {
+        rollback(sc);
+        return expression;
+    }
+}
+
 void *parse_power(scanner *sc) {
     void *primary = parse_primary(sc);
     char *token = sc_read(sc);
@@ -470,7 +502,7 @@ void *parse_lambda_expr(scanner *sc) {
     char *token = sc_read(sc);  // it should be lambda
     list *parameters = list_node();
     list *assign_targets = list_node(), *assign_exprs = list_node();
-    expression_list *assign_expr_list;
+    expression_list *assign_target_list, *assign_expr_list;
     token = sc_read(sc);
     if (strcmp(token, ":")) {
         rollback(sc);
@@ -496,17 +528,22 @@ void *parse_lambda_expr(scanner *sc) {
             }
         }
     }
-    if (list_is_empty(assign_exprs))
+    if (!list_is_empty(assign_targets)) {
+        assign_target_list = EXPRESSION_LIST(assign_targets);
         assign_expr_list = EXPRESSION_LIST(assign_exprs);
-    else
+    }
+    else {
+        assign_target_list = 0;
         assign_expr_list = 0;
-    return LAMBDA_EXPR(parameters, parse_expression(sc), assign_targets, assign_expr_list);
+    }
+    return LAMBDA_EXPR(parameters, parse_expression(sc), assign_target_list, assign_expr_list);
 }
 
 void *parse_lambda_expr_nocond(scanner *sc) {
     char *token = sc_read(sc);  // it should be lambda
     list *parameters = list_node();
     list *assign_targets = list_node(), *assign_exprs = list_node();
+    expression_list *assign_target_list, *assign_expr_list;
     token = sc_read(sc);
     if (strcmp(token, ":")) {
         rollback(sc);
@@ -532,11 +569,15 @@ void *parse_lambda_expr_nocond(scanner *sc) {
             }
         }
     }
-    if (list_is_empty(assign_exprs))
+    if (!list_is_empty(assign_targets)) {
+        assign_target_list = EXPRESSION_LIST(assign_targets);
         assign_expr_list = EXPRESSION_LIST(assign_exprs);
-    else
+    }
+    else {
+        assign_target_list = 0;
         assign_expr_list = 0;
-    return LAMBDA_EXPR(parameters, parse_expression_nocond(sc), assign_targets, assign_expr_list);
+    }
+    return LAMBDA_EXPR(parameters, parse_expression_nocond(sc), assign_target_list, assign_expr_list);
 }
 
 void *parse_expression(scanner *sc) {
@@ -889,6 +930,7 @@ void *parse_funcdef(scanner *sc) {
     list *assign_targets = list_node(), *assign_exprs = list_node();
     char *token = sc_read(sc);  // it should be "def"
     token = sc_read(sc);
+    expression_list *assign_target_list, *assign_expr_list;
     if (is_identifier(token)) {
         id = IDENTIFIER(token);
         token = sc_read(sc);
@@ -923,11 +965,15 @@ void *parse_funcdef(scanner *sc) {
                 void *_suite = parse_suite(sc);
                 int yield = sc->yield;
                 sc->yield = 0;
-                if (!list_is_empty(assign_exprs))
+                if (!list_is_empty(assign_targets)) {
+                    assign_target_list = EXPRESSION_LIST(assign_targets);
                     assign_expr_list = EXPRESSION_LIST(assign_exprs);
-                else
+                }
+                else {
+                    assign_target_list = 0;
                     assign_expr_list = 0;
-                return FUNCDEF(id, parameters, _suite, yield, assign_targets, assign_expr_list);
+                }
+                return FUNCDEF(id, parameters, _suite, yield, assign_target_list, assign_expr_list);
             }
         }
     }

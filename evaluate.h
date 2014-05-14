@@ -8,6 +8,7 @@
 
 typedef struct environment environment;
 typedef struct suite suite;
+typedef struct expression_list expression_list;
 
 typedef struct identifier {
     int type;
@@ -162,16 +163,16 @@ typedef struct lambda_expr {
     int type;
     list *parameters;
     void *expr;
-    list *assign_targets;
+    expression_list *assign_target_list;
     expression_list *assign_expr_list;
 } lambda_expr;
 
-typedef struct expression_list {
+struct expression_list {
     int type;
     list *expr_head;
     list *value_list; /* for yield */
     list *expr_ptr;   /* for yield */
-} expression_list;
+};
 
 int type(void *);
 
@@ -197,7 +198,7 @@ void *U_EXPR(char *, void *);
 void *B_EXPR(void *, char *, void *);
 void *NOT_TEST(void *);
 void *CONDITIONAL_EXPRESSION(void *or_test, void *or_test2, void *expr);
-void *LAMBDA_EXPR(list *parameters, void *expr, list *assign_targets, expression_list *assign_expr_list);
+void *LAMBDA_EXPR(list *parameters, void *expr, expression_list *assign_target_list, expression_list *assign_expr_list);
 void *EXPRESSION_LIST(list *);
 void *PYINT(integer *);
 void *PYSTR(char *);

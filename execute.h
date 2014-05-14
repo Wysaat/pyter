@@ -7,6 +7,7 @@
 
 typedef struct identifier identifier;
 typedef struct environment environment;
+typedef struct expression_list expression_list;
 
 typedef struct expression_stmt {
     int type;
@@ -77,7 +78,7 @@ typedef struct funcdef {
     list *parameters;
     void *fsuite;
     int yield;
-    list *assign_targets;
+    expression_list *assign_target_list;
     expression_list *assign_expr_list;
 } funcdef;
 
@@ -104,7 +105,7 @@ void *STMT_LIST(list *);
 void *IF_STMT(list *condition_list, list *suite_list);
 void *WHILE_STMT(void *condition, list *suite_list);
 void *FOR_STMT(void *targets, void *expressions, list *suite_list);
-void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield, list *assignment_list);
+void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield, expression_list *assign_target_list, expression_list *assign_expr_list);
 void *CLASSDEF(identifier *id, void *_suite);
 void *SUITE(list *stmts);
 void expression_stmtExecute(void *structure, environment *env, int pf);
