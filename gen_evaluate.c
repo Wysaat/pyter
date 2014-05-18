@@ -66,7 +66,7 @@ void *subscription_copy(subscription *expr) {
 }
 
 void *call_copy(call *ptr) {
-    return CALL(copy(ptr->primary), copy(ptr->arguments));
+    return CALL(copy(ptr->primary), list_copy(ptr->arguments));
 }
 
 void *power_copy(power *expr) {

@@ -113,7 +113,7 @@ typedef struct subscription {
 typedef struct call {
     int type;
     void *primary;
-    void *arguments;
+    list *arguments;
     void *primary_val;  /* for yield */
 } call;
 
@@ -193,7 +193,7 @@ void *SLICE_EXPR(void *start, void *stop, void *step);
 void *SUBSC_EXPR(void *);
 void *SLICING(void *primary, slice_expr *);
 void *SUBSCRIPTION(void *primary, subsc_expr *);
-void *CALL(void *primary, void *arguments);
+void *CALL(void *primary, list *arguments);
 void *U_EXPR(char *, void *);
 void *B_EXPR(void *, char *, void *);
 void *NOT_TEST(void *);

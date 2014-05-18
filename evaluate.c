@@ -144,7 +144,7 @@ void *SUBSCRIPTION(void *primary, subsc_expr *subsc) {
     return retptr;
 }
 
-void *CALL(void *primary, void *arguments) {
+void *CALL(void *primary, list *arguments) {
     call *retptr = (call *)malloc(sizeof(call));
     memset(retptr, 0, sizeof(*retptr));
     retptr->type = call_t;
@@ -429,6 +429,38 @@ void *subscriptionEvaluate(subscription *structure, environment *env) {
 
 void *callEvaluate(call *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
+    list *target_list, expr_list, expressions;
+    if (structure->arguments) {
+        assign_target_list = structure->arguments->content,
+        assign_expr_list = structure->arguments->next->content,
+        expressions = structure->arguments->next->next->content;
+        list *assign_values, *values, *ptr;
+        if (!list_is_empty(assign_target_list)) {
+            assign_value_list = list_node();
+            for (ptr = assign_expr_list; ptr; ptr = ptr->next) {
+                list_append_content(assign_value_list, evaluate(ptr));
+            }
+        }
+        else
+            assign_value_list = 0;
+        if (!list_is_empty(expressions)) {
+            values = list_node();
+            for (ptr = expressions; ptr; ptr = ptr->next) {
+                list_append_content(values, evaluate(ptr));
+            }
+        }
+        else
+            values = 0;
+        list *argument_list = list_node();
+        list_append_content(argument_list, assign_target_list);
+        list_append_content(argument_list, assign_value_list);
+        list_append_content(argument_list, value_list);
+        return __cal__(primary_val, argument_list);
+    }
+    else {
+        return __call__(primary_val, 0);
+    }
+
     if (structure->arguments) {
         void *argument_vals = evaluate(structure->arguments, env);
         if (type(structure->arguments) == parenth_form_t) {

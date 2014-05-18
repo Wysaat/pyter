@@ -45,7 +45,7 @@ void sc_getline(scanner *sc) {
     if (sc->stream == stdin)
         printf(">>> ");
     char *line = 0;
-    int read, len = 0;
+    size_t read, len = 0;
     read = getline(&line, &len, sc->stream);
     if (read != -1) {
         sc->line = line;

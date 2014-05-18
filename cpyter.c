@@ -258,7 +258,7 @@ void *parse_primary(scanner *sc) {
             }
             else {
                 rollback(sc);
-                void *arguments = parse_expression_list(sc, ")");
+                list *arguments = parse_expression_list(sc, ")");
                 token = sc_read(sc);
                 if (!strcmp(token, ")")) {
                     primary = CALL(primary, arguments);
@@ -272,35 +272,59 @@ void *parse_primary(scanner *sc) {
     }
 }
 
-void *parse_argument_list(scanner *sc, char *ending) {
-    void *expression = parse_expression(sc);
+list *parse_argument_list(scanner *sc, char *ending) {
     char *token;
-    list *target_list = list_node(),
+    list *retptr = list_node(),
+         *target_list = list_node(),
          *expr_list = list_node(),
          *expressions = list_node();
-    if (type(expression) == identifier_t) {
-        token = sc_read(sc);
-        if (!strcmp(token, "=")) {
-            list_append_content(target_list, expression);
-            list_append_content(expr_list, parse_expression(sc));
+    list_append_content(retptr, target_list);
+    list_append_content(retptr, expr_list);
+    list_append_content(retptr, expressions);
+
+    while (1) {
+        void *expression = parse_expression(sc);
+        if (type(expression) == identifier_t) {
+            token = sc_read(sc);
+            if (!strcmp(token, "=")) {
+                list_append_content(target_list, expression);
+                list_append_content(expr_list, parse_expression(sc));
+                token = sc_read(sc);
+                if (!strcmp(token, ",")) {
+                    token = sc_read(sc);
+                    rollback(sc);
+                    if (!strcmp(token, ending))
+                        return retptr;
+                }
+                else if (!strcmp(token, ending)) {
+                    rollback(sc);
+                    return retptr;
+                }
+            }
+            else if (!strcmp(token, ",")) {
+                list_append_content(expressions, expression);
+                token = sc_read(sc);
+                rollback(sc);
+                if (!strcmp(token, ending))
+                    return retptr;
+            }
+            else if (!strcmp(token, ending)) {
+                rollback(sc);
+                return retptr;
+            }
         }
-        else
-            rollback(sc);
-    }
-    token = sc_read(sc);
-    if (!strcmp(token, ",")) {
-        list *expressions = list_node();
-        list_append_content(expressions, expression);
-        token = sc_read(sc);
-        rollback(sc);
-        if (!strcmp(token, ending))
-            return EXPRESSION_LIST(expressions);
-        list_append_list(expressions, pa_exprs(sc, ending));
-        return EXPRESSION_LIST(expressions);
-    }
-    else {
-        rollback(sc);
-        return expression;
+        else {
+            token = sc_read(sc);
+            if (!strcmp(token, ",")) {
+                list_append_content(expressions, expression);
+                token = sc_read(sc);
+                rollback(sc);
+                if (!strcmp(token, ending)) {
+                    rollback(sc);
+                    return retptr;
+                }
+            }
+        }
     }
 }
 
