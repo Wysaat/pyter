@@ -4,6 +4,7 @@
 #include "pybool.h"
 #include "pystr.h"
 #include "../environment.h"
+#include "others.h"
 
 pybool *__eq__(void *, void *);
 void *__getitem__(void *, void *);

@@ -258,7 +258,7 @@ void *parse_primary(scanner *sc) {
             }
             else {
                 rollback(sc);
-                list *arguments = parse_expression_list(sc, ")");
+                list *arguments = parse_argument_list(sc, ")");
                 token = sc_read(sc);
                 if (!strcmp(token, ")")) {
                     primary = CALL(primary, arguments);
@@ -309,6 +309,7 @@ list *parse_argument_list(scanner *sc, char *ending) {
                     return retptr;
             }
             else if (!strcmp(token, ending)) {
+                list_append_content(expressions, expression);
                 rollback(sc);
                 return retptr;
             }
@@ -323,6 +324,11 @@ list *parse_argument_list(scanner *sc, char *ending) {
                     rollback(sc);
                     return retptr;
                 }
+            }
+            else if (!strcmp(token, ending)) {
+                list_append_content(expressions, expression);
+                rollback(sc);
+                return retptr;
             }
         }
     }

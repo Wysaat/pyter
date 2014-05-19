@@ -429,47 +429,37 @@ void *subscriptionEvaluate(subscription *structure, environment *env) {
 
 void *callEvaluate(call *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
-    list *target_list, expr_list, expressions;
+    list *target_list, *assign_expr_list, *expressions;
     if (structure->arguments) {
-        assign_target_list = structure->arguments->content,
+        target_list = structure->arguments->content,
         assign_expr_list = structure->arguments->next->content,
         expressions = structure->arguments->next->next->content;
-        list *assign_values, *values, *ptr;
-        if (!list_is_empty(assign_target_list)) {
+        list *assign_target_list, *assign_value_list, *value_list, *ptr;
+        if (!list_is_empty(target_list)) {
+            assign_target_list = target_list;
             assign_value_list = list_node();
             for (ptr = assign_expr_list; ptr; ptr = ptr->next) {
-                list_append_content(assign_value_list, evaluate(ptr));
+                list_append_content(assign_value_list, evaluate(ptr->content, env));
             }
         }
-        else
+        else {
+            assign_target_list = 0;
             assign_value_list = 0;
+        }
         if (!list_is_empty(expressions)) {
-            values = list_node();
+            value_list = list_node();
             for (ptr = expressions; ptr; ptr = ptr->next) {
-                list_append_content(values, evaluate(ptr));
+                list_append_content(value_list, evaluate(ptr->content, env));
             }
         }
         else
-            values = 0;
-        list *argument_list = list_node();
-        list_append_content(argument_list, assign_target_list);
-        list_append_content(argument_list, assign_value_list);
-        list_append_content(argument_list, value_list);
-        return __cal__(primary_val, argument_list);
-    }
-    else {
-        return __call__(primary_val, 0);
-    }
+            value_list = 0;
+        pyargument *argument = (pyargument *)malloc(sizeof(pyargument));
+        argument->assign_target_list = assign_target_list;
+        argument->assign_value_list = assign_value_list;
+        argument->value_list = value_list;
 
-    if (structure->arguments) {
-        void *argument_vals = evaluate(structure->arguments, env);
-        if (type(structure->arguments) == parenth_form_t) {
-            pytuple *args = pytuple__init__();
-            args->values = list_node();
-            args->values->content = argument_vals;
-            return __call__(primary_val, args);
-        }
-        return __call__(primary_val, argument_vals);
+        return __call__(primary_val, argument);
     }
     else {
         return __call__(primary_val, 0);
