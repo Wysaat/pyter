@@ -10,7 +10,7 @@ pylist *pylist__init__() {
     return retptr;
 }
 
-void *pylist__sort__(pylist *val, int comp()) {
+void pylist__sort__(pylist *val, int comp()) {
     list_sort(val->values, comp);
 }
 

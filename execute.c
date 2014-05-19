@@ -129,7 +129,7 @@ void *SUITE(list *stmts) {
 void expression_stmtExecute(void *structure, environment *env, int pf) {
     expression_stmt *stmt = (expression_stmt *)structure;
     void *ptr = evaluate(stmt->expression_list, env);
-    if (pf)
+    if (pf && type(ptr)!=pyNone_t)
         print(ptr);
 }
 

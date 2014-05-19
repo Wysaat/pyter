@@ -5,6 +5,7 @@
 #include "pyfunction.h"
 #include "../environment.h"
 #include <string.h>
+#include "py__builtins__.h"
 
 pyclass *pyclass__init__(char *id) {
     pyclass *retptr = (pyclass *)malloc(sizeof(pyclass));
@@ -26,6 +27,9 @@ void *pyclass__getattribute__(void *first, void *instance, pystr *attr) {
             if (!strcmp(entry->id, attr->value)) {
                 if (type(entry->value) == pyfunction_t) {
                     ((pyfunction *)entry->value)->bound = instance;
+                }
+                else if (type(entry->value) == pybuiltin_function_t) {
+                    ((pybuiltin_function *)entry->value)->bound = instance;
                 }
                 return entry->value;
             }

@@ -43,5 +43,7 @@ void *pyfunction__call__(void *lptr, void *rptr) {
 
     execute(func->fsuite, local_env, 0);
 
-    return local_env->ret;
+    if (local_env->ret)
+        return local_env->ret;
+    return pyNone_init();
 }

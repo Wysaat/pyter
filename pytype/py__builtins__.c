@@ -1,9 +1,14 @@
 #include "py__builtins__.h"
 #include "../types.h"
 #include <stdlib.h>
+#include <string.h>
+#include "others.h"
+#include "../list.h"
+#include "../evaluate.h"
 
 pybuiltin_function *pybuiltin_function__init__(char *id, void *func) {
     pybuiltin_function *retptr = (pybuiltin_function *)malloc(sizeof(pybuiltin_function));
+    memset(retptr, 0, sizeof(pybuiltin_function));
     retptr->type = pybuiltin_function_t;
     retptr->id = id;
     retptr->func = func;
@@ -12,5 +17,26 @@ pybuiltin_function *pybuiltin_function__init__(char *id, void *func) {
 
 void *pybuiltin_function__call__(void *left, void *right) {
     pybuiltin_function *builtin_func = (pybuiltin_function *)left;
-    return builtin_func->func(right);
+    pyargument *argument;
+    if (builtin_func->bound) {
+        if (right) {
+            argument = (pyargument *)right;
+        }
+        else {
+            right = (pyargument *)malloc(sizeof(pyargument));
+            argument = right;
+        }
+        list *new_value_list = list_node();
+        list_append_content(new_value_list, builtin_func->bound);
+        if (argument->value_list)
+            list_append_list(new_value_list, argument->value_list);
+        argument->value_list = new_value_list;
+    }
+    if (right) {
+        argument = (pyargument *)right;
+        if (!argument->assign_target_list) {
+            if (argument->value_list)
+                return builtin_func->func(argument->value_list);
+        }
+    }
 }

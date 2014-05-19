@@ -375,35 +375,39 @@ void *dict_exprEvaluate(dict_expr *structure, environment *env) {
 
 void *attributerefEvaluate(attributeref *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
-    list *ptr;
-    if (type(primary_val) == instance_t) {
-        instance *inst = (instance *)primary_val;
-        if (!list_is_empty(inst->env->val_dict)) {
-            for (ptr = inst->env->val_dict; ptr; ptr = ptr->next) {
-                val_dict_entry *entry = (val_dict_entry *)ptr->content;
-                if (!strcmp(entry->id, structure->id->value)) {
-                    if (type(entry->value) == pyfunction_t)
-                        ((pyfunction *)entry->value)->bound = 0;
-                    return entry->value;
-                }
+    list *ptr, *val_dict;
+    pyclass *class;
+
+    if (type(primary_val) == pyclass_t) {
+        val_dict = ((pyclass *)primary_val)->env->val_dict;
+        class = ((pyclass *)primary_val)->class;
+    }
+    else if (type(primary_val) == instance_t) {
+        val_dict = ((instance *)primary_val)->env->val_dict;
+        class = ((instance *)primary_val)->class;
+    }
+    else if (type(primary_val) == pyint_t) {
+        val_dict = list_node();
+        class = &int_class;
+    }
+    else if (type(primary_val) == pylist_t) {
+        val_dict = list_node();
+        class = &list_class;
+    }
+
+    if (!list_is_empty(val_dict)) {
+        for (ptr = val_dict; ptr; ptr = ptr->next) {
+            val_dict_entry *entry = (val_dict_entry *)ptr->content;
+            if (!strcmp(entry->id, structure->id->value)) {
+                if (type(entry->value) == pyfunction_t)
+                    ((pyfunction *)entry->value)->bound = 0;
+                else if (type(entry->value) == pybuiltin_function_t)
+                    ((pybuiltin_function *)entry->value)->bound = 0;
+                return entry->value;
             }
         }
-        return __getattribute__(inst->class, inst, PYSTR(structure->id->value));
     }
-    else if (type(primary_val) == pyclass_t) {
-        pyclass *class = (pyclass *)primary_val;
-        if (!list_is_empty(class->env->val_dict)) {
-            for (ptr = class->env->val_dict; ptr; ptr = ptr->next) {
-                val_dict_entry *entry = (val_dict_entry *)ptr->content;
-                if (!strcmp(entry->id, structure->id->value)) {
-                    if (type(entry->value) == pyfunction_t)
-                        ((pyfunction *)entry->value)->bound = 0;
-                    return entry->value;
-                }
-            }
-        }
-        return __getattribute__(class->class, class, PYSTR(structure->id->value));
-    }
+    return __getattribute__(class, primary_val, PYSTR(structure->id->value));
 }
 
 void *slice_exprEvaluate(slice_expr *structure, environment *env) {
@@ -762,17 +766,16 @@ void print_nnl(void *structure) {
             else
                 printf("<function %s at %p>", "<lambda>", structure);
             break;
+        case pyNone_t:
+            printf("None");
+            break;
     }
 }
 
 /* '\n' append */
 void print(void *structure) {
-    if (!structure)
-        return;
-    else {
-        print_nnl(structure);
-        printf("\n");
-    }
+    print_nnl(structure);
+    printf("\n");
 }
 
 int type(void *val) {
