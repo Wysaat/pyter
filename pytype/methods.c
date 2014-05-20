@@ -12,7 +12,6 @@
 #include "pyfunction.h"
 #include "pyclass.h"
 #include "py__builtins__.h"
-#include <stdio.h>
 
 pybool *__eq__(void *left, void *right) {
     if (type(left) != type(right))
@@ -144,4 +143,9 @@ void *__getattribute__(void *first, void *second, pystr *attr) {
 void __setattr__(void *first, void *second, pystr *attr, void *val) {
     if (type(first) == pyclass_t)
         pyclass__setattr__(first, second, attr, val);
+}
+
+pyint *len(void *vptr) {
+    if (type(vptr) == pylist_t)
+        return pylist__len__(vptr);
 }

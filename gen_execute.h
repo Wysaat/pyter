@@ -12,7 +12,6 @@ void stmt_list_gen_execute(void *structure, environment *env, int pf);
 void if_stmt_gen_execute(void *structure, environment *env, int pf);
 void while_stmt_gen_execute(void *structure, environment *env, int pf);
 void for_stmt_gen_execute(void *structure, environment *env, int pf);
-void classdef_gen_execute(void *structure, environment *env, int pf);
 void suite_gen_execute(void *structure, environment *env, int pf);
 void gen_execute(void *structure, environment *env, int pf);
 

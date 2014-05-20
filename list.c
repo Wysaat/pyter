@@ -195,3 +195,14 @@ void list_replace(list *head, int pos, void *content) {
     free(ptr->content);
     ptr->content = content;
 }
+
+int list_len(list *head) {
+    if (list_is_empty(head))
+        return 0;
+    int count = 0;
+    while (head) {
+        count++;
+        head = head->next;
+    }
+    return count;
+}

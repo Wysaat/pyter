@@ -1056,6 +1056,7 @@ void interpret(FILE *stream)
     def_print(global_env);
     def_next(global_env);
     def_list(global_env);
+    def_len(global_env);
 
     while (1) {
         void *stmt = parse_stmt(sc);

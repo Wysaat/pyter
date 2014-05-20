@@ -17,5 +17,6 @@ pybool *__bool__(void *);
 void *__call__(void *, void *);
 void *__getattribute__(void *, void *, pystr *);
 void __setattr__(void *, void *, pystr *, void *);
+pyint *len(void *);
 
 #endif /* PYTYPE_METHODS_H */

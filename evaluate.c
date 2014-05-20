@@ -769,6 +769,12 @@ void print_nnl(void *structure) {
         case pyNone_t:
             printf("None");
             break;
+        case pybuiltin_function_t:
+            printf("<built-in function %s>", ((pybuiltin_function *)structure)->id);
+            break;
+        case pyclass_t:
+            printf("<class '%s'>", ((pyclass *)structure)->id);
+            break;
     }
 }
 

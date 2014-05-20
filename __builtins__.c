@@ -13,6 +13,7 @@
 #include "pytype/pyclass.h"
 #include "__builtins__.h"
 #include "pytype/others.h"
+#include "pytype/methods.h"
 
 void *_print(list *val) {
     if (val && !list_is_empty(val)) {
@@ -44,7 +45,8 @@ void def_int(environment *env) {
     store(env, IDENTIFIER("int"), &int_class);
 }
 
-void def_sort_func_of_list(environment *env) {
+/* CAUTION: nested function definition is not standard C, change it someday.. */
+void *def_sort_func_of_list(environment *env) {
     int comp(void *left, void *right) {
         if (type(left) == pyint_t && type(right) == pyint_t) {
             if (is_true(pyint__lt__((pyint *)left, (pyint *)right)))
@@ -63,9 +65,33 @@ void def_sort_func_of_list(environment *env) {
     store(env, IDENTIFIER("sort"), sort_func_of_list);
 }
 
-// void def_len_func_of_list(environment *env) {
-//     void
-// }
+void *_len(list *val) {
+    return len(val->content);
+}
+
+void *_pylist__len__(list *val) {
+    return pylist__len__(val->content);
+}
+
+void *_pylist_append(list *val) {
+    pylist__append__(val->content, val->next->content);
+    return pyNone_init();
+}
+
+void *def_len_func_of_list(environment *env) {
+    pybuiltin_function *len_func_of_list = pybuiltin_function__init__("__len__", _pylist__len__);
+    store(env, IDENTIFIER("__len__"), len_func_of_list);
+}
+
+void *def_append_func_of_list(environment *env) {
+    pybuiltin_function *append_func_of_list = pybuiltin_function__init__("append", _pylist_append);
+    store(env, IDENTIFIER("append"), append_func_of_list);
+}
+
+void *def_len(environment *env) {
+    pybuiltin_function *len_func = pybuiltin_function__init__("len", _len);
+    store(env, IDENTIFIER("len"), len_func);
+}
 
 void def_list(environment *env) {
     list_class.type = pyclass_t;
@@ -75,5 +101,7 @@ void def_list(environment *env) {
     list_class.id = "list";
     list_class.env = environment_init(0);
     def_sort_func_of_list(list_class.env);
+    def_len_func_of_list(list_class.env);
+    def_append_func_of_list(list_class.env);
     store(env, IDENTIFIER("list"), &list_class);
 }

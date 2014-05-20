@@ -19,5 +19,6 @@ void pylist__sort__(pylist *, int comp());
 pybool *pylist__eq__(void *, void *);
 void *pylist__getitem__(void *, void *);
 void pylist__setitem__(void *, void *, void *value);
+pyint *pylist__len__(void *);
 
 #endif /* PYTYPE_PYLIST_H */

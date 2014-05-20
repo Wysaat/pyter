@@ -35,4 +35,6 @@ void pyint__puts__(pyint *);
 void pyint__dec__(pyint *);
 void pyint__inc__(pyint *);
 
+pyint *int_to_pyint(int );
+
 #endif /* PYTYPE_PYINT_H */

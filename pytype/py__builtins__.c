@@ -39,4 +39,6 @@ void *pybuiltin_function__call__(void *left, void *right) {
                 return builtin_func->func(argument->value_list);
         }
     }
+    else
+        return builtin_func->func();
 }

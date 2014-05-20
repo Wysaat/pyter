@@ -177,3 +177,9 @@ pybool *pyint__ge__(void *lvoid, void *rvoid) {
         return PYBOOL(1);
     return PYBOOL(0);
 }
+
+pyint *int_to_pyint(int number) {
+    pyint *retptr = pyint__init__();
+    retptr->value = integer__init__(itoa(number));
+    return retptr;
+}

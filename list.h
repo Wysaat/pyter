@@ -26,5 +26,6 @@ void list_sort0(list *, int (*func)(), int size);
 int list_find(list *, void *);
 int list_eq(list *, list *);
 void list_replace(list *, int pos, void *);
+int list_len(list *);
 
 #endif /* LIST_H */

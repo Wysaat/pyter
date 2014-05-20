@@ -4,8 +4,10 @@
 #include "../types.h"
 #include "pyfunction.h"
 #include "../environment.h"
-#include <string.h>
 #include "py__builtins__.h"
+#include "../__builtins__.h"
+#include "pylist.h"
+#include "methods.h"
 
 pyclass *pyclass__init__(char *id) {
     pyclass *retptr = (pyclass *)malloc(sizeof(pyclass));
@@ -38,10 +40,22 @@ void *pyclass__getattribute__(void *first, void *instance, pystr *attr) {
 }
 
 void *pyclass__call__(void *left, void *right) {
+    if (left == &list_class)
+        return pylist__init__();
     instance *retptr = (instance *)malloc(sizeof(instance));
     retptr->type = instance_t;
     retptr->class = (pyclass *)left;
     retptr->env = environment_init(0);
+
+    list *ptr;
+    for (ptr = retptr->class->env->val_dict; ptr; ptr = ptr->next) {
+        val_dict_entry *entry = (val_dict_entry *)ptr->content;
+        if (entry->id && !strcmp(entry->id, "__init__")) {
+            ((pyfunction *)entry->value)->bound = retptr;
+            __call__(entry->value, right);
+        }
+    }
+
     return retptr;
 }
 

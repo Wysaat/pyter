@@ -147,3 +147,8 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
         }
     }
 }
+
+pyint *pylist__len__(void *vptr) {
+    pylist *ptr = (pylist *)vptr;
+    return int_to_pyint(list_len(ptr->values));
+}

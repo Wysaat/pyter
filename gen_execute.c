@@ -228,15 +228,6 @@ void for_stmt_gen_execute(void *structure, environment *env, int pf) {
     stmt->values_list = 0;
 }
 
-void classdef_gen_execute(void *structure, environment *env, int pf) {
-    classdef *stmt = (classdef *)structure;
-    pyclass *class = pyclass__init__(stmt->id->value);
-    class->env->outer = env;
-    execute(stmt->_suite, class->env, 0);
-    class->env->outer = 0;
-    store(env, stmt->id, class);
-}
-
 void suite_gen_execute(void *structure, environment *env, int pf) {
     suite *stmt = (suite *)structure;
     if (!stmt->ptr)
@@ -292,7 +283,7 @@ void gen_execute(void *structure, environment *env, int pf) {
             funcdefExecute(structure, env, pf);
             break;
         case classdef_t:
-            classdef_gen_execute(structure, env, pf);
+            classdefExecute(structure, env, pf);
             break;
         case suite_t:
             suite_gen_execute(structure, env, pf);
