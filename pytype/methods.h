@@ -18,5 +18,6 @@ void *__call__(void *, void *);
 void *__getattribute__(void *, void *, pystr *);
 void __setattr__(void *, void *, pystr *, void *);
 pyint *len(void *);
+pystr *str(void *vptr);
 
 #endif /* PYTYPE_METHODS_H */

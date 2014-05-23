@@ -85,6 +85,7 @@ typedef struct funcdef {
 typedef struct classdef {
     int type;
     identifier *id;
+    list *inheritance;
     void *_suite;
 } classdef;
 
@@ -106,7 +107,7 @@ void *IF_STMT(list *condition_list, list *suite_list);
 void *WHILE_STMT(void *condition, list *suite_list);
 void *FOR_STMT(void *targets, void *expressions, list *suite_list);
 void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield, expression_list *assign_target_list, expression_list *assign_expr_list);
-void *CLASSDEF(identifier *id, void *_suite);
+void *CLASSDEF(identifier *id, list *inheritance, void *_suite);
 void *SUITE(list *stmts);
 void expression_stmtExecute(void *structure, environment *env, int pf);
 void assignment_stmtExecute(void *structure, environment *env, int pf);

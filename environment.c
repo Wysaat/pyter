@@ -5,6 +5,8 @@
 #include "pytype/pylist.h"
 #include "pytype/methods.h"
 #include "pytype/pyclass.h"
+#include "pytype/pyint.h"
+#include "pytype/others.h"
 
 environment *environment_init(environment *outer) {
     environment *retptr = (environment *)malloc(sizeof(environment));
@@ -69,9 +71,19 @@ void store(environment *env, void *targets, void *values) {
              type(targets) == list_expr_t || type(targets) == parenth_form_t) {
         expression_list *expressions = (expression_list *)targets;
         list *ptr1, *ptr2;
-        for (ptr1 = expressions->expr_head,
-             ptr2 = ((pylist *)values)->values; ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next)
-            store(env, ptr1->content, ptr2->content);
+        if (type(values) == pylist_t || type(values) == pytuple_t || type(values) == pyset_t) {
+            for (ptr1 = expressions->expr_head,
+                 ptr2 = ((pylist *)values)->values; ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next)
+                store(env, ptr1->content, ptr2->content);
+        }
+        else if (type(values) == pyrange_t) {
+            pyint *index = int_to_pyint(0);
+            pyrange *range = (pyrange *)values;
+            for (ptr1 = expressions->expr_head; ptr1; ptr1 = ptr1->next) {
+                store(env, ptr1->content, __getitem__(values, index));
+                pyint__inc__(index);
+            }
+        }
     }
 }
 

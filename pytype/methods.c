@@ -12,6 +12,7 @@
 #include "pyfunction.h"
 #include "pyclass.h"
 #include "py__builtins__.h"
+#include "others.h"
 
 pybool *__eq__(void *left, void *right) {
     if (type(left) != type(right))
@@ -39,6 +40,9 @@ void *__getitem__(void *left, void *right)  {
     }
     else if (type(left) == pytuple_t) {
         return pytuple__getitem__(left, right);
+    }
+    else if (type(left) == pyrange_t) {
+        return pyrange__getitem__(left, right);
     }
 }
 
@@ -148,4 +152,9 @@ void __setattr__(void *first, void *second, pystr *attr, void *val) {
 pyint *len(void *vptr) {
     if (type(vptr) == pylist_t)
         return pylist__len__(vptr);
+}
+
+pystr *str(void *vptr) {
+    if (type(vptr) == pyrange_t)
+        return pyrange__str__(vptr);
 }

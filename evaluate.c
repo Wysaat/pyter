@@ -394,6 +394,10 @@ void *attributerefEvaluate(attributeref *structure, environment *env) {
         val_dict = list_node();
         class = &list_class;
     }
+    else if (type(primary_val) == pyrange_t) {
+        val_dict = list_node();
+        class = &range_class;
+    }
 
     if (!list_is_empty(val_dict)) {
         for (ptr = val_dict; ptr; ptr = ptr->next) {
@@ -407,6 +411,26 @@ void *attributerefEvaluate(attributeref *structure, environment *env) {
             }
         }
     }
+
+    if (type(primary_val) == pyclass_t && ((pyclass *)primary_val)->inheritance) {
+        list *ptr2, *ptr3;
+        for (ptr2 = ((pyclass *)primary_val)->inheritance; ptr2; ptr2 = ptr2->next) {
+            pyclass *_class = (pyclass *)ptr2->content;
+            if (!list_is_empty(_class->env->val_dict)) {
+                for (ptr3 = _class->env->val_dict; ptr3; ptr3 = ptr3->next) {
+                    val_dict_entry *entry = (val_dict_entry *)ptr3->content;
+                    if (!strcmp(entry->id, structure->id->value)) {
+                        if (type(entry->value) == pyfunction_t)
+                            ((pyfunction *)entry->value)->bound = 0;
+                        else if (type(entry->value) == pybuiltin_function_t)
+                            ((pybuiltin_function *)entry->value)->bound = 0;
+                        return entry->value;
+                    }
+                }
+            }
+        }
+    }
+
     return __getattribute__(class, primary_val, PYSTR(structure->id->value));
 }
 
@@ -686,8 +710,7 @@ void *evaluate(void *structure, environment *env) {
         case expression_list_t:
             return expression_listEvaluate((expression_list *)structure, env);
         default:
-            printf("[evaluate]: can't evaluate this structure, exit now\n");
-            exit(0);
+            printf("[evaluate]: can't evaluate this structure..\n");
     }
 }
 
@@ -774,6 +797,9 @@ void print_nnl(void *structure) {
             break;
         case pyclass_t:
             printf("<class '%s'>", ((pyclass *)structure)->id);
+            break;
+        case pyrange_t:
+            printf("%s", pystr_to_str(str(structure)));
             break;
     }
 }

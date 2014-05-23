@@ -183,3 +183,7 @@ pyint *int_to_pyint(int number) {
     retptr->value = integer__init__(itoa(number));
     return retptr;
 }
+
+int pyint_to_int(pyint *ptr) {
+    return (atoi(integer__str__(ptr->value)));
+}

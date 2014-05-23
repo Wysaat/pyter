@@ -11,6 +11,7 @@ struct pyclass {
     pyclass *class;
     char *id;
     environment *env;
+    list *inheritance;
 };
 
 typedef struct instance instance;

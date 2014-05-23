@@ -8,9 +8,11 @@
 #include "../__builtins__.h"
 #include "pylist.h"
 #include "methods.h"
+#include <string.h>
 
 pyclass *pyclass__init__(char *id) {
     pyclass *retptr = (pyclass *)malloc(sizeof(pyclass));
+    memset(retptr, 0, sizeof(pyclass));
     retptr->type = pyclass_t;
     retptr->class = (pyclass *)malloc(sizeof(pyclass));
     retptr->class->type = pyclass_t;
@@ -42,6 +44,8 @@ void *pyclass__getattribute__(void *first, void *instance, pystr *attr) {
 void *pyclass__call__(void *left, void *right) {
     if (left == &list_class)
         return pylist__init__();
+    if (left == &range_class)
+        return pyrange_init(right);
     instance *retptr = (instance *)malloc(sizeof(instance));
     retptr->type = instance_t;
     retptr->class = (pyclass *)left;

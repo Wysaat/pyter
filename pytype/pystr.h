@@ -19,4 +19,7 @@ pybool *pystr__bool__(void *);
 void pystr__print__(pystr *);
 void pystr__puts__(pystr *);
 
+pystr *str_to_pystr(char *);
+char *pystr_to_str(pystr *ptr);
+
 #endif /* PYTYPE_PYSTR_H */

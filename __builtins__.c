@@ -78,17 +78,17 @@ void *_pylist_append(list *val) {
     return pyNone_init();
 }
 
-void *def_len_func_of_list(environment *env) {
+void def_len_func_of_list(environment *env) {
     pybuiltin_function *len_func_of_list = pybuiltin_function__init__("__len__", _pylist__len__);
     store(env, IDENTIFIER("__len__"), len_func_of_list);
 }
 
-void *def_append_func_of_list(environment *env) {
+void def_append_func_of_list(environment *env) {
     pybuiltin_function *append_func_of_list = pybuiltin_function__init__("append", _pylist_append);
     store(env, IDENTIFIER("append"), append_func_of_list);
 }
 
-void *def_len(environment *env) {
+void def_len(environment *env) {
     pybuiltin_function *len_func = pybuiltin_function__init__("len", _len);
     store(env, IDENTIFIER("len"), len_func);
 }
@@ -104,4 +104,14 @@ void def_list(environment *env) {
     def_len_func_of_list(list_class.env);
     def_append_func_of_list(list_class.env);
     store(env, IDENTIFIER("list"), &list_class);
+}
+
+void def_range(environment *env) {
+    range_class.type = pyclass_t;
+    range_class.class = (pyclass *)malloc(sizeof(pyclass));
+    range_class.class->type = pyclass_t;
+    range_class.class->id = strdup("type");
+    range_class.id = "range";
+    range_class.env = environment_init(0);
+    store(env, IDENTIFIER("range"), &range_class);
 }

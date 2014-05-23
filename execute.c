@@ -7,6 +7,9 @@
 #include "pytype/pylist.h"
 #include "pytype/pyfunction.h"
 #include "pytype/pyclass.h"
+#include "pytype/others.h"
+#include "pytype/pyint.h"
+#include "pytype/pybool.h"
 
 void *EXPRESSION_STMT(void *expression_list) {
     expression_stmt *retptr = (expression_stmt *)malloc(sizeof(expression_stmt));
@@ -109,11 +112,12 @@ void *FUNCDEF(identifier *id, list *parameters, void *fsuite, int yield,
     return retptr;
 }
 
-void *CLASSDEF(identifier *id, void *_suite) {
+void *CLASSDEF(identifier *id, list *inheritance, void *_suite) {
     classdef *retptr = (classdef *)malloc(sizeof(classdef));
     memset(retptr, 0, sizeof(*retptr));
     retptr->type = classdef_t;
     retptr->id = id;
+    retptr->inheritance = inheritance;
     retptr->_suite = _suite;
     return retptr;
 }
@@ -222,6 +226,29 @@ void for_stmtExecute(void *structure, environment *env, int pf) {
         if (stmt->suite_list->next)
             execute(stmt->suite_list->next->content, env, pf);
     }
+
+    else if (type(values_list) == pyrange_t) {
+        pyrange *range = (pyrange *)values_list;
+        pyint *index = int_to_pyint(0);
+        while (1) {
+            pyint *intval = __getitem__(range, index);
+            if (is_true(pyint__ge__(intval, range->stop)))
+                break;
+            store(env, stmt->targets, intval);
+            execute(stmt->suite_list->content, env, pf);
+            if (env->_break)
+                break;
+            if (env->_continue)
+                env->_continue = 0;
+            pyint__inc__(index);
+        }
+        if (env->_break) {
+            env->_break = 0;
+            return;
+        }
+        if (stmt->suite_list->next)
+            execute(stmt->suite_list->next->content, env, pf);
+    }
 }
 
 void funcdefExecute(void *structure, environment *env, int pf) {
@@ -245,6 +272,13 @@ void funcdefExecute(void *structure, environment *env, int pf) {
 void classdefExecute(void *structure, environment *env, int pf) {
     classdef *stmt = (classdef *)structure;
     pyclass *class = pyclass__init__(stmt->id->value);
+    if (stmt->inheritance) {
+        class->inheritance = list_node();
+        list *ptr;
+        for (ptr = stmt->inheritance; ptr; ptr = ptr->next) {
+            list_append_content(class->inheritance, evaluate(ptr->content, env));
+        }
+    }
     class->env->outer = env;
     execute(stmt->_suite, class->env, 0);
     class->env->outer = 0;
@@ -259,7 +293,7 @@ void suiteExecute(void *structure, environment *env, int pf) {
 }
 
 /*
- * CAUTION: break!!! NEVER forget BREAK!!!
+ * CAUTION: break!!! NEVER forget to BREAK!!!
  * hours have been wasted !!!
  */
 void execute(void *structure, environment *env, int pf) {

@@ -1017,7 +1017,32 @@ void *parse_classdef(scanner *sc) {
         id = IDENTIFIER(token);
         token = sc_read(sc);
         if (!strcmp(token, ":")) {
-            return CLASSDEF(id, parse_suite(sc));
+            return CLASSDEF(id, 0, parse_suite(sc));
+        }
+        else if (!strcmp(token, "(")) {
+            token = sc_read(sc);
+            if (!strcmp(token, ")")) {
+                token = sc_read(sc);
+                if (!strcmp(token, ":")) {
+                    return CLASSDEF(id, 0, parse_suite(sc));
+                }
+            }
+            rollback(sc);
+            void *expressions = parse_expression_list(sc, ")");
+            list *inheritance;
+            if (type(expressions) == expression_list_t)
+                inheritance = ((expression_list *)expressions)->expr_head;
+            else {
+                inheritance = list_node();
+                list_append_content(inheritance, expressions);
+            }
+            token = sc_read(sc);
+            if (!strcmp(token, ")")) {
+                token = sc_read(sc);
+                if (!strcmp(token, ":")) {
+                    return CLASSDEF(id, inheritance, parse_suite(sc));
+                }
+            }
         }
     }
 }
@@ -1057,6 +1082,7 @@ void interpret(FILE *stream)
     def_next(global_env);
     def_list(global_env);
     def_len(global_env);
+    def_range(global_env);
 
     while (1) {
         void *stmt = parse_stmt(sc);

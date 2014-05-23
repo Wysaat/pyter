@@ -63,3 +63,13 @@ void pystr__print__(pystr *strptr) {
 void pystr__puts__(pystr *strptr) {
     puts(strptr->value);
 }
+
+pystr *str_to_pystr(char *str) {
+    pystr *retptr = pystr__init__();
+    retptr->value = strdup(str);
+    return retptr;
+}
+
+char *pystr_to_str(pystr *ptr) {
+    return ptr->value;
+}
