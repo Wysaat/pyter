@@ -190,15 +190,17 @@ void while_stmt_gen_execute(void *structure, environment *env, int pf) {
 void for_stmt_gen_execute(void *structure, environment *env, int pf) {
     for_stmt *stmt = (for_stmt *)structure;
 
-    if (!stmt->values_list) {
-        void *vptr = gen_evaluate(stmt->expressions, env);
+    if (!stmt->values_list && !stmt->index) {
+        void *values_list = gen_evaluate(stmt->expressions, env);
         if (env->yield)
             return;
-        stmt->values_list = vptr;
+        if (type(values_list) == pylist_t || type(values_list) == pytuple_t || type(values_list) == pyset_t)
+            stmt->values_list = values_list;
+        else if (type(values_list) == pyrange_t)
+            stmt->range = values_list;
     }
-    if (type(stmt->values_list) == pylist_t ||
-        type(stmt->values_list) == pytuple_t ||
-        type(stmt->values_list) == pyset_t) {
+
+    if (stmt->values_list) {
         list *ptr;
         if (!stmt->list_ptr)
             stmt->list_ptr = ((pylist *)stmt->values_list)->values;
@@ -224,8 +226,38 @@ void for_stmt_gen_execute(void *structure, environment *env, int pf) {
                 return;
         }
         stmt->list_ptr = 0;
+        stmt->values_list = 0;
     }
-    stmt->values_list = 0;
+
+    else if (stmt->range) {
+        if (!stmt->index)
+            stmt->index = int_to_pyint(0);
+        while (1) {
+            pyint *intval = __getitem__(stmt->range, stmt->index);
+            if (is_true(pyint__ge__(intval, stmt->range->stop)))
+                break;
+            store(env, stmt->targets, intval);
+            gen_execute(stmt->suite_list->content, env, pf);
+            if (env->yield)
+                return;
+            if (env->_break)
+                break;
+            if (env->_continue)
+                env->_continue = 0;
+            pyint__inc__(stmt->index);
+        }
+        if (env->_break) {
+            env->_break = 0;
+            stmt->index = 0;
+            return;
+        }
+        if (stmt->suite_list->next) {
+            gen_execute(stmt->suite_list->next->content, env, pf);
+            if (env->yield)
+                return;
+        }
+        stmt->index = 0;
+    }
 }
 
 void suite_gen_execute(void *structure, environment *env, int pf) {

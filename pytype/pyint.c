@@ -125,11 +125,15 @@ pyint *pyint__rshift__(pyint *left, pyint *right) {
     return retptr;
 }
 
-pybool *pyint__lt__(pyint *left, pyint *right) {
+pybool *pyint__lt__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    pyint *right = (pyint *)rvoid;
     return PYBOOL(integer__lt__(left->value, right->value));
 }
 
-pybool *pyint__gt__(pyint *left, pyint *right) {
+pybool *pyint__gt__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    pyint *right = (pyint *)rvoid;
     return PYBOOL(integer__gt__(left->value, right->value));
 }
 

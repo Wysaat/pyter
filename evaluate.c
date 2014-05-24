@@ -536,6 +536,21 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
         return __add__(left_val, right_val);
     else if (!strcmp(structure->op, "-"))
         return __sub__(left_val, right_val);
+    else if (!strcmp(structure->op, "in")) {
+        if (type(right_val) == pylist_t) {
+            if (list_find(((pylist *)right_val)->values, left_val) >= 0)
+                return PYBOOL(1);
+            return PYBOOL(0);
+        }
+        else if (type(right_val) == pyrange_t) {
+            pyrange *range = (pyrange *)right_val;
+            if (is_true(pyint__ge__(left_val, range->stop)) || is_true(pyint__lt__(left_val, range->start)))
+                return PYBOOL(0);
+            if (!is_true(__bool__(pyint__mod__(pyint__sub__(left_val, range->start), range->step))))
+                return PYBOOL(1);
+            return PYBOOL(0);
+        }
+    }
 
     if (*left_val == pyint_t && *right_val == pyint_t) {
         integer *left = ((pyint *)left_val)->value;

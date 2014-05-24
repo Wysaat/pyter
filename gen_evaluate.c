@@ -374,21 +374,45 @@ void *call_gen_evaluate(call *structure, environment *env) {
     if (env->yield)
         return 0;
     void *primary_val = structure->primary_val;
+    list *target_list, *assign_expr_list, *expressions;
     if (structure->arguments) {
-        void *argument_vals = gen_evaluate(structure->arguments, env);
-        if (env->yield)
-            return 0;
-        structure->primary_val = 0;
-        if (type(structure->arguments) == parenth_form_t) {
-            pytuple *args = pytuple__init__();
-            args->values = list_node();
-            args->values->content = argument_vals;
-            return __call__(primary_val, args);
+        target_list = structure->arguments->content,
+        assign_expr_list = structure->arguments->next->content,
+        expressions = structure->arguments->next->next->content;
+        list *assign_target_list, *assign_value_list, *value_list, *ptr;
+        if (!list_is_empty(target_list)) {
+            assign_target_list = target_list;
+            assign_value_list = list_node();
+            for (ptr = assign_expr_list; ptr; ptr = ptr->next) {
+                void *value = gen_evaluate(ptr->content, env);
+                if (env->yield)
+                    return 0;
+                list_append_content(assign_value_list, value);
+            }
         }
-        return __call__(primary_val, argument_vals);
+        else {
+            assign_target_list = 0;
+            assign_value_list = 0;
+        }
+        if (!list_is_empty(expressions)) {
+            value_list = list_node();
+            for (ptr = expressions; ptr; ptr = ptr->next) {
+                void *value = gen_evaluate(ptr->content, env);
+                if (env->yield)
+                    return 0;
+                list_append_content(value_list, value);
+            }
+        }
+        else
+            value_list = 0;
+        pyargument *argument = (pyargument *)malloc(sizeof(pyargument));
+        argument->assign_target_list = assign_target_list;
+        argument->assign_value_list = assign_value_list;
+        argument->value_list = value_list;
+
+        return __call__(primary_val, argument);
     }
     else {
-        structure->primary_val = 0;
         return __call__(primary_val, 0);
     }
 }
@@ -639,7 +663,7 @@ void *gen_evaluate(void *structure, environment *env) {
         case expression_list_t:
             return expression_list_gen_evaluate((expression_list *)structure, env);
         default:
-            printf("[gen_evaluate]: can't gen_evaluate this structure, exit now\n");
-            exit(0);
+            printf("[gen_evaluate]: can't gen_evaluate this structure\n");
+            break;
     }
 }

@@ -4,6 +4,7 @@
 #include "evaluate.h"
 #include "environment.h"
 #include "pytype/pytuple.h"
+#include "pytype/others.h"
 
 typedef struct identifier identifier;
 typedef struct environment environment;
@@ -70,6 +71,8 @@ typedef struct for_stmt {
     list *suite_list;
     void *values_list; /* for yield */
     list *list_ptr;    /* for yield */
+    pyrange *range;    /* for range in yield */
+    pyint *index;      /* for range in yield */
 } for_stmt;
 
 typedef struct funcdef {
