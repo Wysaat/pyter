@@ -58,6 +58,13 @@ void *PARENTH_FORM(list *expr_head) {
     return retptr;
 }
 
+void *GENERATOR(suite *_suite) {
+    generator *retptr = (generator *)malloc(sizeof(generator));
+    retptr->type = generator_t;
+    retptr->_suite = _suite;
+    return retptr;
+}
+
 void *LIST_EXPR(list *expr_head) {
     list_expr *retptr = (list_expr *)malloc(sizeof(list_expr));
     memset(retptr, 0, sizeof(*retptr));
@@ -311,6 +318,10 @@ void *parenth_formEvaluate(parenth_form *structure, environment *env) {
         list_append_content(retptr->values, evaluate(ptr->content, env));
     }
     return retptr;
+}
+
+void *generatorEvaluate(generator *structure, environment *env) {
+    return pygenerator_init(structure->_suite, environment_init(env), 0);
 }
 
 void *list_exprEvaluate(list_expr *structure, environment *env) {
@@ -690,6 +701,8 @@ void *evaluate(void *structure, environment *env) {
             return str_exprEvaluate((str_expr *)structure);
         case parenth_form_t:
             return parenth_formEvaluate((parenth_form *)structure, env);
+        case generator_t:
+            return generatorEvaluate((generator *)structure, env);
         case list_expr_t:
             return list_exprEvaluate((list_expr *)structure, env);
         case list_comprehension_t:
@@ -815,6 +828,12 @@ void print_nnl(void *structure) {
             break;
         case pyrange_t:
             printf("%s", pystr_to_str(str(structure)));
+            break;
+        case pygenerator_t:
+            if (((pygenerator *)structure)->id)
+                printf("<generator object %s at %p>", ((pygenerator *)structure)->id, structure);
+            else
+                printf("<generator object %s at %p>", "<genexpr>", structure);
             break;
     }
 }

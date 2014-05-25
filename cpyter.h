@@ -32,6 +32,7 @@
 #include "pytype/pyclass.h"
 #include "pytype/others.h"
 #include "pytype/py__builtins__.h"
+#include "pytype/pygenerator.h"
 
 #include "environment.h"
 

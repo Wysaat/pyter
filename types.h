@@ -1,6 +1,6 @@
 enum types { identifier_t, int_expr_t, float_expr_t, imag_expr_t, str_expr_t,
              parenth_form_t, list_expr_t, set_expr_t, dict_expr_t,
-             list_comprehension_t, yield_atom_t,
+             list_comprehension_t, yield_atom_t, generator_t,
              attributeref_t, slice_expr_t, subsc_expr_t, slicing_t, subscription_t, call_t,
              power_t, u_expr_t, b_expr_t, comparison_t,
              not_test_t, conditional_expression_t, lambda_expr_t,

@@ -155,12 +155,8 @@ void *parse_atom(scanner *sc) {
         }
         else if (!strcmp(token, "for")) {
             rollback(sc);
-            list_append_content(expr_head, expression);
-            void *to_add = LIST_EXPR(expr_head);
-            void *right_side = B_EXPR(IDENTIFIER(0), "+", to_add);
-            void *stmt = ASSIGNMENT_STMT(IDENTIFIER(0), right_side);
+            void *stmt = YIELD_STMT(expression);
             list *stmts = list_node();
-            list_append_content(stmts, ASSIGNMENT_STMT(IDENTIFIER(0), LIST_EXPR(list_node())));
             list_append_content(stmts, parse_comp_for(sc, stmt));
             token = sc_read(sc);
             if (!strcmp(token, ")"))
@@ -1105,8 +1101,13 @@ void interpret(FILE *stream)
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
-    interpret(stdin);
+    FILE *stream;
+    if (argc == 1)
+        stream = stdin;
+    else if (argc == 2)
+        stream = fopen(argv[1], "r");
+    interpret(stream);
     return 0;
 }

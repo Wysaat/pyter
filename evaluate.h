@@ -57,6 +57,11 @@ typedef struct parenth_form {
     list *values;  /* for yield */
 } parenth_form;
 
+typedef struct generator {
+    int type;
+    suite *_suite;
+} generator;
+
 typedef struct list_expr {
     int type;
     list *expr_head;
@@ -183,6 +188,7 @@ void *IMAG_EXPR(char *);
 void *STR_EXPR(char *);
 void *POWER(void *primary, void *u__expr);
 void *PARENTH_FORM(list *);
+void *GENERATOR(suite *);
 void *LIST_EXPR(list *);
 void *SET_EXPR(list *);
 void *DICT_EXPR(list *, list *);
@@ -209,6 +215,7 @@ void *float_exprEvaluate(float_expr *);
 void *imag_exprEvaluate(imag_expr *);
 void *str_exprEvaluate(str_expr *);
 void *parenth_formEvaluate(parenth_form *, environment *);
+void *generatorEvaluate(generator *, environment *);
 void *list_exprEvaluate(list_expr *, environment *);
 void *set_exprEvaluate(set_expr *, environment *);
 void *dict_exprEvaluate(dict_expr *, environment *);

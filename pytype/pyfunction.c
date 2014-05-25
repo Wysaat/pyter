@@ -39,7 +39,7 @@ void *pyfunction__call__(void *lptr, void *rptr) {
     }
 
     if (func->yield)
-        return pygenerator_init(copy(func->fsuite), local_env);
+        return pygenerator_init(copy(func->fsuite), local_env, func->id->value);
 
     execute(func->fsuite, local_env, 0);
 

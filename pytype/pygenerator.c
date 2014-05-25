@@ -4,12 +4,13 @@
 #include "../types.h"
 #include "../gen_execute.h"
 
-pygenerator *pygenerator_init(void *_suite, environment *local_env) {
+pygenerator *pygenerator_init(void *_suite, environment *local_env, char *id) {
     pygenerator *retptr = (pygenerator *)malloc(sizeof(pygenerator));
     memset(retptr, 0, sizeof(retptr));
     retptr->type = pygenerator_t;
     retptr->_suite = _suite;
     retptr->local_env = local_env;
+    retptr->id = id;
     return retptr;
 }
 

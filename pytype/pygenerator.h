@@ -7,7 +7,8 @@ struct pygenerator {
     // pyclass *class;
     void *_suite;
     environment *local_env;
+    char *id;
 };
 
-pygenerator *pygenerator_init(void *_suite, environment *local_env);
+pygenerator *pygenerator_init(void *_suite, environment *local_env, char *id);
 pygenerator *pygenerator_next(void *);
