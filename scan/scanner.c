@@ -54,6 +54,8 @@ void sc_getline(scanner *sc) {
         sc->ind = 0;
         sc->eolf = 0;
     }
+    else
+        sc->eoff = 1;
 
     int i, indentation = 0;
     /*  not supporting tab now */

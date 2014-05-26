@@ -20,6 +20,7 @@ struct scanner {
     int indentf;
     int dedentf;
     int yield;  /* for yield */
+    int eoff;
 };
 
 scanner *sc_init(FILE *stream);
