@@ -11,7 +11,23 @@ scanner *sc_init(FILE *stream) {
     int *zero = (int *)malloc(sizeof(int));
     *zero = 0;
     retptr->indentation_stack->content = zero;
-    retptr->eolf = 1;
+    retptr->eolf = 0;
+    retptr->skip = (char *)malloc(4);
+    memset(retptr->skip, 0, 4);
+    retptr->skip[0] = ' ';
+    retptr->skip[1] = '\t';
+    retptr->ps1 = strdup(">>> ");
+    retptr->ps2 = strdup("... ");
+    sc_getline(retptr);
+    if (retptr->stream == stdin) {
+        while (retptr->ll == 1) {
+            if (feof(retptr->stream)) {
+                retptr->eoff = 1;
+                break;
+            }
+            sc_getline(retptr);
+        }
+    }
     return retptr;
 }
 
@@ -43,22 +59,66 @@ char *sc_readchs(scanner *sc, int len) {
 
 void sc_getline(scanner *sc) {
     if (sc->stream == stdin)
-        printf(">>> ");
+        printf("%s", sc->ps1);
     char *line = 0;
     size_t read, len = 0;
-    read = getline(&line, &len, sc->stream);
-    if (read != -1) {
-        sc->line = line;
-        sc->ln++;
-        sc->ll = read;
-        sc->ind = 0;
-        sc->eolf = 0;
+
+    if (sc->stream != stdin) {
+        char *ch_ptr;
+        int skip_the_line = 1;
+        while (1) {
+            read = getline(&line, &len, sc->stream);
+            if (read == -1) {
+                sc->eoff = 1;
+                return;
+            }
+            sc->ln++;
+            for (ch_ptr = line; *ch_ptr != '\n' && *ch_ptr != 0; ch_ptr++)
+                if (*ch_ptr != ' ' && *ch_ptr != '\t')
+                    skip_the_line = 0;
+            if (!skip_the_line) {
+                sc->line = line;
+                sc->ll = read;
+                sc->ind = 0;
+                sc->eolf = 0;
+                break;
+            }
+        }
     }
-    else
-        sc->eoff = 1;
+    else {
+        char *ch_ptr;
+        int skip_the_line = 1;
+        while (1) {
+            read = getline(&line, &len, sc->stream);
+            if (read == -1) {
+                puts("");
+                sc->eoff = 1;
+                return;
+            }
+            sc->ln++;
+            if (read == 1) {
+                sc->line = line;
+                sc->ll = read;
+                sc->ind = 0;
+                sc->eolf = 0;
+                break;
+            }
+            for (ch_ptr = line; *ch_ptr != '\n'; ch_ptr++)
+                if (*ch_ptr != ' ' && *ch_ptr != '\t')
+                    skip_the_line = 0;
+            if (!skip_the_line) {
+                sc->line = line;
+                sc->ll = read;
+                sc->ind = 0;
+                sc->eolf = 0;
+                break;
+            }
+            printf("%s", sc->ps2);
+        }
+    }
 
     int i, indentation = 0;
-    /*  not supporting tab now */
+    /* not supporting tabs now */
     for (i = 0; sc->line[i] == ' '; i++) {
         indentation++;
     }
@@ -108,4 +168,12 @@ void sc_dump(scanner *sc) {
     printf("scanner->eolf is %d\n", sc->eolf);
     printf("scanner->lasttk is %s\n", sc->lasttk);
     printf("-----end of scanner dump-----------------------------\n");
+}
+
+int sc_skip(scanner *sc, char ch) {
+    char *ptr;
+    for (ptr = sc->skip; *ptr; ptr++)
+        if (*ptr == ch)
+            return 1;
+    return 0;
 }

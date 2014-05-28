@@ -44,20 +44,26 @@ char *sc_read_str_lit(scanner *sc, buffer *buff) {
 char *sc_rread(scanner *sc, buffer *buff) { /* raw read */
     int i, j, k = 0;
     char *token;
-    while (sc_curch(sc) == ' ' || sc_curch(sc) == '\t')
-        sc->ind++;
-    if (sc_curch(sc) == 0) {
-        sc->eolf = 1;
-        sc->eoff = 1;
-        return 0;
+
+    while (1) {
+        while (sc_skip(sc, sc_curch(sc)))
+            sc->ind++;
+        if (sc_curch(sc) == 0) {
+            sc_getline(sc);
+            if (sc->eoff)
+                return 0;
+        }
+        else
+            break;
     }
+
     if (sc_curch(sc) == '\n') {
         sc->eolf = 1;
         return strdup("\n");
     }
     for (j = 3; j > 0; j--)
         if (is_spctk(sc_curchs(sc, j)))
-            return sc_readchs(sc, j);
+            return sc_readchs(sc, strlen(sc_curchs(sc, j)));
     if (sc_curch(sc) == '.') {
         if (sc_nxtch(sc) >= '0' && sc_nxtch(sc) <= '9')
             return sc_read_num_lit(sc, buff);
@@ -127,6 +133,10 @@ void *parse_atom(scanner *sc) {
     else if (is_str(token))
         return STR_EXPR(token);
     else if (!strcmp(token, "(")) {
+        char *ps = sc->ps1;
+        sc->ps1 = sc->ps2;
+        sc->skip[2] = '\n';
+
         list *endings = list_node();
         list_append_content(endings, ")");
         list *expr_head = list_node();
@@ -135,6 +145,8 @@ void *parse_atom(scanner *sc) {
             token = sc_read(sc);
             if (!strcmp(token, ")")) {
                 sc->yield = 1;
+                sc->ps1 = ps;
+                sc->skip[2] = 0;
                 return YIELD_ATOM(0);
             }
             rollback(sc);
@@ -142,27 +154,41 @@ void *parse_atom(scanner *sc) {
             token = sc_read(sc);
             if (!strcmp(token, ")")) {
                 sc->yield = 1;
+                sc->ps1 = ps;
+                sc->skip[2] = 0;
                 return YIELD_ATOM(expressions);
             }
         }
-        else if (!strcmp(token, ")"))
+        else if (!strcmp(token, ")")) {
+            sc->ps1 = ps;
+            sc->skip[2] = 0;
             return PARENTH_FORM(expr_head);
+        }
         rollback(sc);
         void *expression = parse_expression(sc);
         token = sc_read(sc);
-        if (!strcmp(token, ")"))
+        if (!strcmp(token, ")")) {
+            sc->ps1 = ps;
+            sc->skip[2] = 0;
             return expression;
+        }
         else if(!strcmp(token, ",")) {
             list_append_content(expr_head, expression);
             token = sc_read(sc);
-            if (!strcmp(token, ")"))
+            if (!strcmp(token, ")")) {
+                sc->ps1 = ps;
+                sc->skip[2] = 0;
                 return PARENTH_FORM(expr_head);
+            }
             rollback(sc);
             list_append_list(expr_head, pa_exprs(sc, endings));
             void *retptr = PARENTH_FORM(expr_head);
             token = sc_read(sc);
-            if (!strcmp(token, ")"))
+            if (!strcmp(token, ")")) {
+                sc->ps1 = ps;
+                sc->skip[2] = 0;
                 return retptr;
+            }
         }
         else if (!strcmp(token, "for")) {
             rollback(sc);
@@ -170,8 +196,11 @@ void *parse_atom(scanner *sc) {
             list *stmts = list_node();
             list_append_content(stmts, parse_comp_for(sc, stmt));
             token = sc_read(sc);
-            if (!strcmp(token, ")"))
+            if (!strcmp(token, ")")) {
+                sc->ps1 = ps;
+                sc->skip[2] = 0;
                 return GENERATOR(SUITE(stmts));
+            }
         }
     }
     else if (!strcmp(token, "[")) {
@@ -346,10 +375,8 @@ list *parse_argument_list(scanner *sc, char *ending) {
                 list_append_content(expressions, expression);
                 token = sc_read(sc);
                 rollback(sc);
-                if (!strcmp(token, ending)) {
-                    rollback(sc);
+                if (!strcmp(token, ending))
                     return retptr;
-                }
             }
             else if (!strcmp(token, ending)) {
                 list_append_content(expressions, expression);
@@ -924,6 +951,8 @@ void *parse_stmt_list(scanner *sc) {
 }
 
 void *parse_suite(scanner *sc) {
+    free(sc->ps1);
+    sc->ps1 = strdup("... ");
     char *token = sc_read(sc);
     if (!strcmp(token, "\n")) {
         if (!sc_read(sc) && sc->indentf--) {
@@ -1156,7 +1185,6 @@ void *parse_stmt(scanner *sc) {
 void interpret(FILE *stream)
 {
     environment *global_env = environment_init(0);
-    scanner *sc = sc_init(stream);
     char *token;
 
     def_print(global_env);
@@ -1165,12 +1193,23 @@ void interpret(FILE *stream)
     def_len(global_env);
     def_range(global_env);
 
+    scanner *sc = sc_init(stream);
+    if (sc->eoff)
+        return;
+
     while (1) {
         void *stmt = parse_stmt(sc);
-        execute(stmt, global_env, 1);
+        int pf = 0;
+        if (stream == stdin)
+            pf = 1;
+        execute(stmt, global_env, pf);
         if (stream == stdin && type(stmt) != stmt_list_t)
             token = sc_read(sc);  /* token should be "\n" */
+        free(sc->ps1);
+        sc->ps1 = strdup(">>> ");
         token = sc_read(sc);
+        while (token && !strcmp(token, "\n"))
+            token = sc_read(sc);
         if (!token && sc->eoff) {
             break;
         }

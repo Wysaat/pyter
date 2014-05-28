@@ -21,6 +21,8 @@ struct scanner {
     int dedentf;
     int yield;  /* for yield */
     int eoff;
+    char *skip;
+    char *ps1, *ps2; /* interpreter prompt strings */
 };
 
 scanner *sc_init(FILE *stream);
@@ -32,5 +34,6 @@ char sc_readch(scanner *sc);
 char *sc_readchs(scanner *sc, int len);
 void sc_getline(scanner *sc);
 void sc_dump(scanner *sc);
+int sc_skip(scanner *sc, char ch);
 
 #endif /* SCAN_SCANNER_H */
