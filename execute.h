@@ -44,6 +44,11 @@ typedef struct pass_stmt {
     int type;
 } pass_stmt;
 
+typedef struct import_stmt {
+    int type;
+    char *module_name;
+} import_stmt;
+
 typedef struct stmt_list {
     int type;
     list *stmts;
@@ -105,6 +110,7 @@ void *YIELD_STMT(void *);
 void *BREAK_STMT();
 void *CONTINUE_STMT();
 void *PASS_STMT();
+void *IMPORT_STMT(char *);
 void *STMT_LIST(list *);
 void *IF_STMT(list *condition_list, list *suite_list);
 void *WHILE_STMT(void *condition, list *suite_list);
@@ -119,6 +125,7 @@ void yield_stmtExecute(void *structure, environment *env, int pf);
 void break_stmtExecute(void *structure, environment *env, int pf);
 void continue_stmtExecute(void *structure, environment *env, int pf);
 void pass_stmtExecute(void *structure, environment *env, int pf);
+void import_stmtExecute(void *structure, environment *env, int pf);
 void stmt_listExecute(void *structure, environment *env, int pf);
 void if_stmtExecute(void *structure, environment *env, int pf);
 void while_stmtExecute(void *structure, environment *env, int pf);

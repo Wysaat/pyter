@@ -7,7 +7,7 @@ all:
 	pytype/pyint.c pytype/pyfloat.c pytype/pycomplex.c pytype/pystr.c pytype/pybool.c \
 	pytype/pylist.c pytype/pytuple.c \
 	pytype/pyfunction.c pytype/pyclass.c \
-	pytype/py__builtins__.c pytype/pygenerator.c pytype/others.c \
+	pytype/py__builtins__.c pytype/pygenerator.c pytype/others.c pytype/pymodule.c \
 	environment.c \
 	__builtins__.c \
 	scan/scanner.c scan/buffer.c scan/token.c -o $(OUT) -g -lm

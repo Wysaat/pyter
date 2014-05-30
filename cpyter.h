@@ -33,6 +33,7 @@
 #include "pytype/others.h"
 #include "pytype/py__builtins__.h"
 #include "pytype/pygenerator.h"
+#include "pytype/pymodule.h"
 
 #include "environment.h"
 
@@ -68,5 +69,7 @@ void *parse_stmt(scanner *);
 
 char *itoa(int );
 char *lltoa(long long );
+
+void interpret(FILE *stream, environment *env);
 
 #endif /* CPYTER_H */

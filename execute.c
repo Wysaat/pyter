@@ -10,6 +10,7 @@
 #include "pytype/others.h"
 #include "pytype/pyint.h"
 #include "pytype/pybool.h"
+#include "cpyter.h"
 
 void *EXPRESSION_STMT(void *expression_list) {
     expression_stmt *retptr = (expression_stmt *)malloc(sizeof(expression_stmt));
@@ -59,6 +60,14 @@ void *CONTINUE_STMT() {
 void *PASS_STMT() {
     pass_stmt *retptr = (pass_stmt *)malloc(sizeof(pass_stmt));
     retptr->type = pass_stmt_t;
+    return retptr;
+}
+
+void *IMPORT_STMT(char *module_name) {
+    import_stmt *retptr = (import_stmt *)malloc(sizeof(import_stmt));
+    memset(retptr, 0, sizeof(*retptr));
+    retptr->type = import_stmt_t;
+    retptr->module_name = module_name;
     return retptr;
 }
 
@@ -158,6 +167,15 @@ void continue_stmtExecute(void *structure, environment *env, int pf) {
 }
 
 void pass_stmtExecute(void *structure, environment *env, int pf) {
+}
+
+void import_stmtExecute(void *structure, environment *env, int pf) {
+    import_stmt *stmt = (import_stmt *)structure;
+    char *filename = stradd(stmt->module_name, ".py");
+    FILE *stream = fopen(filename, "r");
+    pymodule *mptr = pymodule_init(stmt->module_name);
+    interpret(stream, mptr->env);
+    store(env, IDENTIFIER(mptr->name), mptr);
 }
 
 void stmt_listExecute(void *structure, environment *env, int pf) {
@@ -317,6 +335,9 @@ void execute(void *structure, environment *env, int pf) {
             break;
         case pass_stmt_t:
             pass_stmtExecute(structure, env, pf);
+            break;
+        case import_stmt_t:
+            import_stmtExecute(structure, env, pf);
             break;
         case stmt_list_t:
             stmt_listExecute(structure, env, pf);

@@ -409,6 +409,10 @@ void *attributerefEvaluate(attributeref *structure, environment *env) {
         val_dict = list_node();
         class = &range_class;
     }
+    else if (type(primary_val) == pymodule_t) {
+        val_dict = ((pymodule *)primary_val)->env->val_dict;
+        class = 0;
+    }
 
     if (!list_is_empty(val_dict)) {
         for (ptr = val_dict; ptr; ptr = ptr->next) {

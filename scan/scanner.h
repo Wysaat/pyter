@@ -22,7 +22,9 @@ struct scanner {
     int yield;  /* for yield */
     int eoff;
     char *skip;
-    char *ps1, *ps2; /* interpreter prompt strings */
+    char *ps, *ps1, *ps2; /* interpreter prompt strings */
+    int skip_newlines;
+    int in_suite;
 };
 
 scanner *sc_init(FILE *stream);

@@ -18,6 +18,7 @@ scanner *sc_init(FILE *stream) {
     retptr->skip[1] = '\t';
     retptr->ps1 = strdup(">>> ");
     retptr->ps2 = strdup("... ");
+    retptr->ps = retptr->ps1;
     sc_getline(retptr);
     if (retptr->stream == stdin) {
         while (retptr->ll == 1) {
@@ -59,7 +60,7 @@ char *sc_readchs(scanner *sc, int len) {
 
 void sc_getline(scanner *sc) {
     if (sc->stream == stdin)
-        printf("%s", sc->ps1);
+        printf("%s", sc->ps);
     char *line = 0;
     size_t read, len = 0;
 
@@ -113,7 +114,7 @@ void sc_getline(scanner *sc) {
                 sc->eolf = 0;
                 break;
             }
-            printf("%s", sc->ps2);
+            printf("%s", "... ");
         }
     }
 
@@ -167,6 +168,10 @@ void sc_dump(scanner *sc) {
     printf("scanner->rbf is %d\n", sc->rbf);
     printf("scanner->eolf is %d\n", sc->eolf);
     printf("scanner->lasttk is %s\n", sc->lasttk);
+    printf("scanner->skip_newlines is %d\n", sc->skip_newlines);
+    printf("scanner->ps is %s\n", sc->ps);
+    printf("scanner->ps1 is %s\n", sc->ps1);
+    printf("scanner->ps2 is %s\n", sc->ps2);
     printf("-----end of scanner dump-----------------------------\n");
 }
 
