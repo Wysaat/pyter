@@ -118,10 +118,16 @@ void sc_getline(scanner *sc) {
         }
     }
 
+    if (sc->skip_newlines)
+        return;
+
     int i, indentation = 0;
     /* not supporting tabs now */
-    for (i = 0; sc->line[i] == ' '; i++) {
-        indentation++;
+    if (sc->line[0] == ' ' || sc->line[0] == '\t') {
+        char indent_with = sc->line[0];
+        for (i = 0; sc->line[i] == indent_with; i++) {
+            indentation++;
+        }
     }
 
     list *ptr = sc->indentation_stack;

@@ -10,23 +10,23 @@
 #include "gen_execute.h"
 
 parenth_form *parenth_form_copy(parenth_form *expr) {
-    list *expr_head = list_copy(expr->expr_head);
+    list *expr_head = copy(expr->expr_head);
     return PARENTH_FORM(expr_head);
 }
 
 list_expr *list_expr_copy(list_expr *expr) {
-    list *expr_head = list_copy(expr->expr_head);
+    list *expr_head = copy(expr->expr_head);
     return LIST_EXPR(expr_head);
 }
 
 set_expr *set_expr_copy(set_expr *expr) {
-    list *expr_head = list_copy(expr->expr_head);
+    list *expr_head = copy(expr->expr_head);
     return SET_EXPR(expr_head);
 }
 
 dict_expr *dict_expr_copy(dict_expr *expr) {
-    list *expr_head = list_copy(expr->expr_head);
-    list *expr_head2 = list_copy(expr->expr_head2);
+    list *expr_head = copy(expr->expr_head);
+    list *expr_head2 = copy(expr->expr_head2);
     return DICT_EXPR(expr_head, expr_head2);
 }
 
@@ -66,7 +66,7 @@ void *subscription_copy(subscription *expr) {
 }
 
 void *call_copy(call *ptr) {
-    return CALL(copy(ptr->primary), list_copy(ptr->arguments));
+    return CALL(copy(ptr->primary), copy(ptr->arguments));
 }
 
 void *power_copy(power *expr) {
@@ -85,7 +85,7 @@ comparison *comparison_copy(comparison *expr) {
     comparison *retptr = (comparison *)malloc(sizeof(comparison));
     memset(retptr, 0, sizeof(*retptr));
     retptr->type = comparison_t;
-    retptr->comparisons = list_copy(expr->comparisons);
+    retptr->comparisons = copy(expr->comparisons);
     return retptr;
 }
 
@@ -98,7 +98,7 @@ void *conditional_expression_copy(conditional_expression *expr) {
 }
 
 void *expression_list_copy(expression_list *expr) {
-    return EXPRESSION_LIST(list_copy(expr->expr_head));
+    return EXPRESSION_LIST(copy(expr->expr_head));
 }
 
 /* CAUTION env->val_dict could be an empty list */

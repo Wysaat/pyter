@@ -8,10 +8,11 @@ typedef struct pyclass pyclass;
 
 struct pyclass {
     int type;
+    int ref;
     pyclass *class;
     char *id;
     environment *env;
-    list *inheritance;
+    list *inheritance;  // can be zero
 };
 
 typedef struct instance instance;
@@ -26,5 +27,6 @@ pyclass *pyclass__init__(char *id);
 void *pyclass__getattribute__(void *, void *, pystr *);
 void *pyclass__call__(void *, void *);
 void pyclass__setattr__(void *, void *, pystr *attr, void *val);
+void pyclass_del(void *);
 
 #endif /* PYTYPE_PYCLASS_H */

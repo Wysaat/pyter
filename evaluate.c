@@ -106,6 +106,12 @@ void *YIELD_ATOM(void *expressions) {
     retptr->yielded = 0;
 }
 
+void yield_atom_del(void *vptr) {
+    yield_atom *ptr = (yield_atom *)vptr;
+    del(ptr->expressions);
+    free(ptr);
+}
+
 void *ATTRIBUTEREF(void *primary, identifier *id) {
     attributeref *retptr = (attributeref *)malloc(sizeof(attributeref));
     memset(retptr, 0, sizeof(*retptr));
@@ -275,6 +281,12 @@ void *identifierEvaluate(identifier *structure, environment *env) {
     }
 }
 
+void identifier_del(void *vptr) {
+    identifier *ptr = (identifier *)vptr;
+    free(ptr->value);
+    free(ptr);
+}
+
 void *int_exprEvaluate(int_expr *structure) {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
     retptr->type = pyint_t;
@@ -282,11 +294,23 @@ void *int_exprEvaluate(int_expr *structure) {
     return retptr;
 }
 
+void int_expr_del(void *vptr) {
+    int_expr *ptr = (int_expr *)vptr;
+    free(ptr->value);
+    free(ptr);
+}
+
 void *float_exprEvaluate(float_expr *structure) {
     pyfloat *retptr = (pyfloat *)malloc(sizeof(pyfloat));
     retptr->type = pyfloat_t;
     retptr->value = atof(structure->value);
     return retptr;
+}
+
+void float_expr_del(void *vptr) {
+    float_expr *ptr = (float_expr *)vptr;
+    free(ptr->value);
+    free(ptr);
 }
 
 void *imag_exprEvaluate(imag_expr *structure) {
@@ -300,11 +324,23 @@ void *imag_exprEvaluate(imag_expr *structure) {
     return retptr;
 }
 
+void imag_expr_del(void *vptr) {
+    imag_expr *ptr = (imag_expr *)vptr;
+    free(ptr->value);
+    free(ptr);
+}
+
 void *str_exprEvaluate(str_expr *structure) {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->type = pystr_t;
     retptr->value = strdup(strslice(structure->value, 1, -1, 1));
     return retptr;
+}
+
+void str_expr_del(void *vptr) {
+    str_expr *ptr = (str_expr *)vptr;
+    free(ptr->value);
+    free(ptr);
 }
 
 void *parenth_formEvaluate(parenth_form *structure, environment *env) {
@@ -320,8 +356,18 @@ void *parenth_formEvaluate(parenth_form *structure, environment *env) {
     return retptr;
 }
 
+void parenth_form_del(void *vptr) {
+    parenth_form *ptr = (parenth_form *)vptr;
+    del(ptr->expr_head);
+    free(ptr);
+}
+
 void *generatorEvaluate(generator *structure, environment *env) {
     return pygenerator_init(structure->_suite, environment_init(env), 0);
+}
+
+void generator_del(void *vptr) {
+    free(vptr);
 }
 
 void *list_exprEvaluate(list_expr *structure, environment *env) {
@@ -336,6 +382,12 @@ void *list_exprEvaluate(list_expr *structure, environment *env) {
     return retptr;
 }
 
+void list_expr_del(void *vptr) {
+    list_expr *ptr = (list_expr *)vptr;
+    del(ptr->expr_head);
+    free(ptr);
+}
+
 void *list_comprehensionEvaluate(list_comprehension *structure, environment *env) {
     environment *local_env = environment_init(env);
     execute(structure->_suite, local_env, 0);
@@ -347,6 +399,11 @@ void *list_comprehensionEvaluate(list_comprehension *structure, environment *env
     }
 }
 
+void list_comprehension_del(void *vptr) {
+    list_comprehension *ptr = (list_comprehension *)vptr;
+    del(ptr->_suite);
+    free(ptr);
+}
 
 void *set_exprEvaluate(set_expr *structure, environment *env) {
     pyset *retptr = (pyset *)malloc(sizeof(pyset));
@@ -359,6 +416,12 @@ void *set_exprEvaluate(set_expr *structure, environment *env) {
             list_append_content(retptr->values, val);
     }
     return retptr;
+}
+
+void set_expr_del(void *vptr) {
+    set_expr *ptr = (set_expr *)vptr;
+    del(ptr->expr_head);
+    free(ptr);
 }
 
 void *dict_exprEvaluate(dict_expr *structure, environment *env) {
@@ -382,6 +445,13 @@ void *dict_exprEvaluate(dict_expr *structure, environment *env) {
         ptr2 = ptr2->next;
     }
     return retptr;
+}
+
+void dict_expr_del(void *vptr) {
+    dict_expr *ptr = (dict_expr *)vptr;
+    del(ptr->expr_head);
+    del(ptr->expr_head2);
+    free(ptr);
 }
 
 void *attributerefEvaluate(attributeref *structure, environment *env) {
@@ -449,6 +519,12 @@ void *attributerefEvaluate(attributeref *structure, environment *env) {
     return __getattribute__(class, primary_val, PYSTR(structure->id->value));
 }
 
+void attributeref_del(void *vptr) {
+    attributeref *ptr = (attributeref *)vptr;
+    del(ptr->primary);
+    del(ptr->id);
+}
+
 void *slice_exprEvaluate(slice_expr *structure, environment *env) {
     pyslice *retptr = (pyslice *)malloc(sizeof(pyslice));
     retptr->type = pyslice_t;
@@ -458,16 +534,44 @@ void *slice_exprEvaluate(slice_expr *structure, environment *env) {
     return retptr;
 }
 
+void slice_expr_del(void *vptr) {
+    slice_expr *ptr = (slice_expr *)vptr;
+    del(ptr->start);
+    del(ptr->stop);
+    del(ptr->step);
+    free(ptr);
+}
+
 void *slicingEvaluate(slicing *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
     void *slice_val = evaluate(structure->slice, env);
     return __getitem__(primary_val, slice_val);
 }
 
+void slicing_del(void *vptr) {
+    slicing *ptr = (slicing *)vptr;
+    del(ptr->primary);
+    del(ptr->slice);
+    free(ptr);
+}
+
 void *subscriptionEvaluate(subscription *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
     void *subsc_val = evaluate(structure->subsc->value, env);
     return __getitem__(primary_val, subsc_val);
+}
+
+void subsc_expr_del(void *vptr) {
+    subsc_expr *ptr = (subsc_expr *)vptr;
+    del(ptr->value);
+    free(ptr);
+}
+
+void subscription_del(void *vptr) {
+    subscription *ptr = (subscription *)vptr;
+    del(ptr->primary);
+    del(ptr->subsc);
+    free(ptr);
 }
 
 void *callEvaluate(call *structure, environment *env) {
@@ -509,6 +613,19 @@ void *callEvaluate(call *structure, environment *env) {
     }
 }
 
+void call_del(void *vptr) {
+    call *ptr = (call *)vptr;
+    del(ptr->primary);
+    if (ptr->arguments) {
+        del(ptr->arguments->next->content);
+        del(ptr->arguments->next->next->content);
+        free(ptr->arguments->next->next);
+        free(ptr->arguments->next);
+        free(ptr->arguments);
+    }
+    free(ptr);
+}
+
 void *powerEvaluate(power *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
     void *u_expr_val = evaluate(structure->u_expr, env);
@@ -516,6 +633,13 @@ void *powerEvaluate(power *structure, environment *env) {
         integer *val = integer__pow__(((pyint *)primary_val)->value, ((pyint *)u_expr_val)->value);
         return PYINT(val);
     }
+}
+
+void power_del(void *vptr) {
+    power *ptr = (power *)vptr;
+    del(ptr->primary);
+    del(ptr->u_expr);
+    free(ptr);
 }
 
 void *u_exprEvaluate(u_expr *structure, environment *env) {
@@ -537,6 +661,13 @@ void *u_exprEvaluate(u_expr *structure, environment *env) {
             return val;
         }
     }
+}
+
+void u_expr_del(void *vptr) {
+    u_expr *ptr = (u_expr *)vptr;
+    free(ptr->op);
+    del(ptr->expr);
+    free(ptr);
 }
 
 void *b_exprEvaluate(b_expr *structure, environment *env) {
@@ -614,6 +745,14 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
     }
 }
 
+void b_expr_del(void *vptr) {
+    b_expr *ptr = (b_expr *)vptr;
+    free(ptr->op);
+    del(ptr->left);
+    del(ptr->right);
+    free(ptr);
+}
+
 void *not_testEvaluate(not_test *structure, environment *env) {
     integer *zero = INTEGER_NODE();
     int *expr_val = evaluate(structure->expr, env);
@@ -633,6 +772,12 @@ void *not_testEvaluate(not_test *structure, environment *env) {
     }
 }
 
+void not_test_del(void *vptr) {
+    not_test *ptr = (not_test *)vptr;
+    del(ptr->expr);
+    free(ptr);
+}
+
 void *comparisonEvaluate(comparison *structure, environment *env) {
     list *ptr;
     int *val;
@@ -644,6 +789,12 @@ void *comparisonEvaluate(comparison *structure, environment *env) {
             return PYBOOL(0);
     }
     return PYBOOL(1);
+}
+
+void comparison_del(void *vptr) {
+    comparison *ptr = (comparison *)vptr;
+    del(ptr->comparisons);
+    free(ptr);
 }
 
 void *conditional_expressionEvaluate(conditional_expression *structure, environment *env) {
@@ -659,6 +810,14 @@ void *conditional_expressionEvaluate(conditional_expression *structure, environm
         return retptr;
     retptr = evaluate(structure->expr, env);
     return retptr;
+}
+
+void conditional_expression_del(void *vptr) {
+    conditional_expression *ptr = (conditional_expression *)vptr;
+    del(ptr->or_test);
+    del(ptr->or_test2);
+    del(ptr->expr);
+    free(ptr);
 }
 
 void *lambda_exprEvaluate(lambda_expr *structure, environment *env) {
@@ -677,6 +836,11 @@ void *lambda_exprEvaluate(lambda_expr *structure, environment *env) {
     return retptr;
 }
 
+void lambda_expr_del(void *vptr) {
+    lambda_expr *ptr = (lambda_expr *)vptr;
+    free(ptr);
+}
+
 void *expression_listEvaluate(expression_list *structure, environment *env) {
     list *expr_ptr;
     list *value_list = list_node();
@@ -688,6 +852,11 @@ void *expression_listEvaluate(expression_list *structure, environment *env) {
     return retptr;
 }
 
+void expression_list_del(void *vptr) {
+    expression_list *ptr = (expression_list *)vptr;
+    free(ptr->expr_head);
+    free(ptr);
+}
 
 void *evaluate(void *structure, environment *env) {
     if (!structure)
@@ -817,9 +986,9 @@ void print_nnl(void *structure) {
             break;
         case pyfunction_t:
             if (((pyfunction *)structure)->id)
-                printf("<function %s at %p>", ((pyfunction *)structure)->id->value, structure);
+                printf("<function %s at %p>", ((pyfunction *)structure)->id->value, &structure);
             else
-                printf("<function %s at %p>", "<lambda>", structure);
+                printf("<function %s at %p>", "<lambda>", &structure);
             break;
         case pyNone_t:
             printf("None");
@@ -850,4 +1019,92 @@ void print(void *structure) {
 
 int type(void *val) {
     return *(int *)val;
+}
+
+int ref(void *val) {
+    return *((int *)val+1);
+}
+
+void ref_inc(void *val) {
+    ++(*((int *)val+1));
+    list *ptr;
+    if (type(val) == pylist_t) {
+        if (list_is_empty(((pylist *)val)->values))
+            return;
+        for (ptr = ((pylist *)val)->values; ptr; ptr = ptr->next)
+            ref_inc(ptr->content);
+    }
+    else if (type(val) == pytuple_t) {
+        if (list_is_empty(((pytuple *)val)->values))
+            return;
+        for (ptr = ((pytuple *)val)->values; ptr; ptr = ptr->next)
+            ref_inc(ptr->content);
+    }
+    else if (type(val) == pyset_t) {
+        if (list_is_empty(((pyset *)val)->values))
+            return;
+        for (ptr = ((pyset *)val)->values; ptr; ptr = ptr->next)
+            ref_inc(ptr->content);
+    }
+    else if (type(val) == pydict_t) {
+        if (list_is_empty(((pydict *)val)->keys))
+            return;
+        for (ptr = ((pydict *)val)->keys; ptr; ptr = ptr->next)
+            ref_inc(ptr->content);
+        for (ptr = ((pydict *)val)->values; ptr; ptr = ptr->next)
+            ref_inc(ptr->content);
+    }
+    else if (type(val) == pyfunction_t) {
+        if (!((pyfunction *)val)->assign_values)
+            return;
+        ref_inc(((pyfunction *)val)->assign_values);
+    }
+    else if (type(val) == pyclass_t) {
+        if (!((pyclass *)val)->inheritance)
+            return;
+        for (ptr = ((pyclass *)val)->inheritance; ptr; ptr = ptr->next)
+            ref_inc(ptr->content);
+    }
+}
+
+void ref_dec(void *val) {
+    --(*((int *)val+1));
+    list *ptr;
+    if (type(val) == pylist_t) {
+        if (list_is_empty(((pylist *)val)->values))
+            return;
+        for (ptr = ((pylist *)val)->values; ptr; ptr = ptr->next)
+            ref_dec(ptr->content);
+    }
+    else if (type(val) == pytuple_t) {
+        if (list_is_empty(((pytuple *)val)->values))
+            return;
+        for (ptr = ((pytuple *)val)->values; ptr; ptr = ptr->next)
+            ref_dec(ptr->content);
+    }
+    else if (type(val) == pyset_t) {
+        if (list_is_empty(((pyset *)val)->values))
+            return;
+        for (ptr = ((pyset *)val)->values; ptr; ptr = ptr->next)
+            ref_dec(ptr->content);
+    }
+    else if (type(val) == pydict_t) {
+        if (list_is_empty(((pydict *)val)->keys))
+            return;
+        for (ptr = ((pydict *)val)->keys; ptr; ptr = ptr->next)
+            ref_dec(ptr->content);
+        for (ptr = ((pydict *)val)->values; ptr; ptr = ptr->next)
+            ref_dec(ptr->content);
+    }
+    else if (type(val) == pyfunction_t) {
+        if (!((pyfunction *)val)->assign_values)
+            return;
+        ref_dec(((pyfunction *)val)->assign_values);
+    }
+    else if (type(val) == pyclass_t) {
+        if (!((pyclass *)val)->inheritance)
+            return;
+        for (ptr = ((pyclass *)val)->inheritance; ptr; ptr = ptr->next)
+            ref_dec(ptr->content);
+    }
 }

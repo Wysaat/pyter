@@ -10,6 +10,7 @@ typedef struct pyfunction pyfunction;
 
 struct pyfunction {
     int type;
+    int ref;
     identifier *id;
     list *parameters;
     void *fsuite;
@@ -21,5 +22,6 @@ struct pyfunction {
 };
 
 void *pyfunction__call__(void *, void *);
+void pyfunction_del(void *);
 
 #endif /* PYTYPE_PYFUNCTION_H */

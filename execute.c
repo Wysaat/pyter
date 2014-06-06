@@ -45,6 +45,12 @@ void *YIELD_STMT(void *expressions) {
     return retptr;
 }
 
+void yield_stmt_del(void *vptr) {
+    yield_stmt *ptr = (yield_stmt *)vptr;
+    del(ptr->expressions);
+    free(ptr);
+}
+
 void *BREAK_STMT() {
     break_stmt *retptr = (break_stmt *)malloc(sizeof(break_stmt));
     retptr->type = break_stmt_t;
@@ -68,6 +74,19 @@ void *IMPORT_STMT(char *module_name) {
     memset(retptr, 0, sizeof(*retptr));
     retptr->type = import_stmt_t;
     retptr->module_name = module_name;
+    return retptr;
+}
+
+void *DEL_STMT(void *expressions) {
+    del_stmt *retptr = (del_stmt *)malloc(sizeof(del_stmt));
+    memset(retptr, 0, sizeof(*retptr));
+    retptr->type = del_stmt_t;
+    if (type(expressions) == expression_list_t)
+        retptr->target_list = ((expression_list *)expressions)->expr_head;
+    else {
+        retptr->target_list = list_node();
+        list_append_content(retptr->target_list, expressions);
+    }
     return retptr;
 }
 
@@ -146,6 +165,12 @@ void expression_stmtExecute(void *structure, environment *env, int pf) {
         print(ptr);
 }
 
+void expression_stmt_del(void *vptr) {
+    expression_stmt *ptr = (expression_stmt *)vptr;
+    del(ptr->expression_list);
+    free(ptr);
+}
+
 void assignment_stmtExecute(void *structure, environment *env, int pf) {
     assignment_stmt *stmt = (assignment_stmt *)structure;
     void *targets = stmt->targets;
@@ -153,20 +178,44 @@ void assignment_stmtExecute(void *structure, environment *env, int pf) {
     store(env, targets, values);
 }
 
+void assignment_stmt_del(void *vptr) {
+    assignment_stmt *ptr = (assignment_stmt *)vptr;
+    del(ptr->expressions);
+    free(ptr);
+}
+
 void return_stmtExecute(void *structure, environment *env, int pf) {
     return_stmt *stmt = (return_stmt *)structure;
     env->ret = evaluate(stmt->expressions, env);
+}
+
+void return_stmt_del(void *vptr) {
+    return_stmt *ptr = (return_stmt *)vptr;
+    del(ptr->expressions);
+    free(ptr);
 }
 
 void break_stmtExecute(void *structure, environment *env, int pf) {
     env->_break = 1;
 }
 
+void break_stmt_del(void *vptr) {
+    free(vptr);
+}
+
 void continue_stmtExecute(void *structure, environment *env, int pf) {
     env->_continue = 1;
 }
 
+void continue_stmt_del(void *vptr) {
+    free(vptr);
+}
+
 void pass_stmtExecute(void *structure, environment *env, int pf) {
+}
+
+void pass_stmt_del(void *vptr) {
+    free(vptr);
 }
 
 void import_stmtExecute(void *structure, environment *env, int pf) {
@@ -178,6 +227,39 @@ void import_stmtExecute(void *structure, environment *env, int pf) {
     store(env, IDENTIFIER(mptr->name), mptr);
 }
 
+void import_stmt_del(void *vptr) {
+    import_stmt *ptr = (import_stmt *)vptr;
+    free(ptr->module_name);
+    free(ptr);
+}
+
+void del_stmtExecute(void *structure, environment *env, int pf) {
+    del_stmt *stmt = (del_stmt *)structure;
+    list *ptr, *ptr2;
+    for (ptr = stmt->target_list; ptr; ptr = ptr->next) {
+        if (type(ptr->content) == identifier_t) {
+            for (ptr2 = env->val_dict; ptr2; ptr2 = ptr2->next) {
+                val_dict_entry *entry = (val_dict_entry *)ptr2->content;
+                if (!strcmp(entry->id, ((identifier *)ptr->content)->value)) {
+                    del(entry->value);
+                    if (ptr2->prev)
+                        ptr2->prev->next = ptr2->next;
+                    if (ptr2->next)
+                        ptr2->next->prev = ptr2->prev;
+                    free(ptr2->content);
+                    free(ptr2);
+                }
+            }
+        }
+    }
+}
+
+void del_stmt_del(void *vptr) {
+    del_stmt *ptr = (del_stmt *)vptr;
+    del(ptr->target_list);
+    free(ptr);
+}
+
 void stmt_listExecute(void *structure, environment *env, int pf) {
     stmt_list *stmt = (stmt_list *)structure;
     list *ptr;
@@ -186,19 +268,37 @@ void stmt_listExecute(void *structure, environment *env, int pf) {
     }
 }
 
+void stmt_list_del(void *vptr) {
+    stmt_list *ptr = (stmt_list *)vptr;
+    del(ptr->stmts);
+    free(ptr);
+}
+
 void if_stmtExecute(void *structure, environment *env, int pf) {
     if_stmt *stmt= (if_stmt *)structure;
     list *ptr1, *ptr2;
     for (ptr1 = stmt->condition_list, ptr2 = stmt->suite_list;
              ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next) {
-        /* MEMORY LEAKAGE */
-        if (is_true(__bool__(evaluate(ptr1->content, env)))) {
+        void *temp1 = evaluate(ptr1->content, env);
+        pybool *temp2 = __bool__(temp1);
+        if (is_true(temp2)) {
             execute(ptr2->content, env, pf);
+            del(temp2);
+            del(temp1);
             return;
         }
+        del(temp2);
+        del(temp1);
     }
     if (ptr2)
         execute(ptr2->content, env, pf);
+}
+
+void if_stmt_del(void *vptr) {
+    if_stmt *ptr = (if_stmt *)vptr;
+    del(ptr->condition_list);
+    del(ptr->suite_list);
+    free(ptr);
 }
 
 void while_stmtExecute(void *structure, environment *env, int pf) {
@@ -220,6 +320,13 @@ void while_stmtExecute(void *structure, environment *env, int pf) {
     }
     if (stmt->suite_list->next)
         execute(stmt->suite_list->next->content, env, pf);
+}
+
+void while_stmt_del(void *vptr) {
+    while_stmt *ptr = (while_stmt *)vptr;
+    del(ptr->condition);
+    del(ptr->suite_list);
+    free(ptr);
 }
 
 void for_stmtExecute(void *structure, environment *env, int pf) {
@@ -269,6 +376,14 @@ void for_stmtExecute(void *structure, environment *env, int pf) {
     }
 }
 
+void for_stmt_del(void *vptr) {
+    for_stmt *ptr = (for_stmt *)vptr;
+    del(ptr->targets);
+    del(ptr->expressions);
+    del(ptr->suite_list);
+    free(ptr);
+}
+
 void funcdefExecute(void *structure, environment *env, int pf) {
     funcdef *stmt = (funcdef *)structure;
     pyfunction *func = (pyfunction *)malloc(sizeof(pyfunction));
@@ -287,9 +402,14 @@ void funcdefExecute(void *structure, environment *env, int pf) {
     store(env, stmt->id, func);
 }
 
+void funcdef_del(void *vptr) {
+    funcdef *ptr = (funcdef *)vptr;
+    free(ptr);
+}
+
 void classdefExecute(void *structure, environment *env, int pf) {
     classdef *stmt = (classdef *)structure;
-    pyclass *class = pyclass__init__(stmt->id->value);
+    pyclass *class = pyclass__init__(strdup(stmt->id->value));
     if (stmt->inheritance) {
         class->inheritance = list_node();
         list *ptr;
@@ -303,11 +423,26 @@ void classdefExecute(void *structure, environment *env, int pf) {
     store(env, stmt->id, class);
 }
 
+void classdef_del(void *vptr) {
+    classdef *ptr = (classdef *)vptr;
+    del(ptr->id);
+    if (ptr->inheritance)
+        del(ptr->inheritance);
+    del(ptr->_suite);
+    free(ptr);
+}
+
 void suiteExecute(void *structure, environment *env, int pf) {
     suite *stmt = (suite *)structure;
     list *ptr;
     for (ptr = stmt->stmts; ptr; ptr = ptr->next)
         execute(ptr->content, env, pf);
+}
+
+void suite_del(void *vptr) {
+    suite *ptr = (suite *)vptr;
+    del(ptr->stmts);
+    free(ptr);
 }
 
 /*
@@ -338,6 +473,9 @@ void execute(void *structure, environment *env, int pf) {
             break;
         case import_stmt_t:
             import_stmtExecute(structure, env, pf);
+            break;
+        case del_stmt_t:
+            del_stmtExecute(structure, env, pf);
             break;
         case stmt_list_t:
             stmt_listExecute(structure, env, pf);

@@ -30,7 +30,7 @@ yield_stmt *yield_stmt_copy(yield_stmt *stmt) {
 stmt_list *stmt_list_copy(stmt_list *stmt) {
     stmt_list *retptr = (stmt_list *)malloc(sizeof(stmt_list));
     retptr->type = stmt_list_t;
-    retptr->stmts = list_copy(stmt->stmts);
+    retptr->stmts = copy(stmt->stmts);
     retptr->ptr = 0;
     return retptr;
 }
@@ -38,8 +38,8 @@ stmt_list *stmt_list_copy(stmt_list *stmt) {
 if_stmt *if_stmt_copy(if_stmt *stmt) {
     if_stmt *retptr = (if_stmt *)malloc(sizeof(if_stmt));
     retptr->type = if_stmt_t;
-    retptr->condition_list = list_copy(stmt->condition_list);
-    retptr->suite_list = list_copy(stmt->suite_list);
+    retptr->condition_list = copy(stmt->condition_list);
+    retptr->suite_list = copy(stmt->suite_list);
     retptr->ptr1 = 0;
     retptr->ptr2 = 0;
     return retptr;
@@ -49,7 +49,7 @@ while_stmt *while_stmt_copy(while_stmt *stmt) {
     while_stmt *retptr = (while_stmt *)malloc(sizeof(while_stmt));
     retptr->type = while_stmt_t;
     retptr->condition = copy(stmt->condition);
-    retptr->suite_list = list_copy(stmt->suite_list);
+    retptr->suite_list = copy(stmt->suite_list);
     retptr->cond_val = 0;
 }
 
@@ -58,7 +58,7 @@ for_stmt *for_stmt_copy(for_stmt *stmt) {
     retptr->type = for_stmt_t;
     retptr->targets = copy(stmt->targets);
     retptr->expressions = copy(stmt->expressions);
-    retptr->suite_list = list_copy(stmt->suite_list);
+    retptr->suite_list = copy(stmt->suite_list);
     retptr->values_list = 0;
     retptr->list_ptr = 0;
     return retptr;
@@ -67,7 +67,7 @@ for_stmt *for_stmt_copy(for_stmt *stmt) {
 suite *suite_copy(suite *stmt) {
     suite *retptr = (suite *)malloc(sizeof(suite));
     retptr->type = suite_t;
-    retptr->stmts = list_copy(stmt->stmts);
+    retptr->stmts = copy(stmt->stmts);
     retptr->ptr = 0;
     return retptr;
 }

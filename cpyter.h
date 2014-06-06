@@ -53,7 +53,7 @@ list *pa_exprs(scanner *sc, list *endings);
 list **pa_dict_items(scanner *);
 void *pa_sll_or_subs(scanner *);
 void *parse_expression_list(scanner *sc, list *endings);
-void *parse_target_list(scanner *sc, char *ending);
+void *parse_target_list(scanner *sc, list *endings);
 list *parse_argument_list(scanner *sc, char *ending);
 void *parse_comp_for(scanner *sc, void *expression);
 void *parse_comp_if(scanner *sc, void *expression);

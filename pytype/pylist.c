@@ -26,13 +26,13 @@ void pylist__append__(pylist *left, void *rvoid) {
     list_append_content(left->values, rvoid);
 }
 
+/* lvoid, rvoid should not be changed */
 pylist *pylist__mul__(void *lvoid, void *rvoid) {
     pylist *left = (pylist *)lvoid;
-    pyint *times = (pyint *)rvoid;
+    pyint *times = pyint_cpy(rvoid);
     pylist *retptr = pylist__init__();
 
-    pyint *zero = pyint__init__();
-    zero->value = INTEGER_NODE();
+    pyint *zero = int_to_pyint(0);
 
     while (is_true(pyint__gt__(times, zero))) {
         list *to_append = list_cpy(left->values);
@@ -40,6 +40,7 @@ pylist *pylist__mul__(void *lvoid, void *rvoid) {
         pyint__dec__(times);
     }
     pyint__del__(zero);
+    pyint__del__(times);
 
     return retptr;  
 }
@@ -95,28 +96,33 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
         for (ptr = left->values; is_true(pyint__lt__(ind, right)); pyint__inc__(ind))
             ptr = ptr->next;
         pyint__del__(ind);
+        ref_dec(ptr->content);
         ptr->content = value;
+        ref_inc(value);
     }
     else if (type(rvoid) == pyslice_t) {
         pyslice *right = (pyslice *)rvoid;
-        pyint *one = pyint__init__();
-        one->value = INTEGER_NODE();
-        one->value->value = 1;
+        pyint *one = int_to_pyint(1);
         list *ptr2;
         if (is_true(pyint__eq__(right->step, one))) {
             for (ptr = left->values; is_true(pyint__lt__(ind, right->start)); pyint__inc__(ind))
                 ptr = ptr->next;
             ptr = ptr->prev;
             ind->value->value = 0;
-            for (ptr2 = left->values; is_true(pyint__lt__(ind, right->stop)); pyint__inc__(ind))
+            for (ptr2 = ptr->next; is_true(pyint__lt__(ind, right->stop)); pyint__inc__(ind)) {
+                ref_dec(ptr2->content);
                 ptr2 = ptr2->next;
+            }
             if (type(value) == pylist_t) {
                 list *to_add = list_cpy(((pylist *)value)->values);
                 ptr->next = to_add;
                 to_add->prev = ptr;
                 list *ptr3 = to_add;
-                while (ptr3->next)
+                while (ptr3->next) {
+                    ref_inc(ptr3->content);
                     ptr3 = ptr3->next;
+                }
+                ref_inc(ptr3);
                 ptr3->next = ptr2;
                 ptr2->prev = ptr3;
                 pyint__del__(one);
@@ -124,7 +130,7 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
             }
         }
         else {
-            pyint *zero = pyint__init__(); zero->value = INTEGER_NODE();
+            pyint *zero = int_to_pyint(0);
             pyint *delt, *mo;
             if (type(value) == pylist_t) {
                 pylist *to_add = (pylist *)value;
@@ -134,7 +140,9 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
                         delt = pyint__sub__(ind, right->start);
                         mo = pyint__mod__(delt, right->step);
                         if (is_true(pyint__eq__(mo, zero))) {
+                            ref_dec(ptr->content);
                             ptr->content = ptr2->content;
+                            ref_inc(ptr2->content);
                             ptr2 = ptr2->next;
                         }
                         pyint__del__(mo);
@@ -151,4 +159,10 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
 pyint *pylist__len__(void *vptr) {
     pylist *ptr = (pylist *)vptr;
     return int_to_pyint(list_len(ptr->values));
+}
+
+void pylist_del(void *vptr) {
+    pylist *ptr = (pylist *)vptr;
+    del(ptr->values);
+    free(ptr);
 }

@@ -6,6 +6,7 @@
 typedef struct pycomplex pycomplex;
 struct pycomplex {
     int type;
+    int ref;
     pyfloat *real;
     pyfloat *imag;
 };

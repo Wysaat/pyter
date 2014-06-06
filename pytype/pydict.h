@@ -6,6 +6,7 @@
 typedef struct pydict pydict;
 struct pydict {
 	int type;
+	int ref;
 	list *keys;
 	list *values;
 };

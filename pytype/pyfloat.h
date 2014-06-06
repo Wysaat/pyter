@@ -4,6 +4,7 @@
 typedef struct pyfloat pyfloat;
 struct pyfloat {
     int type;
+    int ref;
     double value;
 };
 

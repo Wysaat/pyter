@@ -111,11 +111,13 @@ char *sc_read(scanner *sc) {
         return 0;
     buffer *buff = buff_init();
     char *retptr = sc_rread(sc, buff);
-    if (!strcmp(retptr, "(") || !strcmp(retptr, "[") || !strcmp(retptr, "{")) {
-        sc->skip_newlines++;
-    }
-    else if (!strcmp(retptr, ")") || !strcmp(retptr, "]") || !strcmp(retptr, "}")) {
-        sc->skip_newlines--;
+    if (retptr) {
+        if (!strcmp(retptr, "(") || !strcmp(retptr, "[") || !strcmp(retptr, "{")) {
+            sc->skip_newlines++;
+        }
+        else if (!strcmp(retptr, ")") || !strcmp(retptr, "]") || !strcmp(retptr, "}")) {
+            sc->skip_newlines--;
+        }
     }
     if (!sc->skip_newlines) {
         sc->ps = sc->ps1;
@@ -804,24 +806,28 @@ void *parse_expression_list(scanner *sc, list *endings) {
 }
 
 /* actually parse_atom_list */
-void *parse_target_list(scanner *sc, char *ending) {
-    void *target = parse_atom(sc);
+void *parse_target_list(scanner *sc, list *endings) {
+    void *target = parse_primary(sc);
     char *token = sc_read(sc);
     if (!strcmp(token, ",")) {
         token = sc_read(sc);
         rollback(sc);
-        if (!strcmp(token, ending))
-            return target;
+        list *ptr;
+        for (ptr = endings; ptr; ptr = ptr->next)
+            if (!strcmp(token, (char *)ptr->content))
+                return target;
         list *targets = list_node();
         list_append_content(targets, target);
         while (1) {
-            list_append_content(targets, parse_atom(sc));
+            list_append_content(targets, parse_primary(sc));
             token = sc_read(sc);
             if (!strcmp(token, ",")) {
                 token = sc_read(sc);
                 rollback(sc);
-                if (!strcmp(token, ending))
-                    return EXPRESSION_LIST(targets);
+                list *ptr;
+                for (ptr = endings; ptr; ptr = ptr->next)
+                    if (!strcmp(token, (char *)ptr->content))
+                        return EXPRESSION_LIST(targets);
             }
             else {
                 rollback(sc);
@@ -838,7 +844,9 @@ void *parse_target_list(scanner *sc, char *ending) {
 void *parse_comp_for(scanner *sc, void *stmt) {
     char *token = sc_read(sc);  // it should be "for"
     list *suite_list = list_node();
-    void *targets = parse_target_list(sc, "in");
+    list *endings = list_node();
+    list_append_content(endings, "in");
+    void *targets = parse_target_list(sc, endings);
     token = sc_read(sc);
     if (!strcmp(token, "in")) {
         void *or_test_expr = parse_or_test(sc);
@@ -920,6 +928,12 @@ void *parse_simple_stmt(scanner *sc) {
             }
         }
     }
+    else if (!strcmp(token, "del")) {
+        list *endings = list_node();
+        list_append_content(endings, ";");
+        list_append_content(endings, "\n");
+        return DEL_STMT(parse_target_list(sc, endings));
+    }
     else {
         rollback(sc);
         list_append_content(endings, "=");
@@ -930,6 +944,19 @@ void *parse_simple_stmt(scanner *sc) {
         if (!strcmp(token, "=")) {
             void *expression_list2 = parse_expression_list(sc, endings);
             return ASSIGNMENT_STMT(expression_list1, expression_list2);
+        }
+        else if (!strcmp(token, "**=")) {
+            void *augtarget = expression_list1;
+            void *expression_list2 = parse_expression_list(sc, endings);
+            void *augvalue = POWER(augtarget, expression_list2);
+            return ASSIGNMENT_STMT(augtarget, augvalue);
+        }
+        else if (is_augop(token)) {
+            token[strlen(token)-1] = 0;
+            void *augtarget = expression_list1;
+            void *expression_list2 = parse_expression_list(sc, endings);
+            void *augvalue = B_EXPR(augtarget, token, expression_list2);
+            return ASSIGNMENT_STMT(augtarget, augvalue);
         }
         else {
             rollback(sc);
@@ -1049,7 +1076,8 @@ void *parse_while_stmt(scanner *sc) {
 void *parse_for_stmt(scanner *sc) {
     char *token = sc_read(sc);  // it should be "for"
     list *suite_list = list_node(), *endings = list_node();
-    void *targets = parse_target_list(sc, "in");
+    list_append_content(endings, "in");
+    void *targets = parse_target_list(sc, endings);
     token = sc_read(sc);
     if (!strcmp(token, "in")) {
         list_append_content(endings, ":");
@@ -1220,6 +1248,7 @@ void interpret(FILE *stream, environment *env)
             token = sc_read(sc);  /* token should be "\n" */
             sc->ps = sc->ps1;
         }
+        del(stmt);
         token = sc_read(sc);
         while (token && !strcmp(token, "\n"))
             token = sc_read(sc);

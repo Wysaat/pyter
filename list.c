@@ -9,6 +9,7 @@
 #include "pytype/methods.h"
 #include "pytype/pybool.h"
 #include "types.h"
+#include "environment.h"
 
 list *list_node() {
     list *retptr = (list *)malloc(sizeof(list));
@@ -37,11 +38,11 @@ list *list_cpy(list *head) {
     return retptr;
 }
 
-
-/* NOT deleting the content */
 void list_del(list *head) {
     list *ptr = head, *tmp;
     while (ptr) {
+        if (ptr->content)
+            del(ptr->content);
         tmp = ptr;
         ptr = ptr->next;
         free(tmp);
@@ -88,7 +89,12 @@ void list_append_list(list *list1, list *list2) {
         }
     }
 
-    list_del(list2);
+    list *ptr = list2, *tmp;
+    while (ptr) {
+        tmp = ptr;
+        ptr = ptr->next;
+        free(tmp);
+    }
 }
 
 void list_append_content(list *head, void *content) {

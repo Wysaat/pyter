@@ -4,6 +4,7 @@ typedef struct pymodule pymodule;
 
 struct pymodule {
     int type;
+    int ref;
     char *name;
     environment *env;
 };

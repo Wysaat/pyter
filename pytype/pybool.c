@@ -21,3 +21,7 @@ pybool *pybool__bool__(void *ptr) {
 int is_true(pybool *boolval) {
 	return boolval->value;
 }
+
+void pybool_del(void *vptr) {
+    free(vptr);
+}

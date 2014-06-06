@@ -69,3 +69,11 @@ int is_str(char *token) {
         return 1;
     return 0;
 }
+
+int is_augop(char *token) {
+    int len = sizeof(augops) / sizeof(*augops), i;
+    for (i = 0; i < len; i++)
+        if (!strcmp(token, augops[i]))
+            return 1;
+    return 0;
+}

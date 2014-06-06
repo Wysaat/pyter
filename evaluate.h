@@ -118,7 +118,7 @@ typedef struct subscription {
 typedef struct call {
     int type;
     void *primary;
-    list *arguments;
+    list *arguments;  // can be 0
     void *primary_val;  /* for yield */
 } call;
 
@@ -180,6 +180,7 @@ struct expression_list {
 };
 
 int type(void *);
+int ref(void *);
 
 void *IDENTIFIER(char *);
 void *INT_EXPR(char *);
@@ -209,6 +210,9 @@ void *EXPRESSION_LIST(list *);
 void *PYINT(integer *);
 void *PYSTR(char *);
 
+void identifier_del(void *vptr);
+void int_expr_del(void *vptr);
+
 void *identifierEvaluate(identifier *, environment *);
 void *int_exprEvaluate(int_expr *);
 void *float_exprEvaluate(float_expr *);
@@ -237,5 +241,32 @@ void *expression_listEvaluate(expression_list *, environment *);
 void *evaluate(void *, environment *);
 void print_nnl(void *);
 void print(void *);
+
+void idenfitier_del(void *);
+void int_expr_del(void *);
+void float_expr_del(void *);
+void imag_expr_del(void *);
+void str_expr_del(void *);
+void parenth_form_del(void *);
+void generator_del(void *);
+void list_expr_del(void *);
+void set_expr_del(void *);
+void dict_expr_del(void *);
+void list_comprehension_del(void *);
+void yield_atom_del(void *);
+void attributeref_del(void *);
+void slice_expr_del(void *);
+void slicing_del(void *);
+void subsc_expr_del(void *vptr);
+void subscription_del(void *);
+void call_del(void *);
+void power_del(void *);
+void u_expr_del(void *);
+void b_expr_del(void *);
+void not_test_del(void *);
+void comparison_del(void *);
+void conditional_expression_del(void *);
+void lambda_expr_del(void *);
+void expression_list_del(void *);
 
 #endif /* EVALUATE_H */

@@ -6,6 +6,7 @@
 typedef struct pystr pystr;
 struct pystr {
     int type;
+    int ref;
     char *value;
 };
 

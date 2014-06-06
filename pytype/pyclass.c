@@ -73,3 +73,13 @@ void pyclass__setattr__(void *first, void *second, pystr *attr, void *val) {
         store(class->env, IDENTIFIER(attr->value), val);
     }
 }
+
+void pyclass_del(void *vptr) {
+    pyclass *class = (pyclass *)vptr;
+    del(class->class);
+    del(class->id);
+    del(class->env);
+    if (class->inheritance)
+        del(class->inheritance);
+    free(class);
+}

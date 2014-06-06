@@ -14,13 +14,12 @@ char *stradd(char *left, char *right) {
 char *strslice(char *val, int start, int stop, int step) {
     if (start < 0) start += strlen(val);
     if (stop < 0) stop += strlen(val);
-    char *retval;
 
     int len = (stop-start)/step, i;
     if ((stop-start) % step)
         len++;
     if (len <= 0) len = 0;
-    retval = (char *)malloc(len+1);
+    char *retval = (char *)malloc(len+1);
     retval[len] = 0;
     for (i = 0; i < len; i++)
         retval[i] = val[start+step*i];

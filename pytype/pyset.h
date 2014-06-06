@@ -6,6 +6,7 @@
 typedef struct pyset pyset;
 struct pyset {
 	int type;
+	int ref;
 	list *values;
 };
 

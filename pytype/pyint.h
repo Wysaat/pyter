@@ -9,6 +9,7 @@ typedef struct pyint pyint;
 
 struct pyint {
     int type;
+    int ref;
     integer *value;
 };
 
@@ -37,5 +38,6 @@ void pyint__inc__(pyint *);
 
 pyint *int_to_pyint(int );
 int pyint_to_int(pyint *);
+pyint *pyint_cpy(void *);
 
 #endif /* PYTYPE_PYINT_H */

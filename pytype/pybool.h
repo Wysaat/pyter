@@ -4,11 +4,13 @@
 typedef struct pybool pybool;
 struct pybool {
     int type;
+    int ref;
     int value;
 };
 
 void *PYBOOL(int);
 pybool *pybool__bool__(void *);
+void pybool_del(void *);
 
 int is_true(pybool *);
 

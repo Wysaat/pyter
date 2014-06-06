@@ -6,8 +6,6 @@
 #include "environment.h"
 #include "execute.h"
 
-int type(void *);
-
 void *identifier_gen_evaluate(identifier *, environment *);
 void *int_expr_gen_evaluate(int_expr *);
 void *float_expr_gen_evaluate(float_expr *);

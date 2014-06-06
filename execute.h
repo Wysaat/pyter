@@ -49,6 +49,11 @@ typedef struct import_stmt {
     char *module_name;
 } import_stmt;
 
+typedef struct del_stmt {
+    int type;
+    list *target_list;
+} del_stmt;
+
 typedef struct stmt_list {
     int type;
     list *stmts;
@@ -86,14 +91,14 @@ typedef struct funcdef {
     list *parameters;
     void *fsuite;
     int yield;
-    expression_list *assign_target_list;
-    expression_list *assign_expr_list;
+    expression_list *assign_target_list;  // can be 0
+    expression_list *assign_expr_list;  // can be 0
 } funcdef;
 
 typedef struct classdef {
     int type;
     identifier *id;
-    list *inheritance;
+    list *inheritance;  // can be 0
     void *_suite;
 } classdef;
 
@@ -111,6 +116,7 @@ void *BREAK_STMT();
 void *CONTINUE_STMT();
 void *PASS_STMT();
 void *IMPORT_STMT(char *);
+void *DEL_STMT(void *);
 void *STMT_LIST(list *);
 void *IF_STMT(list *condition_list, list *suite_list);
 void *WHILE_STMT(void *condition, list *suite_list);
@@ -126,6 +132,7 @@ void break_stmtExecute(void *structure, environment *env, int pf);
 void continue_stmtExecute(void *structure, environment *env, int pf);
 void pass_stmtExecute(void *structure, environment *env, int pf);
 void import_stmtExecute(void *structure, environment *env, int pf);
+void del_stmtExecute(void *structure, environment *env, int pf);
 void stmt_listExecute(void *structure, environment *env, int pf);
 void if_stmtExecute(void *structure, environment *env, int pf);
 void while_stmtExecute(void *structure, environment *env, int pf);
@@ -134,5 +141,22 @@ void funcdefExecute(void *structure, environment *env, int pf);
 void classdefExecute(void *structure, environment *env, int pf);
 void suiteExecute(void *structure, environment *env, int pf);
 void execute(void *structure, environment *env, int pf);
+
+void expression_stmt_del(void *vptr);
+void assignment_stmt_del(void *vptr);
+void return_stmt_del(void *vptr);
+void yield_stmt_del(void *vptr);
+void break_stmt_del(void *vptr);
+void continue_stmt_del(void *vptr);
+void pass_stmt_del(void *vptr);
+void import_stmt_del(void *vptr);
+void del_stmt_del(void *vptr);
+void stmt_list_del(void *vptr);
+void if_stmt_del(void *vptr);
+void while_stmt_del(void *vptr);
+void for_stmt_del(void *vptr);
+void funcdef_del(void *vptr);
+void classdef_del(void *vptr);
+void suite_del(void *vptr);
 
 #endif /* EXECUTE_H */

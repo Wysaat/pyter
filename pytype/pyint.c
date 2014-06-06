@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../types.h"
 #include "pyint.h"
 #include "pycomplex.h"
@@ -10,6 +11,7 @@
 
 pyint *pyint__init__() {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
+    memset(retptr, 0, sizeof(pyint));
     retptr->type = pyint_t;
     return retptr;
 }
@@ -190,4 +192,11 @@ pyint *int_to_pyint(int number) {
 
 int pyint_to_int(pyint *ptr) {
     return (atoi(integer__str__(ptr->value)));
+}
+
+pyint *pyint_cpy(void *vptr) {
+    pyint *ptr = (pyint *)vptr;
+    pyint *retptr = pyint__init__();
+    retptr->value = integer__cpy__(ptr->value);
+    return retptr;
 }

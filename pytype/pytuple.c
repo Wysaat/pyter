@@ -55,3 +55,9 @@ void *pytuple__getitem__(void *lvoid, void *rvoid) {
         ptr = ptr->next;
     return ptr->content;
 }
+
+void pytuple_del(void *vptr) {
+    pytuple *ptr = (pytuple *)vptr;
+    del(ptr->values);
+    free(ptr);
+}

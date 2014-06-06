@@ -47,3 +47,7 @@ a.evaluate()(
 
       
   
+def f():
+        a = 3
+        return a * 3
+print(f())

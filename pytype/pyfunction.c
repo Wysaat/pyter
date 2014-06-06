@@ -7,6 +7,7 @@
 #include "pygenerator.h"
 #include "../list.h"
 #include "others.h"
+#include <stdlib.h>
 
 void *pyfunction__call__(void *lptr, void *rptr) {
     pyfunction *func = (pyfunction *)lptr;
@@ -43,7 +44,26 @@ void *pyfunction__call__(void *lptr, void *rptr) {
 
     execute(func->fsuite, local_env, 0);
 
-    if (local_env->ret)
-        return local_env->ret;
-    return pyNone_init();
+    void *retptr;
+    if (local_env->ret) {
+        ref_inc(local_env->ret);
+        retptr = local_env->ret;
+    }
+    else
+        retptr = pyNone_init();
+
+    environment_del(local_env);
+    return retptr;
+}
+
+void pyfunction_del(void *vptr) {
+    pyfunction *func = (pyfunction *)vptr;
+    del(func->id);
+    del(func->parameters);
+    del(func->fsuite);
+    del(func->env);
+    del(func->bound);
+    del(func->assign_target_list);
+    del(func->assign_values);
+    free(func);
 }
