@@ -32,13 +32,72 @@ char *sc_read_num_lit(scanner *sc, buffer *buff) {
 }
 
 char *sc_read_str_lit(scanner *sc, buffer *buff) {
-    int i = 1;
-    char op = sc_readch(sc), ch;
-    buff_add(buff, op);
-    while ((ch = sc_readch(sc)) != op)
-        buff_add(buff, ch);
-    buff_add(buff, op);
-    return buff_puts(buff);
+    buff_add(buff, '\'');
+    char ch;
+    while (1) {
+        while (sc_skip(sc, sc_curch(sc)))
+            sc_readch(sc);
+        if (!sc_curch(sc)) {
+            sc_getline(sc);
+        }
+        else if (sc_curch(sc) == '\'' || sc_curch(sc) == '"') {
+            char op = sc_readch(sc);
+            if (sc_curch(sc) == op && sc_nxtch(sc) == op) {
+                sc->skip_newlines++;
+                sc_readch(sc);
+                sc_readch(sc);
+                int opnum = 0;
+                while (1) {
+                    ch = sc_readch(sc);
+                    if (ch == op) {
+                        opnum++;
+                        if (opnum == 3) {
+                            sc->skip_newlines--;
+                            break;
+                        }
+                    }
+                    else {
+                        while (opnum--)
+                            buff_add(buff, op);
+                        opnum = 0;
+                        if (!ch) {
+                            sc->ps = sc->ps2;
+                            sc_getline(sc);
+                        }
+                        else if (ch == '\n') {
+                            buff_add(buff, '\\');
+                            buff_add(buff, 'n');
+                        }
+                        else if (ch == '\t') {
+                            buff_add(buff, '\\');
+                            buff_add(buff, 't');
+                        }
+                        else
+                            buff_add(buff, ch);
+                    }
+                }
+            }
+            else {
+                while ((ch = sc_readch(sc)) != op) {
+                    if (ch == '\n') {
+                        buff_add(buff, '\\');
+                        buff_add(buff, 'n');
+                    }
+                    else if (ch == '\t') {
+                        buff_add(buff, '\\');
+                        buff_add(buff, 't');
+                    }
+                    else
+                        buff_add(buff, ch);
+                }
+            }
+        }
+        else {
+            buff_add(buff, '\'');
+            sc->ps = sc->ps1;
+            return buff_puts(buff);
+        }
+    }
 }
 
 char *sc_rread(scanner *sc, buffer *buff) { /* raw read */

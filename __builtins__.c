@@ -18,7 +18,48 @@
 void *_print(list *val) {
     if (val && !list_is_empty(val)) {
         for ( ; val; val = val->next) {
-            print_nnl(val->content);
+            if (type(val->content) == pystr_t) {
+                char *ptr = ((pystr *)val->content)->value;
+                int _skip = 0;
+                while (*ptr) {
+                    if (!_skip && *ptr == '\\')
+                        _skip = 1;
+                    else if (!_skip)
+                        printf("%c", *ptr);
+                    else {
+                        _skip = 0;
+                        if (*ptr == 'n')
+                            printf("\n");
+                        else if (*ptr == 't')
+                            printf("\t");
+                        else if (*ptr == '\\')
+                            printf("\\");
+                        else if (*ptr == 'r')
+                            printf("\r");
+                        // else if (*ptr >= '0' && *ptr < '8') {
+                        //     int val = *ptr - '0';
+                        //     if (*(ptr+1) >= '0' && *(ptr+1) < '8') {
+                        //         ptr++;
+                        //         val *= 8;
+                        //         val += *ptr - '0';
+                        //         if (*(ptr+1) >= '0' && *(ptr+1) < '8') {
+                        //             ptr++;
+                        //             val *= 8;
+                        //             val += *ptr - '0';
+                        //             printf("%c", (char)val);
+                        //         }
+                        //         else
+                        //             printf("%c", (char)val);
+                        //     }
+                        //     else
+                        //         printf("%c", (char)val);
+                        // }
+                    }
+                    ptr++;
+                }
+            }
+            else
+                print_nnl(val->content);
             printf(" ");
         }
     }

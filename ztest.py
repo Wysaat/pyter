@@ -26,7 +26,7 @@ def greet(name):
 
 greet('Jack')
 greet('Jill')
-greet('Bob')
+greet('     Bob')
 print(3)
 for i in range(10):
     print()
