@@ -17,7 +17,7 @@ typedef struct expression_stmt {
 
 typedef struct assignment_stmt {
     int type;
-    void *targets;
+    list *targets_list;
     void *expressions;
 } assignment_stmt;
 
@@ -109,7 +109,7 @@ typedef struct suite {
 } suite;
 
 void *EXPRESSION_STMT(void *);
-void *ASSIGNMENT_STMT(void *, void *);
+void *ASSIGNMENT_STMT(list *, void *);
 void *RETURN_STMT(void *);
 void *YIELD_STMT(void *);
 void *BREAK_STMT();

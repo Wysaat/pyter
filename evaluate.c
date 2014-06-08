@@ -933,9 +933,7 @@ void print_nnl(void *structure) {
             printf("j)");
             break;
         case pystr_t:
-            printf("'");
-            printf("%s", ((pystr *)structure)->value);
-            printf("'");
+            pystr_print_nnl((pystr *)structure);
             break;
         case pybool_t:
             if (((pybool *)structure)->value)

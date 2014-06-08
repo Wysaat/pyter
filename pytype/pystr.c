@@ -73,3 +73,22 @@ pystr *str_to_pystr(char *str) {
 char *pystr_to_str(pystr *ptr) {
     return ptr->value;
 }
+
+void pystr_print_nnl(pystr *sptr) {
+    char *ptr = sptr->value;
+    printf("'");
+    while (*ptr) {
+        if (*ptr == '\\')
+            printf("\\\\");
+        else if (*ptr == '\n')
+            printf("\\n");
+        else if (*ptr == '\r')
+            printf("\\r");
+        else if (*ptr == '\t')
+            printf("\\t");
+        else
+            printf("%c", *ptr);
+        ptr++;
+    }
+    printf("'");
+}

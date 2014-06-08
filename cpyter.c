@@ -47,9 +47,67 @@ char *sc_read_str_lit(scanner *sc, buffer *buff) {
                 sc_readch(sc);
                 sc_readch(sc);
                 int opnum = 0;
+                int _skip = 0;
                 while (1) {
                     ch = sc_readch(sc);
-                    if (ch == op) {
+                    if (!_skip && ch == '\\')
+                        _skip = 1;
+                    else if (_skip) {
+                        _skip = 0;
+                        if (ch == '"' || ch == '\'' || ch == '\\')
+                            buff_add(buff, ch);
+                        else if (ch == 'a')
+                            buff_add(buff, '\a');
+                        else if (ch == 'b')
+                            buff_add(buff, '\b');
+                        else if (ch == 'f')
+                            buff_add(buff, '\f');
+                        else if (ch == 'n')
+                            buff_add(buff, '\n');
+                        else if (ch == 'r')
+                            buff_add(buff, '\r');
+                        else if (ch == 't')
+                            buff_add(buff, '\t');
+                        else if (ch == 'v')
+                            buff_add(buff, '\v');
+                        else if (ch >= '0' && ch < '8') {
+                            int val = ch - '0';
+                            if (sc_nxtch(sc) >= '0' && sc_nxtch(sc) < '8') {
+                                ch = sc_readch(sc);
+                                val *= 8;
+                                val += ch;
+                                if (sc_nxtch(sc) >= '8' && sc_nxtch(sc) < '8') {
+                                    ch = sc_readch(sc);
+                                    val *= 8;
+                                    val += ch;
+                                    buff_add(buff, (char)val);
+                                }
+                                else
+                                    buff_add(buff, (char)val);
+                            }
+                            else
+                                buff_add(buff, (char)val);
+                        }
+                        else if (ch == 'x') {
+                            int val = 0;
+                            if ((sc_nxtch(sc) >= '0' && sc_nxtch(sc) <= '9') ||
+                                (sc_nxtch(sc) >= 'a' && sc_nxtch(sc) <= 'f') ||
+                                (sc_nxtch(sc) >= 'A' && sc_nxtch(sc) <= 'F')) {
+                                ch = sc_readch(sc);
+                                val *= 16;
+                                val += ch;
+                                if ((sc_nxtch(sc) >= '0' && sc_nxtch(sc) <= '9') ||
+                                    (sc_nxtch(sc) >= 'a' && sc_nxtch(sc) <= 'f') ||
+                                    (sc_nxtch(sc) >= 'A' && sc_nxtch(sc) <= 'F')) {
+                                    ch = sc_readch(sc);
+                                    val *= 16;
+                                    val += ch;
+                                    buff_add(buff, (char)val);
+                                }
+                            }
+                        }
+                    }
+                    else if (ch == op) {
                         opnum++;
                         if (opnum == 3) {
                             sc->skip_newlines--;
@@ -64,29 +122,74 @@ char *sc_read_str_lit(scanner *sc, buffer *buff) {
                             sc->ps = sc->ps2;
                             sc_getline(sc);
                         }
-                        else if (ch == '\n') {
-                            buff_add(buff, '\\');
-                            buff_add(buff, 'n');
-                        }
-                        else if (ch == '\t') {
-                            buff_add(buff, '\\');
-                            buff_add(buff, 't');
-                        }
                         else
                             buff_add(buff, ch);
                     }
                 }
             }
             else {
-                while ((ch = sc_readch(sc)) != op) {
-                    if (ch == '\n') {
-                        buff_add(buff, '\\');
-                        buff_add(buff, 'n');
+                int _skip = 0;
+                while (1) {
+                    ch = sc_readch(sc);
+                    if (!_skip && ch == '\\')
+                        _skip = 1;
+                    else if (_skip) {
+                        _skip = 0;
+                        if (ch == '"' || ch == '\'' || ch == '\\')
+                            buff_add(buff, ch);
+                        else if (ch == 'a')
+                            buff_add(buff, '\a');
+                        else if (ch == 'b')
+                            buff_add(buff, '\b');
+                        else if (ch == 'f')
+                            buff_add(buff, '\f');
+                        else if (ch == 'n')
+                            buff_add(buff, '\n');
+                        else if (ch == 'r')
+                            buff_add(buff, '\r');
+                        else if (ch == 't')
+                            buff_add(buff, '\t');
+                        else if (ch == 'v')
+                            buff_add(buff, '\v');
+                        else if (ch >= '0' && ch < '8') {
+                            int val = ch - '0';
+                            if (sc_nxtch(sc) >= '0' && sc_nxtch(sc) < '8') {
+                                ch = sc_readch(sc);
+                                val *= 8;
+                                val += ch;
+                                if (sc_nxtch(sc) >= '8' && sc_nxtch(sc) < '8') {
+                                    ch = sc_readch(sc);
+                                    val *= 8;
+                                    val += ch;
+                                    buff_add(buff, (char)val);
+                                }
+                                else
+                                    buff_add(buff, (char)val);
+                            }
+                            else
+                                buff_add(buff, (char)val);
+                        }
+                        else if (ch == 'x') {
+                            int val = 0;
+                            if ((sc_nxtch(sc) >= '0' && sc_nxtch(sc) <= '9') ||
+                                (sc_nxtch(sc) >= 'a' && sc_nxtch(sc) <= 'f') ||
+                                (sc_nxtch(sc) >= 'A' && sc_nxtch(sc) <= 'F')) {
+                                ch = sc_readch(sc);
+                                val *= 16;
+                                val += ch;
+                                if ((sc_nxtch(sc) >= '0' && sc_nxtch(sc) <= '9') ||
+                                    (sc_nxtch(sc) >= 'a' && sc_nxtch(sc) <= 'f') ||
+                                    (sc_nxtch(sc) >= 'A' && sc_nxtch(sc) <= 'F')) {
+                                    ch = sc_readch(sc);
+                                    val *= 16;
+                                    val += ch;
+                                    buff_add(buff, (char)val);
+                                }
+                            }
+                        }
                     }
-                    else if (ch == '\t') {
-                        buff_add(buff, '\\');
-                        buff_add(buff, 't');
-                    }
+                    else if (ch == op)
+                        break;
                     else
                         buff_add(buff, ch);
                 }
@@ -1001,8 +1104,18 @@ void *parse_simple_stmt(scanner *sc) {
         if (sc->eoff)
             return EXPRESSION_STMT(expression_list1);
         if (!strcmp(token, "=")) {
-            void *expression_list2 = parse_expression_list(sc, endings);
-            return ASSIGNMENT_STMT(expression_list1, expression_list2);
+            list *targets_list = list_node();
+            list_append_content(targets_list, expression_list1);
+            while (1) {
+                list *expression_list2 = parse_expression_list(sc, endings);
+                token = sc_read(sc);
+                if (!strcmp(token, "="))
+                    list_append_content(targets_list, expression_list2);
+                else {
+                    rollback(sc);
+                    return ASSIGNMENT_STMT(targets_list, expression_list2);
+                }
+            }
         }
         else if (!strcmp(token, "**=")) {
             void *augtarget = expression_list1;

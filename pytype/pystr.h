@@ -23,4 +23,6 @@ void pystr__puts__(pystr *);
 pystr *str_to_pystr(char *);
 char *pystr_to_str(pystr *ptr);
 
+void pystr_print_nnl(pystr *ptr);
+
 #endif /* PYTYPE_PYSTR_H */

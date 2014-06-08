@@ -20,11 +20,11 @@ void *EXPRESSION_STMT(void *expression_list) {
     return retptr;
 }
 
-void *ASSIGNMENT_STMT(void *targets, void *expressions) {
+void *ASSIGNMENT_STMT(list *targets_list, void *expressions) {
     assignment_stmt *retptr = (assignment_stmt *)malloc(sizeof(assignment_stmt));
     memset(retptr, 0, sizeof(*retptr));
     retptr->type = assignment_stmt_t;
-    retptr->targets = targets;
+    retptr->targets_list = targets_list;
     retptr->expressions = expressions;
     return retptr;
 }
@@ -173,9 +173,10 @@ void expression_stmt_del(void *vptr) {
 
 void assignment_stmtExecute(void *structure, environment *env, int pf) {
     assignment_stmt *stmt = (assignment_stmt *)structure;
-    void *targets = stmt->targets;
     void *values = evaluate(stmt->expressions, env);
-    store(env, targets, values);
+    list *ptr;
+    for (ptr = stmt->targets_list; ptr; ptr = ptr->next)
+        store(env, ptr->content, values);
 }
 
 void assignment_stmt_del(void *vptr) {

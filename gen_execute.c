@@ -17,9 +17,9 @@ expression_stmt *expression_stmt_copy(expression_stmt *stmt) {
 }
 
 assignment_stmt *assignment_stmt_copy(assignment_stmt *stmt) {
-    void *targets = copy(stmt->targets);
+    list *targets_list = copy(stmt->targets_list);
     void *expressions = copy(stmt->expressions);
-    return ASSIGNMENT_STMT(targets, expressions);
+    return ASSIGNMENT_STMT(targets_list, expressions);
 }
 
 yield_stmt *yield_stmt_copy(yield_stmt *stmt) {
@@ -83,11 +83,12 @@ void expression_stmt_gen_execute(void *structure, environment *env, int pf) {
 
 void assignment_stmt_gen_execute(void *structure, environment *env, int pf) {
     assignment_stmt *stmt = (assignment_stmt *)structure;
-    void *targets = stmt->targets;
     void *values = gen_evaluate(stmt->expressions, env);
     if (env->yield)
         return;
-    store(env, targets, values);
+    list *ptr;
+    for (ptr = stmt->targets_list; ptr; ptr = ptr->next)
+        store(env, ptr->content, values);
 }
 
 void return_stmt_gen_execute(void *structure, environment *env, int pf) {
