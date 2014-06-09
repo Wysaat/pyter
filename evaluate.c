@@ -528,17 +528,33 @@ void attributeref_del(void *vptr) {
 void *slice_exprEvaluate(slice_expr *structure, environment *env) {
     pyslice *retptr = (pyslice *)malloc(sizeof(pyslice));
     retptr->type = pyslice_t;
-    retptr->start = evaluate(structure->start, env);
-    retptr->stop = evaluate(structure->stop, env);
-    retptr->step = evaluate(structure->step, env);
+    if (structure->start)
+        retptr->start = pyint_to_int(evaluate(structure->start, env));
+    else
+        retptr->start = 0;
+    if (structure->stop) {
+        retptr->stop = pyint_to_int(evaluate(structure->stop, env));
+        retptr->nostop = 0;
+    }
+    else {
+        retptr->stop = 0;
+        retptr->nostop = 1;
+    }
+    if (structure->step)
+        retptr->step = pyint_to_int(evaluate(structure->step, env));
+    else
+        retptr->step = 1;
     return retptr;
 }
 
 void slice_expr_del(void *vptr) {
     slice_expr *ptr = (slice_expr *)vptr;
-    del(ptr->start);
-    del(ptr->stop);
-    del(ptr->step);
+    if (ptr->start)
+        del(ptr->start);
+    if (ptr->stop)
+        del(ptr->stop);
+    if (ptr->step)
+        del(ptr->step);
     free(ptr);
 }
 

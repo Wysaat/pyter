@@ -953,20 +953,55 @@ list **pa_dict_items(scanner *sc) {
 void *pa_sll_or_subs(scanner *sc) {
     char *token;
     void *start, *stop, *step;
-
-    start = parse_expression(sc);
     token = sc_read(sc);
     if (!strcmp(token, ":")) {
+        token = sc_read(sc);
+        rollback(sc);
+        if (!strcmp(token, "]"))
+            return SLICE_EXPR(0, 0, 0);
         stop = parse_expression(sc);
         token = sc_read(sc);
         if (!strcmp(token, ":")) {
             step = parse_expression(sc);
-            return SLICE_EXPR(start, stop, step);
+            return SLICE_EXPR(0, stop, step);
         }
     }
     else {
         rollback(sc);
-        return SUBSC_EXPR(start);
+        start = parse_expression(sc);
+        token = sc_read(sc);
+        if (!strcmp(token, ":")) {
+            token = sc_read(sc);
+            if (!strcmp(token, ":")) {
+                token = sc_read(sc);
+                rollback(sc);
+                if (!strcmp(token, "]"))
+                    return SLICE_EXPR(start, 0, 0);
+                step = parse_expression(sc);
+                return SLICE_EXPR(start, 0, step);
+            }
+            rollback(sc);
+            if (!strcmp(token, "]"))
+                return SLICE_EXPR(start, 0, 0);
+            stop = parse_expression(sc);
+            token = sc_read(sc);
+            if (!strcmp(token, "]")) {
+                rollback(sc);
+                return SLICE_EXPR(start, stop, 0);
+            }
+            if (!strcmp(token, ":")) {
+                token = sc_read(sc);
+                rollback(sc);
+                if (!strcmp(token, "]"))
+                    return SLICE_EXPR(start, stop, 0);
+                step = parse_expression(sc);
+                return SLICE_EXPR(start, stop, step);
+            }
+        }
+        else {
+            rollback(sc);
+            return SUBSC_EXPR(start);
+        }
     }
 }
 

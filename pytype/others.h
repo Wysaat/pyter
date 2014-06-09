@@ -12,9 +12,10 @@ typedef struct pyrange pyrange;
 
 struct pyslice {
     int type;
-    pyint *start;
-    pyint *stop;
-    pyint *step;
+    int start;
+    int stop;
+    int step;
+    int nostop; // e.g. a[2:] 
 };
 
 struct pyNone {

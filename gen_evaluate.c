@@ -333,9 +333,9 @@ void *slice_expr_gen_evaluate(slice_expr *structure, environment *env) {
         structure->step_val = 0;
         return 0;
     }
-    retptr->start = structure->start_val;
-    retptr->stop = structure->stop_val;
-    retptr->step = structure->step_val;
+    retptr->start = pyint_to_int(structure->start_val);
+    retptr->stop = pyint_to_int(structure->stop_val);
+    retptr->step = pyint_to_int(structure->step_val);
     structure->start_val = 0;
     structure->stop_val = 0;
     structure->step_val = 0;

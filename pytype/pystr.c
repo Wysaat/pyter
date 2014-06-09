@@ -121,9 +121,13 @@ pystr *pystr__getitem__(void *left, void *right) {
     else if (type(right) == pyslice_t) {
         pyslice *slice = (pyslice *)right;
         int length = strlen(primary->value);
-        int start = pyint_to_int(slice->start);
-        int stop = pyint_to_int(slice->stop);
-        int step = pyint_to_int(slice->step);
+        int start = slice->start;
+        int stop;
+        if (slice->nostop || slice->stop > strlen(primary->value))
+            stop = strlen(primary->value);
+        else
+            stop = slice->stop;
+        int step = slice->step;
         if (start < 0)
             start += length;
         if (stop < 0)

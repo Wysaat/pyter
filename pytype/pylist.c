@@ -52,107 +52,32 @@ pybool *pylist__eq__(void *lvoid, void *rvoid) {
 }
 
 void *pylist__getitem__(void *lvoid, void *rvoid) {
-    pylist *left = (pylist *)lvoid;
-    list *ptr;
-    pyint *ind = pyint__init__();
-    ind->value = INTEGER_NODE();
+    pylist *primary = (pylist *)lvoid;
     if (type(rvoid) == pyint_t) {
-        pyint *right = (pyint *)rvoid;
-        for (ptr = left->values; is_true(pyint__lt__(ind, right)); pyint__inc__(ind))
+        int index = pyint_to_int(rvoid);
+        if (index < 0)
+            index += pyint_to_int(pylist__len__(lvoid));
+        int i = 0;
+        list *ptr = primary->values;
+        while (i++ < index)
             ptr = ptr->next;
-        pyint__del__(ind);
         return ptr->content;
-    }
-    else if (type(rvoid) == pyslice_t) {
-        pylist *retptr = pylist__init__();
-        pyint *zero = pyint__init__(); zero->value = INTEGER_NODE();
-        pyint *delt, *mo;
-        pyslice *right = (pyslice *)rvoid;
-        for (ptr = left->values; is_true(pyint__lt__(ind, right->stop)); 
-                  pyint__inc__(ind), ptr = ptr->next) {
-            if (is_true(pyint__ge__(ind, right->start))) {
-                delt = pyint__sub__(ind, right->start);
-                mo = pyint__mod__(delt, right->step);
-                if (is_true(pyint__eq__(mo, zero))) {
-                    pylist__append__(retptr, ptr->content);
-                }
-                pyint__del__(mo);
-                pyint__del__(delt);
-            }
-        }
-        pyint__del__(zero);
-        pyint__del__(ind);
-        return retptr;
     }
 }
 
 void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
-    pylist *left = (pylist *)lvoid;
-    list *ptr;
-    pyint *ind = pyint__init__();
-    ind->value = INTEGER_NODE();
+    pylist *primary = (pylist *)lvoid;
     if (type(rvoid) == pyint_t) {
-        pyint *right = (pyint *)rvoid;
-        for (ptr = left->values; is_true(pyint__lt__(ind, right)); pyint__inc__(ind))
+        int index = pyint_to_int(rvoid);
+        if (index < 0)
+            index += pyint_to_int(pylist__len__(lvoid));
+        int i = 0;
+        list *ptr = primary->values;
+        while (i++ < index)
             ptr = ptr->next;
-        pyint__del__(ind);
         ref_dec(ptr->content);
         ptr->content = value;
         ref_inc(value);
-    }
-    else if (type(rvoid) == pyslice_t) {
-        pyslice *right = (pyslice *)rvoid;
-        pyint *one = int_to_pyint(1);
-        list *ptr2;
-        if (is_true(pyint__eq__(right->step, one))) {
-            for (ptr = left->values; is_true(pyint__lt__(ind, right->start)); pyint__inc__(ind))
-                ptr = ptr->next;
-            ptr = ptr->prev;
-            ind->value->value = 0;
-            for (ptr2 = ptr->next; is_true(pyint__lt__(ind, right->stop)); pyint__inc__(ind)) {
-                ref_dec(ptr2->content);
-                ptr2 = ptr2->next;
-            }
-            if (type(value) == pylist_t) {
-                list *to_add = list_cpy(((pylist *)value)->values);
-                ptr->next = to_add;
-                to_add->prev = ptr;
-                list *ptr3 = to_add;
-                while (ptr3->next) {
-                    ref_inc(ptr3->content);
-                    ptr3 = ptr3->next;
-                }
-                ref_inc(ptr3);
-                ptr3->next = ptr2;
-                ptr2->prev = ptr3;
-                pyint__del__(one);
-                pyint__del__(ind);
-            }
-        }
-        else {
-            pyint *zero = int_to_pyint(0);
-            pyint *delt, *mo;
-            if (type(value) == pylist_t) {
-                pylist *to_add = (pylist *)value;
-                for (ptr = left->values, ptr2 = to_add->values; is_true(pyint__lt__(ind, right->stop)); 
-                          pyint__inc__(ind), ptr = ptr->next) {
-                    if (is_true(pyint__ge__(ind, right->start))) {
-                        delt = pyint__sub__(ind, right->start);
-                        mo = pyint__mod__(delt, right->step);
-                        if (is_true(pyint__eq__(mo, zero))) {
-                            ref_dec(ptr->content);
-                            ptr->content = ptr2->content;
-                            ref_inc(ptr2->content);
-                            ptr2 = ptr2->next;
-                        }
-                        pyint__del__(mo);
-                        pyint__del__(delt);
-                    }
-                }
-                pyint__del__(zero);
-                pyint__del__(ind);
-            }
-        }
     }
 }
 
