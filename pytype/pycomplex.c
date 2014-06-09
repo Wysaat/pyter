@@ -99,3 +99,10 @@ pycomplex *pycomplex__div__(void *lvoid, void *rvoid) {
         return retptr;
     }
 }
+
+pycomplex *pycomplex__neg__(pycomplex *ptr) {
+    pycomplex *retptr = pycomplex__init__();
+    retptr->real = pyfloat__neg__(ptr->real);
+    retptr->imag = pyfloat__neg__(ptr->imag);
+    return retptr;
+}

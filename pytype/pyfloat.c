@@ -8,6 +8,7 @@ pyfloat *pyfloat__init__() {
     pyfloat *retptr = (pyfloat *)malloc(sizeof(pyfloat));
     retptr->type = pyfloat_t;
     retptr->value = (double)0.0;
+    return retptr;
 }
 
 void pyfloat__del__(void *vptr) {
@@ -103,4 +104,10 @@ void *pyfloat__sub__(void *lvoid, void *rvoid) {
         retptr->imag->value = -(right->imag->value);
         return retptr;
     }
+}
+
+pyfloat *pyfloat__neg__(pyfloat *ptr) {
+    pyfloat *retptr = pyfloat__init__();
+    retptr->value = -ptr->value;
+    return retptr;
 }

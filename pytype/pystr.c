@@ -5,11 +5,20 @@
 #include "pystr.h"
 #include "pyint.h"
 #include "pybool.h"
+#include "pylist.h"
+#include "others.h"
 #include "../string.h"
 
 pystr *pystr__init__() {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->value = strdup("");
+    retptr->type = pystr_t;
+    return retptr;
+}
+
+pystr *pystr_init2(char *value) {
+    pystr *retptr = (pystr *)malloc(sizeof(pystr));
+    retptr->value = strdup(value);
     retptr->type = pystr_t;
     return retptr;
 }
@@ -91,4 +100,46 @@ void pystr_print_nnl(pystr *sptr) {
         ptr++;
     }
     printf("'");
+}
+
+pyint *pystr_len(void *vptr) {
+    pystr *ptr = (pystr *)vptr;
+    return int_to_pyint(strlen(ptr->value));
+}
+
+pystr *pystr__getitem__(void *left, void *right) {
+    pystr *primary = (pystr *)left;
+    if (type(right) == pyint_t) {
+        int index = pyint_to_int(right);
+        if (index < 0)
+            index += strlen(primary->value);
+        char val[2];
+        val[0] = primary->value[index];
+        val[1] = 0;
+        return pystr_init2(val);
+    }
+    else if (type(right) == pyslice_t) {
+        pyslice *slice = (pyslice *)right;
+        int length = strlen(primary->value);
+        int start = pyint_to_int(slice->start);
+        int stop = pyint_to_int(slice->stop);
+        int step = pyint_to_int(slice->step);
+        if (start < 0)
+            start += length;
+        if (stop < 0)
+            stop += length;
+        if (start >= stop)
+            return pystr__init__();
+        int ret_len;
+        if ((start-stop)%step == 0)
+            ret_len = (stop-start) / step;
+        else
+            ret_len = (stop-start)/step + 1;
+        char val[ret_len+1];
+        val[ret_len] = 0;
+        int i, j;
+        for (i = start, j = 0; i < stop; i += step, j++)
+            val[j] = primary->value[i];
+        return pystr_init2(val);
+    }
 }

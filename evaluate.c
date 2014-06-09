@@ -644,22 +644,24 @@ void power_del(void *vptr) {
 
 void *u_exprEvaluate(u_expr *structure, environment *env) {
     void *expr_val = evaluate(structure->expr, env);
-    if (*(int *)expr_val == pyint_t) {
-        pyint *val = expr_val;
-        if (!strcmp(structure->op, "+"))
-            return val;
-        else if (!strcmp(structure->op, "-")) {
-            integer *newvalue = integer__neg__(val->value);
-            integer__del__(val->value);
-            val->value = newvalue;
-            return val;
-        }
-        else if ((!strcmp(structure->op, "~"))) {
-            integer *newvalue = integer__invert__(val->value);
-            integer__del__(val->value);
-            val->value = newvalue;
-            return val;
-        }
+    if (!strcmp(structure->op, "+")) {
+        if (type(expr_val) == pyint_t)
+            return expr_val;
+        else if (type(expr_val) == pyfloat_t)
+            return expr_val;
+        else if (type(expr_val) == pycomplex_t)
+            return expr_val;
+    }
+    else if (!strcmp(structure->op, "-")) {
+        if (type(expr_val) == pyint_t)
+            return pyint__neg__((pyint *)expr_val);
+        else if (type(expr_val) == pyfloat_t)
+            return pyfloat__neg__((pyfloat *)expr_val);
+        else if (type(expr_val) == pycomplex_t)
+            return pycomplex__neg__((pycomplex *)expr_val);
+    }
+    else if (!strcmp(structure->op, "~")) {
+        return pyint__invert__((pyint *)expr_val);
     }
 }
 

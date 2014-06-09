@@ -63,7 +63,7 @@ void *pylist__getitem__(void *lvoid, void *rvoid) {
         pyint__del__(ind);
         return ptr->content;
     }
-    else if (type(rvoid) == (pyslice_t)) {
+    else if (type(rvoid) == pyslice_t) {
         pylist *retptr = pylist__init__();
         pyint *zero = pyint__init__(); zero->value = INTEGER_NODE();
         pyint *delt, *mo;

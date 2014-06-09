@@ -56,6 +56,10 @@ int is_float(char *token) {
     for (i = 0; i < strlen(token); i++)
         if (token[i] == '.')
             return 1;
+    if (token[0] == '.' || (token[0] >= '0' && token[0] <= '9'))
+        for (i = 0; i < strlen(token); i++)
+            if (token[i] == 'e' || token[i] == 'E')
+                return 1;
     return 0;
 }
 

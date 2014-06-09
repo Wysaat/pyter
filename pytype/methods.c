@@ -44,6 +44,9 @@ void *__getitem__(void *left, void *right)  {
     else if (type(left) == pyrange_t) {
         return pyrange__getitem__(left, right);
     }
+    else if (type(left) == pystr_t) {
+        return pystr__getitem__(left, right);
+    }
 }
 
 void __setitem__(void *left, void *right, void *value) {
@@ -152,6 +155,8 @@ void __setattr__(void *first, void *second, pystr *attr, void *val) {
 pyint *len(void *vptr) {
     if (type(vptr) == pylist_t)
         return pylist__len__(vptr);
+    else if (type(vptr) == pystr_t)
+        return pystr_len(vptr);
 }
 
 pystr *str(void *vptr) {

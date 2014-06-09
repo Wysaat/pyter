@@ -14,5 +14,6 @@ void *pyfloat__mul__(void *, void *);
 void *pyfloat__div__(void *, void *);
 void *pyfloat__add__(void *, void *);
 void *pyfloat__sub__(void *, void *);
+pyfloat *pyfloat__neg__(pyfloat *);
 
 #endif /* PYTYPE_PYFLOAT_H */

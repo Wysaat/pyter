@@ -40,4 +40,7 @@ pyint *int_to_pyint(int );
 int pyint_to_int(pyint *);
 pyint *pyint_cpy(void *);
 
+pyint *pyint__neg__(pyint *);
+pyint *pyint__invert__(pyint *);
+
 #endif /* PYTYPE_PYINT_H */

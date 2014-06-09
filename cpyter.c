@@ -9,8 +9,17 @@ char *sc_read_num_lit(scanner *sc, buffer *buff) {
         buff_add(buff, sc_readch(sc));
         while ((sc_curch(sc) >= '0' && sc_curch(sc) <= '9'))
             buff_add(buff, sc_readch(sc));
-        if (sc_curch(sc) == 'j')
+        if (sc_curch(sc) == 'j' || sc_curch(sc) == 'J')
             buff_add(buff, sc_readch(sc));
+        else if (sc_curch(sc) == 'e' || sc_curch(sc) == 'E') {
+            buff_add(buff, sc_readch(sc));
+            if (sc_curch(sc) == '+' || sc_curch(sc) == '-')
+                buff_add(buff, sc_readch(sc));
+            while (sc_curch(sc) >= '0' && sc_curch(sc) <= '9')
+                buff_add(buff, sc_readch(sc));
+            if (sc_curch(sc) == 'j' || sc_curch(sc) == 'J')
+                buff_add(buff, sc_readch(sc));
+        }
         return buff_puts(buff);
     }
     while (sc_curch(sc) >= '0' && sc_curch(sc) <= '9')
@@ -19,12 +28,31 @@ char *sc_read_num_lit(scanner *sc, buffer *buff) {
         buff_add(buff, sc_readch(sc));
         while (sc_curch(sc) >= '0' && sc_curch(sc) <= '9')
             buff_add(buff, sc_readch(sc));
-        if (sc_curch(sc) == 'j')
+        if (sc_curch(sc) == 'j' || sc_curch(sc) == 'J')
             buff_add(buff, sc_readch(sc));
+        else if (sc_curch(sc) == 'e' || sc_curch(sc) == 'E') {
+            buff_add(buff, sc_readch(sc));
+            if (sc_curch(sc) == '+' || sc_curch(sc) == '-')
+                buff_add(buff, sc_readch(sc));
+            while (sc_curch(sc) >= '0' && sc_curch(sc) <= '9')
+                buff_add(buff, sc_readch(sc));
+            if (sc_curch(sc) == 'j' || sc_curch(sc) == 'J')
+                buff_add(buff, sc_readch(sc));
+        }
         return buff_puts(buff);
     }
-    else if (sc_curch(sc) == 'j') {
+    else if (sc_curch(sc) == 'j' || sc_curch(sc) == 'J') {
         buff_add(buff, sc_readch(sc));
+        return buff_puts(buff);
+    }
+    else if (sc_curch(sc) == 'e' || sc_curch(sc) == 'E') {
+        buff_add(buff, sc_readch(sc));
+        if (sc_curch(sc) == '+' || sc_curch(sc) == '-')
+            buff_add(buff, sc_readch(sc));
+        while (sc_curch(sc) >= '0' && sc_curch(sc) <= '9')
+            buff_add(buff, sc_readch(sc));
+        if (sc_curch(sc) == 'j' || sc_curch(sc) == 'J')
+            buff_add(buff, sc_readch(sc));
         return buff_puts(buff);
     }
     else

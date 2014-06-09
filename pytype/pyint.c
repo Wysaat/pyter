@@ -200,3 +200,18 @@ pyint *pyint_cpy(void *vptr) {
     retptr->value = integer__cpy__(ptr->value);
     return retptr;
 }
+
+pyint *pyint__neg__(pyint *ptr) {
+    pyint *retptr = pyint_cpy(ptr);
+    if (retptr->value->sign == '+')
+        retptr->value->sign = '-';
+    else
+        retptr->value->sign = '+';
+    return retptr;
+}
+
+pyint *pyint__invert__(pyint *ptr) {
+    pyint *retptr = pyint__init__();
+    retptr->value = integer__invert__(ptr->value);
+    return retptr;
+}
