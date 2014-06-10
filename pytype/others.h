@@ -15,6 +15,7 @@ struct pyslice {
     int start;
     int stop;
     int step;
+    int nostart; // e.g. a[::-1]
     int nostop; // e.g. a[2:] 
 };
 

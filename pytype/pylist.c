@@ -63,6 +63,29 @@ void *pylist__getitem__(void *lvoid, void *rvoid) {
             ptr = ptr->next;
         return ptr->content;
     }
+    else if (type(rvoid) == pyslice_t) {
+        pyslice *slice = (pyslice *)rvoid;
+        pylist *retptr = pylist__init__();
+        int length = pyint_to_int(pylist__len__(lvoid));
+        int start = slice->start;
+        int stop;
+        if (slice->nostop || slice->stop > length)
+            stop = length;
+        else
+            stop = slice->stop;
+        int step = slice->step;
+        if (start < 0)
+            start += length;
+        if (stop < 0)
+            stop += length;
+        if (start >= stop)
+            return retptr;
+        int i;
+        list *ptr;
+        for (i = start, ptr = primary->values; i < stop; i += step, ptr = ptr->next)
+            pylist__append__(retptr, ptr->content);
+        return retptr;
+    }
 }
 
 void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
@@ -77,7 +100,7 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
             ptr = ptr->next;
         ref_dec(ptr->content);
         ptr->content = value;
-        ref_inc(value);
+        ref_inc(ptr->content);
     }
 }
 

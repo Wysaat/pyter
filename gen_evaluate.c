@@ -315,27 +315,44 @@ void *attributeref_gen_evaluate(attributeref *structure, environment *env) {
 void *slice_expr_gen_evaluate(slice_expr *structure, environment *env) {
     pyslice *retptr = (pyslice *)malloc(sizeof(pyslice));
     retptr->type = pyslice_t;
-    if (!structure->start_val)
+    if (!structure->start_val && structure->start)
         structure->start_val = gen_evaluate(structure->start, env);
     if (env->yield) {
         structure->start_val = 0;
         return 0;
     }
-    if (!structure->stop_val)
+    if (!structure->stop_val && structure->stop)
         structure->stop_val = gen_evaluate(structure->stop, env);
     if (env->yield) {
         structure->stop_val = 0;
         return 0;
     }
-    if (!structure->step_val)
+    if (!structure->step_val && structure->step)
         structure->step_val = gen_evaluate(structure->step, env);
     if (env->yield) {
         structure->step_val = 0;
         return 0;
     }
-    retptr->start = pyint_to_int(structure->start_val);
-    retptr->stop = pyint_to_int(structure->stop_val);
-    retptr->step = pyint_to_int(structure->step_val);
+    if (structure->start) {
+        retptr->start = pyint_to_int(structure->start_val);
+        retptr->nostart = 0;
+    }
+    else {
+        retptr->start = 0;
+        retptr->nostart = 1;
+    }
+    if (structure->stop) {
+        retptr->stop = pyint_to_int(structure->stop_val);
+        retptr->nostop = 1;
+    }
+    else {
+        retptr->stop = 0;
+        retptr->nostop = 1;
+    }
+    if (structure->step)
+        retptr->step = pyint_to_int(structure->step_val);
+    else
+        retptr->step = 1;
     structure->start_val = 0;
     structure->stop_val = 0;
     structure->step_val = 0;

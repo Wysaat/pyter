@@ -528,10 +528,14 @@ void attributeref_del(void *vptr) {
 void *slice_exprEvaluate(slice_expr *structure, environment *env) {
     pyslice *retptr = (pyslice *)malloc(sizeof(pyslice));
     retptr->type = pyslice_t;
-    if (structure->start)
+    if (structure->start) {
         retptr->start = pyint_to_int(evaluate(structure->start, env));
-    else
+        retptr->nostart = 0;
+    }
+    else {
         retptr->start = 0;
+        retptr->nostart = 1;
+    }
     if (structure->stop) {
         retptr->stop = pyint_to_int(evaluate(structure->stop, env));
         retptr->nostop = 0;
@@ -973,7 +977,10 @@ void print_nnl(void *structure) {
             printf("[");
             if (!list_is_empty(((pylist *)structure)->values))
                 for (ptr = ((pylist *)structure)->values; ptr; ptr = ptr->next) {
-                    print_nnl(ptr->content);
+                    if (ptr->content == structure)
+                        printf("[...]");
+                    else
+                        print_nnl(ptr->content);
                     if (ptr->next)
                         printf(", ");
                 }
@@ -1047,8 +1054,10 @@ void ref_inc(void *val) {
     if (type(val) == pylist_t) {
         if (list_is_empty(((pylist *)val)->values))
             return;
-        for (ptr = ((pylist *)val)->values; ptr; ptr = ptr->next)
-            ref_inc(ptr->content);
+        for (ptr = ((pylist *)val)->values; ptr; ptr = ptr->next) {
+            if (ptr->content != val)
+                ref_inc(ptr->content);
+        }
     }
     else if (type(val) == pytuple_t) {
         if (list_is_empty(((pytuple *)val)->values))
@@ -1089,8 +1098,10 @@ void ref_dec(void *val) {
     if (type(val) == pylist_t) {
         if (list_is_empty(((pylist *)val)->values))
             return;
-        for (ptr = ((pylist *)val)->values; ptr; ptr = ptr->next)
-            ref_dec(ptr->content);
+        for (ptr = ((pylist *)val)->values; ptr; ptr = ptr->next) {
+            if (ptr->content != val)
+                ref_dec(ptr->content);
+        }
     }
     else if (type(val) == pytuple_t) {
         if (list_is_empty(((pytuple *)val)->values))

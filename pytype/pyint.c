@@ -186,7 +186,13 @@ pybool *pyint__ge__(void *lvoid, void *rvoid) {
 
 pyint *int_to_pyint(int number) {
     pyint *retptr = pyint__init__();
+    char sign = '+';
+    if (number < 0) {
+        number = -number;
+        sign = '-';
+    }
     retptr->value = integer__init__(itoa(number));
+    retptr->value->sign = sign;
     return retptr;
 }
 

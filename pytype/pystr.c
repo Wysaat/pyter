@@ -112,7 +112,7 @@ pystr *pystr__getitem__(void *left, void *right) {
     if (type(right) == pyint_t) {
         int index = pyint_to_int(right);
         if (index < 0)
-            index += strlen(primary->value);
+            index += (int)strlen(primary->value);
         char val[2];
         val[0] = primary->value[index];
         val[1] = 0;
@@ -120,30 +120,54 @@ pystr *pystr__getitem__(void *left, void *right) {
     }
     else if (type(right) == pyslice_t) {
         pyslice *slice = (pyslice *)right;
-        int length = strlen(primary->value);
-        int start = slice->start;
-        int stop;
-        if (slice->nostop || slice->stop > strlen(primary->value))
-            stop = strlen(primary->value);
-        else
+        int length = (int)strlen(primary->value);
+        int start, stop, step;
+        step = slice->step;
+        if (slice->nostart) {
+            if (slice->step > 0)
+                start = 0;
+            else
+                start = length - 1;
+        }
+        else {
+            start = slice->start;
+            if (start < 0)
+                start += length;
+            else if (step < 0 && start >= length)
+                start = length - 1;
+        }
+        if (slice->nostop) {
+            if (slice->step > 0)
+                stop = length;
+            else
+                stop = -1;
+        }
+        else {
             stop = slice->stop;
-        int step = slice->step;
-        if (start < 0)
-            start += length;
-        if (stop < 0)
-            stop += length;
-        if (start >= stop)
+            if (stop < 0)
+                stop += length;
+            else if (step > 0 && stop > length)
+                stop = length;
+        }
+        if (step > 0 && start >= stop)
+            return pystr__init__();
+        if (step < 0 && start <= stop)
             return pystr__init__();
         int ret_len;
-        if ((start-stop)%step == 0)
+        if ((stop-start)%step == 0)
             ret_len = (stop-start) / step;
         else
             ret_len = (stop-start)/step + 1;
         char val[ret_len+1];
         val[ret_len] = 0;
         int i, j;
-        for (i = start, j = 0; i < stop; i += step, j++)
-            val[j] = primary->value[i];
+        if (step > 0) {
+            for (i = start, j = 0; i < stop; i += step, j++)
+                val[j] = primary->value[i];
+        } else {
+            for (i = start, j = 0; i > stop; i += step, j++)
+                val[j] = primary->value[i];
+        }
         return pystr_init2(val);
     }
 }

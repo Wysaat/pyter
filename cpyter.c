@@ -956,14 +956,30 @@ void *pa_sll_or_subs(scanner *sc) {
     token = sc_read(sc);
     if (!strcmp(token, ":")) {
         token = sc_read(sc);
+        if (!strcmp(token, ":")) {
+            token = sc_read(sc);
+            rollback(sc);
+            if (!strcmp(token, "]"))
+                return SLICE_EXPR(0, 0, 0);
+            stop = parse_expression(sc);
+            return SLICE_EXPR(0, 0, stop);
+        }
         rollback(sc);
         if (!strcmp(token, "]"))
             return SLICE_EXPR(0, 0, 0);
         stop = parse_expression(sc);
         token = sc_read(sc);
         if (!strcmp(token, ":")) {
+            token = sc_read(sc);
+            rollback(sc);
+            if (!strcmp(token, "]"))
+                return SLICE_EXPR(0, stop, 0);
             step = parse_expression(sc);
             return SLICE_EXPR(0, stop, step);
+        }
+        else if (!strcmp(token, "]")) {
+            rollback(sc);
+            return SLICE_EXPR(0, stop, 0);
         }
     }
     else {
