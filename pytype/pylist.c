@@ -67,23 +67,55 @@ void *pylist__getitem__(void *lvoid, void *rvoid) {
         pyslice *slice = (pyslice *)rvoid;
         pylist *retptr = pylist__init__();
         int length = pyint_to_int(pylist__len__(lvoid));
-        int start = slice->start;
-        int stop;
-        if (slice->nostop || slice->stop > length)
-            stop = length;
-        else
+        int start, stop, step;
+        step = slice->step;
+        if (slice->nostart) {
+            if (step > 0)
+                start = 0;
+            else
+                start = length - 1;
+        }
+        else {
+            start = slice->start;
+            if (start < 0)
+                start += length;
+            else if (step < 0 && start >= length)
+                start = length - 1;
+        }
+        if (slice->nostop) {
+            if (step > 0)
+                stop = length;
+            else
+                stop = -1;
+        }
+        else {
             stop = slice->stop;
-        int step = slice->step;
-        if (start < 0)
-            start += length;
-        if (stop < 0)
-            stop += length;
-        if (start >= stop)
-            return retptr;
+            if (stop < 0)
+                stop += length;
+            else if (step > 0 && stop > length)
+                stop = length;
+        }
+        if (step > 0 && start >= stop)
+            return pylist__init__();
+        if (step < 0 && start <= stop)
+            return pylist__init__();
+
         int i;
         list *ptr;
-        for (i = start, ptr = primary->values; i < stop; i += step, ptr = ptr->next)
-            pylist__append__(retptr, ptr->content);
+        for (i = 0, ptr = primary->values; i < start; i++, ptr = ptr->next)
+            ;
+        if (step > 0) {
+            for ( ; i < stop; i++, ptr = ptr->next) {
+                if ((i - start) % step == 0)
+                    pylist__append__(retptr, ptr->content);
+            }
+        }
+        else {
+            for ( ; i > stop; i--, ptr = ptr->prev) {
+                if ((i - start) % step == 0)
+                    pylist__append__(retptr, ptr->content);
+            }
+        }
         return retptr;
     }
 }
@@ -101,6 +133,87 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
         ref_dec(ptr->content);
         ptr->content = value;
         ref_inc(ptr->content);
+    }
+    else if (type(rvoid) == pyslice_t) {
+        pyslice *slice = (pyslice *)rvoid;
+        int length = pyint_to_int(pylist__len__(lvoid));
+        int start, stop, step;
+        step = slice->step;
+        if (slice->nostart) {
+            if (step > 0)
+                start = 0;
+            else
+                start = length - 1;
+        }
+        else {
+            start = slice->start;
+            if (start < 0)
+                start += length;
+            else if (step < 0 && start >= length)
+                start = length - 1;
+        }
+        if (slice->nostop) {
+            if (step > 0)
+                stop = length;
+            else
+                stop = -1;
+        }
+        else {
+            stop = slice->stop;
+            if (stop < 0)
+                stop += length;
+            else if (step > 0 && stop > length)
+                stop = length;
+        }
+
+        int i;
+        list *ptr, *ptr2;
+        if (type(value) == pylist_t)
+            ptr2 = ((pylist *)value)->values;
+        else if (type(value) == pytuple_t)
+            ptr2 = ((pytuple *)value)->values;
+        else if (type(value) == pyset_t)
+            ptr2 = ((pyset *)value)->values;
+        if (list_is_empty(ptr2))
+            ptr2 = 0;
+        for (i = 0, ptr = primary->values; i < start; i++, ptr = ptr->next)
+            ;
+        if (step > 0) {
+            for ( ; i < stop; i++, ptr = ptr->next) {
+                if ((i - start) % step == 0) {
+                    if (!ptr2) {
+                        if (ptr->prev)
+                            ptr->prev->next = 0;
+                        while (ptr) {
+                            ref_dec(ptr->content);
+                            free(ptr->content);
+                            list *tmp = ptr->next;
+                            free(ptr);
+                            ptr = tmp;
+                        }
+                        return;
+                    }
+                    ref_dec(ptr->content);
+                    ptr->content = ptr2->content;
+                    ref_inc(ptr->content);
+                    if (!ptr->next && ptr2->next)
+                        ptr->next = ptr2->next;
+                    ptr2 = ptr2->next;
+                }
+            }
+        }
+        else {
+            if (!ptr2)
+                return;
+            for ( ; i > stop; i--, ptr = ptr->prev) {
+                if ((i - start) % step == 0) {
+                    ref_dec(ptr->content);
+                    ptr->content = ptr2->content;
+                    ref_inc(ptr->content);
+                    ptr2 = ptr2->next;
+                }
+            }
+        }
     }
 }
 
