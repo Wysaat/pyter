@@ -7,7 +7,7 @@
 
 typedef struct list list;
 struct list {
-	int type;
+    int type;
     void *content;
     list *prev;
     list *next;
@@ -15,7 +15,6 @@ struct list {
 
 list *list_node();
 list *list_cpy(list *);
-void list_del(list *);
 list *list_add(list *, list *);
 int list_is_empty(list *);
 void list_append_content(list *, void *);
@@ -25,7 +24,6 @@ void list_sort0(list *, int (*func)(), int size);
 
 int list_find(list *, void *);
 int list_eq(list *, list *);
-void list_replace(list *, int pos, void *);
 int list_len(list *);
 
 #endif /* LIST_H */

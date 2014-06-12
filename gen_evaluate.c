@@ -251,8 +251,15 @@ void *dict_expr_gen_evaluate(dict_expr *structure, environment *env) {
         val = gen_evaluate(structure->ptr2->content, env);
         if (env->yield)
             return 0;
-        if ((pos = list_find(retptr->keys, key)) >= 0)
-            list_replace(retptr->values, pos, val);
+        if ((pos = list_find(retptr->keys, key)) >= 0) {
+            int ind;
+            list *ptr = retptr->keys;
+            for (ind = 0; ind < pos; ind++)
+                ptr = ptr->next;
+            // del(ptr->content);
+            ptr->content = val;
+            // del(key);
+        }
         else {
             list_append_content(retptr->keys, key);
             list_append_content(retptr->values, val);

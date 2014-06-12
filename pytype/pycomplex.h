@@ -17,5 +17,7 @@ pycomplex *pycomplex__sub__(void *, void *);
 pycomplex *pycomplex__mul__(void *, void *);
 pycomplex *pycomplex__div__(void *, void *);
 pycomplex *pycomplex__neg__(pycomplex *);
+void pycomplex_del(void *);
+void pycomplex_ref(void *);
 
 #endif /* PYTYPE_PYCOMPLEX_H */

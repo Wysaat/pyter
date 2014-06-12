@@ -13,7 +13,8 @@ struct pystr {
 
 pystr *pystr__init__();
 pystr *pystr_init2(char *value); // value is strduped
-void pystr__del__(pystr *);
+void pystr__del__(void *);
+void pystr_ref(void *);
 pystr *pystr__mul__(void *, void *);
 pystr *pystr__add__(void *, void *);
 pybool *pystr__eq__(void *, void *);

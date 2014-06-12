@@ -180,7 +180,9 @@ struct expression_list {
 };
 
 int type(void *);
-int ref(void *);
+int get_ref(void *);
+void ref_inc(void *);
+void ref_dec(void *);
 
 void *IDENTIFIER(char *);
 void *INT_EXPR(char *);

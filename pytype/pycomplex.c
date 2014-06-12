@@ -106,3 +106,19 @@ pycomplex *pycomplex__neg__(pycomplex *ptr) {
     retptr->imag = pyfloat__neg__(ptr->imag);
     return retptr;
 }
+
+void pycomplex_del(void *vptr) {
+    ref_dec(vptr);
+    pycomplex *ptr = (pycomplex *)vptr;
+    del(ptr->real);
+    del(ptr->imag);
+    if (get_ref(vptr) == 0)
+        free(vptr);
+}
+
+void pycomplex_ref(void *vptr) {
+    ref_inc(vptr);
+    pycomplex *ptr = (pycomplex *)vptr;
+    ref_inc(ptr->real);
+    ref_inc(ptr->imag);
+}

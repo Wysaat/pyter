@@ -14,7 +14,8 @@ struct pyint {
 };
 
 pyint *pyint__init__();
-void pyint__del__(pyint *);
+void pyint__del__(void *);
+void pyint_ref(void *);
 pyfloat *pyint__float__(void *);
 pybool *pyint__bool__(void *);
 void *pyint__add__(void *, void *);

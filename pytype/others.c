@@ -52,3 +52,14 @@ pystr *pyrange__str__(void *vptr) {
         string = stradd(stradd("range(", stradd(stradd(stradd(stradd(start, ", "), stop), ", "), step)), ")");
     return str_to_pystr(string);
 }
+
+void pyargument_del(void *vptr) {
+    pyargument *ptr = (pyargument *)vptr;
+    if (ptr->assign_target_list)
+        del(ptr->assign_target_list);
+    if (ptr->assign_value_list)
+        del(ptr->assign_value_list);
+    if (ptr->value_list)
+        del(ptr->value_list);
+    free(ptr);
+}

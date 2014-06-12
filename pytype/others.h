@@ -24,9 +24,10 @@ struct pyNone {
 };
 
 struct pyargument {
-    list *assign_target_list;
-    list *assign_value_list;
-    list *value_list;
+    int type;
+    list *assign_target_list;  // can be 0
+    list *assign_value_list;  // can be 0
+    list *value_list;  // can be 0
 };
 
 struct pyrange {
@@ -40,5 +41,6 @@ pyNone *pyNone_init();
 pyrange *pyrange_init(void *);
 void *pyrange__getitem__(void *, void *);
 pystr *pyrange__str__(void *vptr);
+void pyargument_del(void *);
 
 #endif /* PYTYPE_OTHERS_H */

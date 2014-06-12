@@ -1197,17 +1197,21 @@ void *parse_simple_stmt(scanner *sc) {
             }
         }
         else if (!strcmp(token, "**=")) {
+            list *target_list = list_node();
+            list_append_content(target_list, expression_list1);
             void *augtarget = expression_list1;
             void *expression_list2 = parse_expression_list(sc, endings);
             void *augvalue = POWER(augtarget, expression_list2);
-            return ASSIGNMENT_STMT(augtarget, augvalue);
+            return ASSIGNMENT_STMT(target_list, augvalue);
         }
         else if (is_augop(token)) {
             token[strlen(token)-1] = 0;
+            list *target_list = list_node();
+            list_append_content(target_list, expression_list1);
             void *augtarget = expression_list1;
             void *expression_list2 = parse_expression_list(sc, endings);
             void *augvalue = B_EXPR(augtarget, token, expression_list2);
-            return ASSIGNMENT_STMT(augtarget, augvalue);
+            return ASSIGNMENT_STMT(target_list, augvalue);
         }
         else {
             rollback(sc);
@@ -1356,7 +1360,7 @@ void *parse_for_stmt(scanner *sc) {
 
 void *parse_funcdef(scanner *sc) {
     identifier *id, *target;
-    list *parameters = list_node();
+    list *parameters;
     list *assign_targets = list_node(), *assign_exprs = list_node();
     char *token = sc_read(sc);  // it should be "def"
     token = sc_read(sc);
@@ -1366,8 +1370,11 @@ void *parse_funcdef(scanner *sc) {
         token = sc_read(sc);
         if (!strcmp(token, "(")) {
             token = sc_read(sc);
-            if (strcmp(token, ")")) {
+            if (!strcmp(token, ")"))
+                parameters = 0;
+            else {
                 rollback(sc);
+                parameters = list_node();
                 while (1) {
                     token = sc_read(sc);
                     if (is_identifier(token)) {

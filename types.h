@@ -21,6 +21,7 @@ enum types { identifier_t, int_expr_t, float_expr_t, imag_expr_t, str_expr_t,
              list_t,
              instance_t,
              pyrange_t,
-             environment_t, val_dict_entry_t, };
+             environment_t, val_dict_entry_t,
+             __pyargument_t, };
 
 #endif /* TYPES_H */

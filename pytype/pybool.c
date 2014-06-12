@@ -5,6 +5,7 @@
 void *PYBOOL(int value) {
     pybool *retptr = (pybool *)malloc(sizeof(pybool));
     retptr->type = pybool_t;
+    retptr->ref = 0;
     if (value)
     	retptr->value = 1;
     else
@@ -23,5 +24,11 @@ int is_true(pybool *boolval) {
 }
 
 void pybool_del(void *vptr) {
-    free(vptr);
+    ref_dec(vptr);
+    if (get_ref(vptr) == 0)
+        free(vptr);
+}
+
+void pybool_ref(void *vptr) {
+    ref_inc(vptr);
 }

@@ -38,17 +38,6 @@ list *list_cpy(list *head) {
     return retptr;
 }
 
-void list_del(list *head) {
-    list *ptr = head, *tmp;
-    while (ptr) {
-        if (ptr->content)
-            del(ptr->content);
-        tmp = ptr;
-        ptr = ptr->next;
-        free(tmp);
-    }
-}
-
 list *list_add(list *list1, list *list2) {
     if (list_is_empty(list1))
         return list_cpy(list2);
@@ -191,15 +180,6 @@ int list_eq(list *left, list *right) {
         ptr1 = ptr1->next;
         ptr2 = ptr2->next;
     }
-}
-
-void list_replace(list *head, int pos, void *content) {
-    int ind;
-    list *ptr = head;
-    for (ind = 0; ind < pos; ind++)
-        ptr = ptr->next;
-    free(ptr->content);
-    ptr->content = content;
 }
 
 int list_len(list *head) {

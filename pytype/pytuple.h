@@ -18,5 +18,6 @@ pytuple *pytuple__mul__(pytuple *, void *);
 pybool *pytuple__eq__(void *, void *);
 void *pytuple__getitem__(void *, void *);
 void pytuple_del(void *);
+void pytuple_ref(void *);
 
 #endif /* PYTYPE_PYTUPLE_H */

@@ -223,7 +223,30 @@ pyint *pylist__len__(void *vptr) {
 }
 
 void pylist_del(void *vptr) {
+    ref_dec(vptr);
     pylist *ptr = (pylist *)vptr;
-    del(ptr->values);
-    free(ptr);
+    if (!list_is_empty(ptr->values)) {
+        list *lptr;
+        for (lptr = ptr->values; lptr; lptr = lptr->next)
+            ref_dec(lptr->content);
+    }
+    if (get_ref(vptr) == 0) {
+        list *lptr = ptr->values, *tmp;
+        while (lptr) {
+            tmp = lptr;
+            lptr = lptr->next;
+            free(tmp);
+        }
+        free(ptr);
+    }
+}
+
+void pylist_ref(void *vptr) {
+    ref_inc(vptr);
+    pylist *ptr = (pylist *)vptr;
+    if (!list_is_empty(ptr->values)) {
+        list *lptr;
+        for (lptr = ptr->values; lptr; lptr = lptr->next)
+            ref_inc(lptr->content);
+    }
 }

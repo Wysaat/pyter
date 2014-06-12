@@ -11,6 +11,7 @@ struct pybool {
 void *PYBOOL(int);
 pybool *pybool__bool__(void *);
 void pybool_del(void *);
+void pybool_ref(void *);
 
 int is_true(pybool *);
 

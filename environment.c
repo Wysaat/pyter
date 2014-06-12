@@ -31,7 +31,6 @@ void store(environment *env, void *targets, void *values) {
         identifier *id = (identifier *)targets;
         if (list_is_empty(env->val_dict)) {
             list_append_content(env->val_dict, val_dict_entry_init(strdup(id->value), values));
-            ref_inc(values);
             return;
         }
         list *ptr;
@@ -41,7 +40,6 @@ void store(environment *env, void *targets, void *values) {
                 if (entry->id && !strcmp(entry->id, id->value)) {
                     del(entry->value);
                     entry->value = values;
-                    ref_inc(values);
                     return;
                 }
             }
@@ -52,12 +50,10 @@ void store(environment *env, void *targets, void *values) {
                 if (!entry->id) {
                     del(entry->value);
                     entry->value = values;
-                    ref_inc(values);
                     return;
                 }
             }
         }
-        ref_inc(values);
         list_append_content(env->val_dict, val_dict_entry_init(strdup(id->value), values));
     }
     else if (type(targets) == subscription_t) {
@@ -82,8 +78,11 @@ void store(environment *env, void *targets, void *values) {
         list *ptr1, *ptr2;
         if (type(values) == pylist_t || type(values) == pytuple_t || type(values) == pyset_t) {
             for (ptr1 = expressions->expr_head,
-                 ptr2 = ((pylist *)values)->values; ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next)
+                 ptr2 = ((pylist *)values)->values; ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next) {
+                ref_inc(ptr2->content);
                 store(env, ptr1->content, ptr2->content);
+            }
+            del(values);
         }
         else if (type(values) == pyrange_t) {
             pyint *index = int_to_pyint(0);
@@ -103,20 +102,21 @@ environment *environment_copy(environment *env) {
     return retptr;
 }
 
-void val_dict_entry_del(void *vptr) {
-    val_dict_entry *entry = (val_dict_entry *)vptr;
-    free(entry->id);
-    del(entry->value);
-    free(entry);
-}
-
 void environment_del(void *vptr) {
     environment *env = (environment *)vptr;
-    del(env->val_dict);
-    if (env->ret)
-        del(env->ret);
-    if (env->yield)
-        del(env->yield);
+    if (list_is_empty(env->val_dict))
+        free(env->val_dict);
+    else {
+        list *ptr = env->val_dict, *tmp;
+        while (ptr) {
+            val_dict_entry *entry = (val_dict_entry *)ptr->content;
+            free(entry->id);
+            free(ptr->content);
+            tmp = ptr;
+            ptr = ptr->next;
+            free(tmp);
+        }
+    }
     free(env);
 }
 
@@ -207,31 +207,43 @@ void del(void *vptr) {
     else if (type(vptr) == suite_t)
         suite_del(vptr);
 
-    else if (ref(vptr) == 0) {
-        if (type(vptr) == pyint_t)
-            pyint__del__(vptr);
-        else if (type(vptr) == pybool_t)
-            pybool_del(vptr);
-        else if (type(vptr) == pystr_t)
-            pystr__del__(vptr);
-        else if (type(vptr) == pylist_t)
-            pylist_del(vptr);
-        else if (type(vptr) == pytuple_t)
-            pytuple_del(vptr);
-        else if (type(vptr) == pyfunction_t)
-            pyfunction_del(vptr);
-        else if (type(vptr) == pyclass_t)
-            pyclass_del(vptr);
+    else if (type(vptr) == __pyargument_t)
+        pyargument_del(vptr);
 
-        else if (type(vptr) == list_t)
-            list_del(vptr);
-        else if (type(vptr) == environment_t)
-            environment_del(vptr);
-        else if (type(vptr) == val_dict_entry_t)
-            val_dict_entry_del(vptr);
-    }
-    else
-        ref_dec(vptr);
+    else if (type(vptr) == environment_t)
+        environment_del(vptr);
+
+    else if (type(vptr) == pyint_t)
+        pyint__del__(vptr);
+    else if (type(vptr) == pybool_t)
+        pybool_del(vptr);
+    else if (type(vptr) == pystr_t)
+        pystr__del__(vptr);
+    else if (type(vptr) == pylist_t)
+        pylist_del(vptr);
+    else if (type(vptr) == pytuple_t)
+        pytuple_del(vptr);
+    else if (type(vptr) == pyfunction_t)
+        pyfunction_del(vptr);
+    else if (type(vptr) == pyclass_t)
+        pyclass_del(vptr);
+}
+
+void ref(void *vptr) {
+    if (type(vptr) == pyint_t)
+        pyint_ref(vptr);
+    else if (type(vptr) == pybool_t)
+        pybool_ref(vptr);
+    else if (type(vptr) == pystr_t)
+        pystr_ref(vptr);
+    else if (type(vptr) == pylist_t)
+        pylist_ref(vptr);
+    else if (type(vptr) == pytuple_t)
+        pytuple_ref(vptr);
+    else if (type(vptr) == pyfunction_t)
+        pyfunction_ref(vptr);
+    else if (type(vptr) == pyclass_t)
+        pyclass_ref(vptr);
 }
 
 void store_id(environment *env, char *id, void *value) {

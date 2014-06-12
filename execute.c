@@ -163,6 +163,7 @@ void expression_stmtExecute(void *structure, environment *env, int pf) {
     void *ptr = evaluate(stmt->expression_list, env);
     if (pf && type(ptr)!=pyNone_t)
         print(ptr);
+    del(ptr);
 }
 
 void expression_stmt_del(void *vptr) {
@@ -307,6 +308,8 @@ void while_stmtExecute(void *structure, environment *env, int pf) {
     void *cond = evaluate(stmt->condition, env);
     pybool *truth = __bool__(cond);
     while (is_true(truth) && !env->ret) {
+        del(truth);
+        del(cond);
         execute(stmt->suite_list->content, env, pf);
         if (env->_break)
             break;
@@ -318,6 +321,10 @@ void while_stmtExecute(void *structure, environment *env, int pf) {
     if (env->_break) {
         env->_break = 0;
         return;
+    }
+    else {
+        del(truth);
+        del(cond);
     }
     if (stmt->suite_list->next)
         execute(stmt->suite_list->next->content, env, pf);
@@ -400,6 +407,7 @@ void funcdefExecute(void *structure, environment *env, int pf) {
     if (stmt->assign_target_list)
         func->assign_values = evaluate(stmt->assign_expr_list, env);
 
+    ref(func);
     store(env, stmt->id, func);
 }
 
@@ -421,6 +429,7 @@ void classdefExecute(void *structure, environment *env, int pf) {
     class->env->outer = env;
     execute(stmt->_suite, class->env, 0);
     class->env->outer = 0;
+    ref(class);
     store(env, stmt->id, class);
 }
 

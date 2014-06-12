@@ -57,7 +57,30 @@ void *pytuple__getitem__(void *lvoid, void *rvoid) {
 }
 
 void pytuple_del(void *vptr) {
+    ref_dec(vptr);
     pytuple *ptr = (pytuple *)vptr;
-    del(ptr->values);
-    free(ptr);
+    if (!list_is_empty(ptr->values)) {
+        list *lptr;
+        for (lptr = ptr->values; lptr; lptr = lptr->next)
+            ref_dec(lptr->content);
+    }
+    if (get_ref(vptr) == 0) {
+        list *lptr = ptr->values, *tmp;
+        while (lptr) {
+            tmp = lptr;
+            lptr = lptr->next;
+            free(tmp);
+        }
+        free(ptr);
+    }
+}
+
+void pytuple_ref(void *vptr) {
+    ref_inc(vptr);
+    pytuple *ptr = (pytuple *)vptr;
+    if (!list_is_empty(ptr->values)) {
+        list *lptr;
+        for (lptr = ptr->values; lptr; lptr = lptr->next)
+            ref_inc(lptr->content);
+    }
 }

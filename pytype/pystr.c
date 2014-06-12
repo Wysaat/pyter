@@ -23,9 +23,17 @@ pystr *pystr_init2(char *value) {
     return retptr;
 }
 
-void pystr__del__(pystr *strptr) {
-    free(strptr->value);
-    free(strptr);
+void pystr__del__(void *vptr) {
+    ref_dec(vptr);
+    if (get_ref(vptr) == 0) {
+        pystr *strptr = (pystr *)vptr;
+        free(strptr->value);
+        free(strptr);
+    }
+}
+
+void pystr_ref(void *vptr) {
+    ref_inc(vptr);
 }
 
 pystr *pystr__mul__(void *left, void *right) {

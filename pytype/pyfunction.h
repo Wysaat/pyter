@@ -12,16 +12,17 @@ struct pyfunction {
     int type;
     int ref;
     identifier *id;
-    list *parameters;
+    list *parameters;  // can be 0, or a list of identifiers
     void *fsuite;
     environment *env;
     void *bound;
     int yield;  /* for generators */
-    expression_list *assign_target_list;
-    pytuple *assign_values;
+    expression_list *assign_target_list;  // can be 0
+    pytuple *assign_values;  // can be 0
 };
 
 void *pyfunction__call__(void *, void *);
 void pyfunction_del(void *);
+void pyfunction_ref(void *);
 
 #endif /* PYTYPE_PYFUNCTION_H */

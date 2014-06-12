@@ -16,9 +16,17 @@ pyint *pyint__init__() {
     return retptr;
 }
 
-void pyint__del__(pyint *val) {
-    integer__del__(val->value);
-    free(val);
+void pyint__del__(void *vptr) {
+    ref_dec(vptr);
+    if (get_ref(vptr) == 0) {
+        pyint *ptr = (pyint *)vptr;
+        integer__del__(ptr->value);
+        free(ptr);
+    }
+}
+
+void pyint_ref(void *vptr) {
+    ref_inc(vptr);
 }
 
 pyfloat *pyint__float__(void *vptr) {

@@ -19,6 +19,7 @@ pyclass *pyclass__init__(char *id) {
     retptr->class->id = strdup("type");
     retptr->id = id;
     retptr->env = environment_init(0);
+    retptr->ref = 0;
     return retptr;
 }
 
@@ -60,6 +61,7 @@ void *pyclass__call__(void *left, void *right) {
         }
     }
 
+    // ref(left);
     return retptr;
 }
 
@@ -75,11 +77,34 @@ void pyclass__setattr__(void *first, void *second, pystr *attr, void *val) {
 }
 
 void pyclass_del(void *vptr) {
+    ref_dec(vptr);
     pyclass *class = (pyclass *)vptr;
-    del(class->class);
-    del(class->id);
-    del(class->env);
-    if (class->inheritance)
-        del(class->inheritance);
-    free(class);
+    if (class->inheritance) {
+        list *ptr;
+        for (ptr = class->inheritance; ptr; ptr = ptr->next)
+            del(ptr->content);
+    }
+    if (get_ref(vptr) == 0) {
+        free(class->id);
+        del(class->env);
+        if (class->inheritance) {
+            list *ptr, *tmp;
+            while (ptr) {
+                tmp = ptr;
+                ptr = ptr->next;
+                free(tmp);
+            }
+        }
+        free(class);
+    }
+}
+
+void pyclass_ref(void *vptr) {
+    ref_inc(vptr);
+    pyclass *class = (pyclass *)vptr;
+    if (class->inheritance) {
+        list *ptr;
+        for (ptr = class->inheritance; ptr; ptr = ptr->next)
+            ref(ptr->content);
+    }
 }

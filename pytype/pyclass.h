@@ -28,5 +28,6 @@ void *pyclass__getattribute__(void *, void *, pystr *);
 void *pyclass__call__(void *, void *);
 void pyclass__setattr__(void *, void *, pystr *attr, void *val);
 void pyclass_del(void *);
+void pyclass_ref(void *);
 
 #endif /* PYTYPE_PYCLASS_H */

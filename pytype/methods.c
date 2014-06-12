@@ -13,6 +13,7 @@
 #include "pyclass.h"
 #include "py__builtins__.h"
 #include "others.h"
+#include <stdlib.h>
 
 pybool *__eq__(void *left, void *right) {
     if (type(left) != type(right))

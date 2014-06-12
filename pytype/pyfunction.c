@@ -16,25 +16,26 @@ void *pyfunction__call__(void *lptr, void *rptr) {
     if (func->assign_target_list)
         store(local_env, func->assign_target_list, func->assign_values);
 
-    ptr1 = func->parameters;
-
-    if (func->bound) {
-        store(local_env, func->parameters->content, func->bound);
-        ptr1 = func->parameters->next;
-    }
-
-    if (rptr) {
-        pyargument *argument = (pyargument *)rptr;
-        if (ptr1 && ptr1->content && argument->value_list) {
-            for (ptr2 = argument->value_list; ptr2; ptr1 = ptr1->next, ptr2 = ptr2->next) {
-                store(local_env, ptr1->content, ptr2->content);
-            }
+    if (func->parameters) {
+        ptr1 = func->parameters;
+        if (func->bound) {
+            store(local_env, func->parameters->content, func->bound);
+            ptr1 = func->parameters->next;
         }
 
-        if (argument->assign_target_list) {
-            for (ptr1 = argument->assign_target_list, ptr2 = argument->assign_value_list;
-                     ptr1 && ptr2; ptr1 = ptr1->next, ptr2 = ptr2->next) {
-                store(local_env, ptr1->content, ptr2->content);
+        if (rptr) {
+            pyargument *argument = (pyargument *)rptr;
+            if (ptr1 && ptr1->content && argument->value_list) {
+                for (ptr2 = argument->value_list; ptr2; ptr1 = ptr1->next, ptr2 = ptr2->next) {
+                    store(local_env, ptr1->content, ptr2->content);
+                }
+            }
+
+            if (argument->assign_target_list) {
+                for (ptr1 = argument->assign_target_list, ptr2 = argument->assign_value_list;
+                         ptr1 && ptr2; ptr1 = ptr1->next, ptr2 = ptr2->next) {
+                    store(local_env, ptr1->content, ptr2->content);
+                }
             }
         }
     }
@@ -45,10 +46,8 @@ void *pyfunction__call__(void *lptr, void *rptr) {
     execute(func->fsuite, local_env, 0);
 
     void *retptr;
-    if (local_env->ret) {
-        ref_inc(local_env->ret);
+    if (local_env->ret)
         retptr = local_env->ret;
-    }
     else
         retptr = pyNone_init();
 
@@ -57,13 +56,30 @@ void *pyfunction__call__(void *lptr, void *rptr) {
 }
 
 void pyfunction_del(void *vptr) {
+    ref_dec(vptr);
     pyfunction *func = (pyfunction *)vptr;
-    del(func->id);
-    del(func->parameters);
-    del(func->fsuite);
-    del(func->env);
-    del(func->bound);
-    del(func->assign_target_list);
-    del(func->assign_values);
-    free(func);
+    if (func->assign_values)
+        del(func->assign_values);
+    if (get_ref(vptr) == 0) {
+        del(func->id);
+        if (func->parameters) {
+            list *ptr = func->parameters, *tmp;
+            while (ptr) {
+                tmp = ptr;
+                ptr = ptr->next;
+                free(tmp);
+            }
+        }
+        del(func->fsuite);
+        if (func->assign_target_list)
+            del(func->assign_target_list);
+        free(func);
+    }
+}
+
+void pyfunction_ref(void *vptr) {
+    ref_inc(vptr);
+    pyfunction *func = (pyfunction *)vptr;
+    if (func->assign_values)
+        ref_inc(func->assign_values);
 }
