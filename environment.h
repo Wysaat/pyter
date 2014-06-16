@@ -9,7 +9,7 @@ typedef struct environment environment;
 
 /* CAUTION val_dict could be an empty list */
 struct environment {
-	int type;
+    int type;
     list *val_dict;
     environment *outer;
     void *ret;
@@ -19,7 +19,7 @@ struct environment {
 };
 
 typedef struct val_dict_entry {
-	int type;
+    int type;
     char *id;
     void *value;
 } val_dict_entry;

@@ -30,4 +30,6 @@ void pystr_print_nnl(pystr *ptr);
 pyint *pystr_len(void *);
 pystr *pystr__getitem__(void *, void *);
 
+pystr *pystr__str__(void *);
+
 #endif /* PYTYPE_PYSTR_H */

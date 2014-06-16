@@ -685,7 +685,6 @@ void *callEvaluate(call *structure, environment *env) {
         retptr = __call__(primary_val, 0);
         del(primary_val);
     }
-    ref(retptr);
     return retptr;
 }
 
@@ -705,14 +704,11 @@ void call_del(void *vptr) {
 void *powerEvaluate(power *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
     void *u_expr_val = evaluate(structure->u_expr, env);
-    if (*(int *)primary_val == pyint_t && *(int *)u_expr_val == pyint_t) {
-        integer *val = integer__pow__(((pyint *)primary_val)->value, ((pyint *)u_expr_val)->value);
-        del(primary_val);
-        del(u_expr_val);
-        void *retptr = PYINT(val);
-        ref(retptr);
-        return retptr;
-    }
+    void *retptr = __pow__(primary_val, u_expr_val);
+    del(primary_val);
+    del(u_expr_val);
+    ref(retptr);
+    return retptr;
 }
 
 void power_del(void *vptr) {
@@ -765,6 +761,8 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
         retptr = __mul__(left_val, right_val);
     else if (!strcmp(structure->op, "/"))
         retptr = __div__(left_val, right_val);
+    else if (!strcmp(structure->op, "//"))
+        retptr = __rfloordiv__(left_val, right_val);
     else if (!strcmp(structure->op, "+"))
         retptr = __add__(left_val, right_val);
     else if (!strcmp(structure->op, "-"))
@@ -780,7 +778,7 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
             pyrange *range = (pyrange *)right_val;
             if (is_true(pyint__ge__(left_val, range->stop)) || is_true(pyint__lt__(left_val, range->start)))
                 retptr = PYBOOL(0);
-            if (!is_true(__bool__(pyint__mod__(pyint__sub__(left_val, range->start), range->step))))
+            else if (!is_true(__bool__(pyint__mod__(pyint__sub__(left_val, range->start), range->step))))
                 retptr = PYBOOL(1);
             else
                 retptr = PYBOOL(0);
@@ -790,9 +788,7 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
     else if (*left_val == pyint_t && *right_val == pyint_t) {
         integer *left = ((pyint *)left_val)->value;
         integer *right = ((pyint *)right_val)->value;
-        if (!strcmp(structure->op, "//"))
-            retptr = pyint__div__((pyint *)left_val, (pyint *)right_val);
-        else if (!strcmp(structure->op, "%"))
+        if (!strcmp(structure->op, "%"))
             retptr = pyint__mod__((pyint *)left_val, (pyint *)right_val);
         else if (!strcmp(structure->op, "<<"))
             retptr = pyint__lshift__((pyint *)left_val, (pyint *)right_val);
@@ -1092,12 +1088,20 @@ void print_nnl(void *structure) {
             break;
         case pytuple_t:
             printf("(");
-            if (!list_is_empty(((pytuple *)structure)->values))
-                for (ptr = ((pytuple *)structure)->values; ptr; ptr = ptr->next) {
+            if (!list_is_empty(((pytuple *)structure)->values)) {
+                ptr = ((pytuple *)structure)->values;
+                if (!ptr->next) {
                     print_nnl(ptr->content);
-                    if (ptr->next)
-                        printf(", ");
+                    printf(",");
                 }
+                else {
+                    for (ptr = ((pytuple *)structure)->values; ptr; ptr = ptr->next) {
+                        print_nnl(ptr->content);
+                        if (ptr->next)
+                            printf(", ");
+                    }
+                }
+            }
             printf(")");
             break;
         case pylist_t:

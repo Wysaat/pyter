@@ -179,3 +179,7 @@ pystr *pystr__getitem__(void *left, void *right) {
         return pystr_init2(val);
     }
 }
+
+pystr *pystr__str__(void *vptr) {
+    return (pystr *)vptr;
+}

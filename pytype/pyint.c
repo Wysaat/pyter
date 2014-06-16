@@ -3,9 +3,11 @@
 #include <string.h>
 #include "../types.h"
 #include "pyint.h"
+#include "pybool.h"
 #include "pycomplex.h"
 #include "pystr.h"
-#include "pybool.h"
+#include "pylist.h"
+#include "pytuple.h"
 #include "../evaluate.h"
 #include <math.h>
 
@@ -27,17 +29,6 @@ void pyint__del__(void *vptr) {
 
 void pyint_ref(void *vptr) {
     ref_inc(vptr);
-}
-
-pyfloat *pyint__float__(void *vptr) {
-    pyint *intptr = (pyint *)vptr;
-    pyfloat *retptr = pyfloat__init__();
-    integer *integerp = intptr->value;
-    while (integerp) {
-        retptr->value += integerp->value * pow(1e1, INTEGER_SZ*integerp->index);
-        integerp = integerp->lower;
-    }
-    return retptr;
 }
 
 pybool *pyint__bool__(void *vptr) {
@@ -96,25 +87,32 @@ void *pyint__mul__(void *lvoid, void *rvoid) {
         return pyfloat__mul__(rvoid, lvoid);
     else if (type(rvoid) == pycomplex_t)
         return pycomplex__mul__(rvoid, lvoid);
-    else if (type(rvoid) == pystr_t) {
+    else if (type(rvoid) == pystr_t)
         return pystr__mul__(rvoid, lvoid);
-    }
+    else if (type(rvoid) == pylist_t)
+        return pylist__mul__(rvoid, lvoid);
+    else if (type(rvoid) == pytuple_t)
+        return pytuple__mul__(rvoid, lvoid);
 }
 
 void *pyint__div__(void *lvoid, void *rvoid) {
-    pyint *left = (pyint *)lvoid;
+    pyfloat *left = pyint__float__(lvoid);
+    void *retptr = pyfloat__div__(left, rvoid);
+    pyfloat__del__(left);
+    return retptr;
+}
+
+void *pyint__rfloordiv__(void *lvoid, void *rvoid) {
     if (type(rvoid) == pyint_t) {
+        pyint *left = (pyint *)lvoid;
         pyint *right = (pyint *)rvoid;
         pyint *retptr = pyint__init__();
         retptr->value = integer__div__(left->value, right->value);
         return retptr;
     }
-    else if (type(rvoid) == pyfloat_t || type(rvoid) == pycomplex_t) {
-        pyfloat *fleft = pyint__float__(lvoid);
-        void *retptr = pyfloat__div__(fleft, rvoid);
-        pyfloat__del__(fleft);
-        return retptr;
-    }
+    pyfloat *result = pyint__div__(lvoid, rvoid);
+    result->value = floor(result->value);
+    return result;
 }
 
 pyint *pyint__mod__(pyint *left, pyint *right) {
@@ -227,5 +225,75 @@ pyint *pyint__neg__(pyint *ptr) {
 pyint *pyint__invert__(pyint *ptr) {
     pyint *retptr = pyint__init__();
     retptr->value = integer__invert__(ptr->value);
+    return retptr;
+}
+
+void *pyint__pow__(void *lvoid, void *rvoid) {
+    if (type(rvoid) == pyint_t) {
+        pyint *left = (pyint *)lvoid;
+        pyint *right = (pyint *)rvoid;
+        if (right->value->sign == '-') {
+            pyfloat *fleft = pyint__float__(lvoid);
+            pyfloat *fright = pyint__float__(rvoid);
+            void *retptr = pyfloat__pow__(fleft, fright);
+            del(fleft);
+            del(fright);
+            return retptr;
+        }
+        else {
+            pyint *retptr = pyint__init__();
+            retptr->value = integer__pow__(left->value, right->value);
+            return retptr;
+        }
+    }
+    else if (type(rvoid) == pyfloat_t) {
+        pyfloat *fptr = pyint__float__(lvoid);
+        void *retptr = pyfloat__pow__(fptr, rvoid);
+        del(fptr);
+        return retptr;
+    }
+    else if (type(rvoid) == pycomplex_t) {
+        pycomplex *cptr = pyint__complex__(lvoid);
+        void *retptr = pycomplex__pow__(cptr, rvoid);
+        del(cptr);
+        return retptr;
+    }
+}
+
+pyint *pyint__int__(void *vptr) {
+    return (pyint *)vptr;
+}
+
+pyfloat *pyint__float__(void *vptr) {
+    pyint *intptr = (pyint *)vptr;
+    pyfloat *retptr = pyfloat__init__();
+    integer *integerp = intptr->value;
+    while (integerp) {
+        retptr->value += integerp->value * pow(1e1, INTEGER_SZ*integerp->index);
+        integerp = integerp->lower;
+    }
+    if (intptr->value->sign == '-')
+        retptr->value = -retptr->value;
+    return retptr;
+}
+
+pycomplex *pyint__complex__(void *vptr) {
+    pyint *intptr = (pyint *)vptr;
+    pycomplex *retptr = pycomplex__init__();
+    integer *integerp = intptr->value;
+    while (integerp) {
+        retptr->real->value += integerp->value * pow(1e1, INTEGER_SZ*integerp->index);
+        integerp = integerp->lower;
+    }
+    if (intptr->value->sign == '-')
+        retptr->real->value = -retptr->real->value;
+    return retptr;
+}
+
+pystr *pyint__str__(void *vptr) {
+    pyint *ptr = (pyint *)vptr;
+    char *value = integer__str__(ptr->value);
+    pystr *retptr = pystr_init2(value);
+    free(value);
     return retptr;
 }

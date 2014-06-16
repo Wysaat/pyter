@@ -51,3 +51,14 @@ def f():
         a = 3
         return a * 3
 print(f())
+
+print((3+4j)**(4+8j))
+print((3+4j)**(4-8j))
+print((3-4j)**(4+8j))
+print((3-4j)**(4-8j))
+print((-3+4j)**(4+8j))
+print((-3-4j)**(4+8j))
+print((-3+4j)**(4-8j))
+print((-3-4j)**(4-8j))
+print((-3+4j)**(-4-8j))
+print((-3-4j)**(-4+8j))      

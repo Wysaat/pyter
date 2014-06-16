@@ -26,7 +26,7 @@ struct instance {
 pyclass *pyclass__init__(char *id);
 void *pyclass__getattribute__(void *, void *, pystr *);
 void *pyclass__call__(void *, void *);
-void pyclass__setattr__(void *, void *, pystr *attr, void *val);
+void pyclass__setattr__(void *, void *, char *attr, void *val);
 void pyclass_del(void *);
 void pyclass_ref(void *);
 

@@ -1,19 +1,5 @@
-#include "../types.h"
-#include "../evaluate.h"
-#include "pyint.h"
-#include "pyfloat.h"
-#include "pycomplex.h"
-#include "pystr.h"
-#include "pybool.h"
-#include "pylist.h"
-#include "pytuple.h"
-#include "pyset.h"
-#include "pydict.h"
-#include "pyfunction.h"
-#include "pyclass.h"
-#include "py__builtins__.h"
-#include "others.h"
 #include <stdlib.h>
+#include "methods.h"
 
 pybool *__eq__(void *left, void *right) {
     if (type(left) != type(right))
@@ -48,11 +34,17 @@ void *__getitem__(void *left, void *right)  {
     else if (type(left) == pystr_t) {
         return pystr__getitem__(left, right);
     }
+    else if (type(left) == pydict_t) {
+        return pydict__getitem__(left, right);
+    }
 }
 
 void __setitem__(void *left, void *right, void *value) {
     if (type(left) == pylist_t) {
         pylist__setitem__(left, right, value);
+    }
+    else if (type(left) == pydict_t) {
+        pydict__setitem__(left, right, value);
     }
 }
 
@@ -78,6 +70,13 @@ void *__div__(void *left, void *right) {
         return pyfloat__div__(left, right);
     else if (type(left) == pycomplex_t)
         return pycomplex__div__(left, right);
+}
+
+void *__rfloordiv__(void *left, void *right) {
+    if (type(left) == pyint_t)
+        return pyint__rfloordiv__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__rfloordiv__(left, right);
 }
 
 void *__add__(void *left, void *right) {
@@ -148,7 +147,7 @@ void *__getattribute__(void *first, void *second, pystr *attr) {
         return pyclass__getattribute__(first, second, attr);
 }
 
-void __setattr__(void *first, void *second, pystr *attr, void *val) {
+void __setattr__(void *first, void *second, char *attr, void *val) {
     if (type(first) == pyclass_t)
         pyclass__setattr__(first, second, attr, val);
 }
@@ -161,6 +160,55 @@ pyint *len(void *vptr) {
 }
 
 pystr *str(void *vptr) {
-    if (type(vptr) == pyrange_t)
+    if (type(vptr) == pyint_t)
+        return pyint__str__(vptr);
+    else if (type(vptr) == pyfloat_t)
+        return pyfloat__str__(vptr);
+    else if (type(vptr) == pycomplex_t)
+        return pycomplex__str__(vptr);
+    else if (type(vptr) == pystr_t)
+        return pystr__str__(vptr);
+    else if (type(vptr) == pyrange_t)
         return pyrange__str__(vptr);
+}
+
+pyint *__int__(void *vptr) {
+    if (type(vptr) == pyint_t)
+        return pyint__int__(vptr);
+    else if (type(vptr) == pyfloat_t)
+        return pyfloat__int__(vptr);
+    // else if (type(vptr) == pystr_t)
+    //     return pystr__int__(vptr);
+}
+
+pyfloat *__float__(void *vptr) {
+    if (type(vptr) == pyint_t)
+        return pyint__float__(vptr);
+    else if (type(vptr) == pyfloat_t)
+        return pyfloat__float__(vptr);
+    // else if (type(vptr) == pystr_t)
+    //     return pystr__float__(vptr);
+}
+
+pycomplex *py__complex__(void *vptr) {
+    if (type(vptr) == pyint_t)
+        return pyint__complex__(vptr);
+    else if (type(vptr) == pyfloat_t)
+        return pyfloat__complex__(vptr);
+    else if (type(vptr) == pycomplex_t)
+        return pycomplex__complex__(vptr);
+}
+
+void *__pow__(void *left, void *right) {
+    if (type(left) == pyint_t)
+        return pyint__pow__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__pow__(left, right);
+    else if (type(left) == pycomplex_t)
+        return pycomplex__pow__(left, right);
+}
+
+void *__abs__(void *vptr) {
+    if (type(vptr) == pycomplex_t)
+        return pycomplex__abs__(vptr);
 }

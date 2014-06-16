@@ -11,4 +11,7 @@ struct pydict {
 	list *values;
 };
 
+void *pydict__getitem__(void *left, void *right);
+void pydict__setitem__(void *left, void *right, void *value);
+
 #endif /* PYTYPE_PYDICT_H */

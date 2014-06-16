@@ -14,12 +14,11 @@ pyclass *pyclass__init__(char *id) {
     pyclass *retptr = (pyclass *)malloc(sizeof(pyclass));
     memset(retptr, 0, sizeof(pyclass));
     retptr->type = pyclass_t;
-    retptr->class = (pyclass *)malloc(sizeof(pyclass));
-    retptr->class->type = pyclass_t;
-    retptr->class->id = strdup("type");
+    retptr->class = &type_class;
     retptr->id = id;
     retptr->env = environment_init(0);
     retptr->ref = 0;
+    retptr->inheritance = 0;
     return retptr;
 }
 
@@ -43,10 +42,17 @@ void *pyclass__getattribute__(void *first, void *instance, pystr *attr) {
 }
 
 void *pyclass__call__(void *left, void *right) {
-    if (left == &list_class)
-        return pylist__init__();
-    if (left == &range_class)
-        return pyrange_init(right);
+    ref(left);
+    if (left == &list_class) {
+        void *retptr = pylist__init__();
+        ref(retptr);
+        return retptr;
+    }
+    if (left == &range_class) {
+        void *retptr = pyrange_init(right);
+        ref(retptr);
+        return retptr;
+    }
     instance *retptr = (instance *)malloc(sizeof(instance));
     retptr->type = instance_t;
     retptr->class = (pyclass *)left;
@@ -61,18 +67,18 @@ void *pyclass__call__(void *left, void *right) {
         }
     }
 
-    // ref(left);
+    ref(retptr);
     return retptr;
 }
 
-void pyclass__setattr__(void *first, void *second, pystr *attr, void *val) {
+void pyclass__setattr__(void *first, void *second, char *attr, void *val) {
     if (type(second) == instance_t) {
         instance *inst = (instance *)second;
-        store(inst->env, IDENTIFIER(attr->value), val);
+        store(inst->env, IDENTIFIER(attr), val);
     }
     else if (type(second) == pyclass_t) {
         pyclass *class = (pyclass *)second;
-        store(class->env, IDENTIFIER(attr->value), val);
+        store(class->env, IDENTIFIER(attr), val);
     }
 }
 

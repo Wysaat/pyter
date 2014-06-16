@@ -21,6 +21,7 @@ pybool *pylist__eq__(void *, void *);
 void *pylist__getitem__(void *, void *);
 void pylist__setitem__(void *, void *, void *value);
 pyint *pylist__len__(void *);
+int pylist_len2(void *);
 void pylist_del(void *);
 void pylist_ref(void *);
 

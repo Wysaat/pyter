@@ -44,10 +44,6 @@ void def_next(environment *env) {
     store_id(env, "next", next_func);
 }
 
-void def_int(environment *env) {
-    store_id(env, "int", &int_class);
-}
-
 /* CAUTION: nested function definition is not standard C, change it someday.. */
 void *def_sort_func_of_list(environment *env) {
     int comp(void *left, void *right) {
@@ -96,13 +92,42 @@ void def_len(environment *env) {
     store_id(env, "len", len_func);
 }
 
+void *_str(list *val) {
+    return str(val->content);
+}
+
+void def_str(environment *env) {
+    pybuiltin_function *str_func = pybuiltin_function__init__("str", _str);
+    store_id(env, "str", str_func);
+}
+
+void def_str_func_of_int(environment *env) {
+    pybuiltin_function *str_func = pybuiltin_function__init__("__str__", _str);
+    store_id(env, "__str__", str_func);
+}
+
+void def_int(environment *env) {
+    int_class.type = pyclass_t;
+    int_class.ref = 0;
+    int_class.class = &type_class;
+    int_class.id = "int";
+    int_class.env = environment_init(0);
+    int_class.inheritance = 0;
+    def_str_func_of_int(int_class.env);
+    store_id(env, "int", &int_class);
+}
+
+// void def_bool(environment *env);
+// void def_float(environment *env);
+// void def_complex(environment *env);
+
 void def_list(environment *env) {
     list_class.type = pyclass_t;
-    list_class.class = (pyclass *)malloc(sizeof(pyclass));
-    list_class.class->type = pyclass_t;
-    list_class.class->id = strdup("type");
+    list_class.ref = 0;
+    list_class.class = &type_class;
     list_class.id = "list";
     list_class.env = environment_init(0);
+    list_class.inheritance = 0;
     def_sort_func_of_list(list_class.env);
     def_len_func_of_list(list_class.env);
     def_append_func_of_list(list_class.env);
@@ -111,10 +136,20 @@ void def_list(environment *env) {
 
 void def_range(environment *env) {
     range_class.type = pyclass_t;
-    range_class.class = (pyclass *)malloc(sizeof(pyclass));
-    range_class.class->type = pyclass_t;
-    range_class.class->id = strdup("type");
+    range_class.ref = 0;
+    range_class.class = &type_class;
     range_class.id = "range";
     range_class.env = environment_init(0);
+    range_class.inheritance = 0;
     store_id(env, "range", &range_class);
+}
+
+void def_type(environment *env) {
+    type_class.type = pyclass_t;
+    type_class.ref = 0;
+    type_class.class = &type_class;
+    type_class.id = "type";
+    type_class.env = environment_init(0);
+    type_class.inheritance = 0;
+    store_id(env, "type", &type_class);
 }

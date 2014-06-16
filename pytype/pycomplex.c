@@ -1,7 +1,10 @@
 #include "pycomplex.h"
 #include "../types.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "pyint.h"
+#include <math.h>
+#include "methods.h"
 
 pycomplex *pycomplex__init__() {
     pycomplex *retptr = (pycomplex *)malloc(sizeof(pycomplex));
@@ -121,4 +124,56 @@ void pycomplex_ref(void *vptr) {
     pycomplex *ptr = (pycomplex *)vptr;
     ref_inc(ptr->real);
     ref_inc(ptr->imag);
+}
+
+void *pycomplex__pow__(void *lvoid, void *rvoid) {
+    if (type(rvoid) == pyint_t || type(rvoid) == pyfloat_t) {
+        pycomplex *right = py__complex__(rvoid);
+        void *retptr = pycomplex__pow__(lvoid, right);
+        del(right);
+        return retptr;
+    }
+    else if (type(rvoid) == pycomplex_t) {
+        // e**(i*x) = cos(x) + i*sin(x)
+        // x ** i = (e**(ln(x)*i)) = cos(ln(x)) + i*sin(ln(x))
+        double e = 2.718281828459045;
+        pycomplex *left = (pycomplex *)lvoid;
+        pycomplex *right = (pycomplex *)rvoid;
+        double a, b, c, d, left_abs, t, rp, cp;
+        a = left->real->value;
+        b = left->imag->value;
+        c = right->real->value;
+        d = right->imag->value;
+        left_abs = pycomplex__abs__(left)->value;
+        t = acos(a / sqrt(pow(a, 2)+pow(b, 2)));
+        if (b < 0)
+            t = -t;
+        rp = pow(left_abs, c) * pow(e, -(d * t));
+        cp = pow(left_abs, d) * pow(e, c * t);
+        pycomplex *retptr = pycomplex__init__();
+        retptr->real->value = cos(log(cp)) * rp;
+        retptr->imag->value = sin(log(cp)) * rp;
+        return retptr;
+    }
+}
+
+pyfloat *pycomplex__abs__(void *vptr) {
+    pycomplex *ptr = (pycomplex *)vptr;
+    pyfloat *retptr = pyfloat__init__();
+    retptr->value = sqrt(ptr->real->value * ptr->real->value + ptr->imag->value * ptr->imag->value);
+    return retptr;
+}
+
+pycomplex *pycomplex__complex__(void *vptr) {
+    return (pycomplex *)vptr;
+}
+
+pystr *pycomplex__str__(void *vptr) {
+    char value[1024];
+    sprintf(value, "(");
+    sprintf(value, "%f", ((pycomplex *)vptr)->real->value);
+    sprintf(value, "+");
+    sprintf(value, "%f", ((pycomplex *)vptr)->imag->value);
+    sprintf(value, "j)");
+    return pystr_init2(value);
 }

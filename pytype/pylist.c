@@ -29,20 +29,22 @@ void pylist__append__(pylist *left, void *rvoid) {
 /* lvoid, rvoid should not be changed */
 pylist *pylist__mul__(void *lvoid, void *rvoid) {
     pylist *left = (pylist *)lvoid;
-    pyint *times = pyint_cpy(rvoid);
-    pylist *retptr = pylist__init__();
+    if (type(rvoid) == pyint_t) {
+        pyint *times = pyint_cpy(rvoid);
+        pylist *retptr = pylist__init__();
 
-    pyint *zero = int_to_pyint(0);
+        pyint *zero = int_to_pyint(0);
 
-    while (is_true(pyint__gt__(times, zero))) {
-        list *to_append = list_cpy(left->values);
-        list_append_list(retptr->values, to_append);
-        pyint__dec__(times);
+        while (is_true(pyint__gt__(times, zero))) {
+            list *to_append = list_cpy(left->values);
+            list_append_list(retptr->values, to_append);
+            pyint__dec__(times);
+        }
+        pyint__del__(zero);
+        pyint__del__(times);
+
+        return retptr;
     }
-    pyint__del__(zero);
-    pyint__del__(times);
-
-    return retptr;  
 }
 
 pybool *pylist__eq__(void *lvoid, void *rvoid) {
@@ -125,18 +127,18 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
     if (type(rvoid) == pyint_t) {
         int index = pyint_to_int(rvoid);
         if (index < 0)
-            index += pyint_to_int(pylist__len__(lvoid));
+            index += pylist_len2(lvoid);
         int i = 0;
         list *ptr = primary->values;
         while (i++ < index)
             ptr = ptr->next;
-        ref_dec(ptr->content);
+        del(ptr->content);
         ptr->content = value;
-        ref_inc(ptr->content);
+        ref(ptr->content);
     }
     else if (type(rvoid) == pyslice_t) {
         pyslice *slice = (pyslice *)rvoid;
-        int length = pyint_to_int(pylist__len__(lvoid));
+        int length = pylist_len2(lvoid);
         int start, stop, step;
         step = slice->step;
         if (slice->nostart) {
@@ -185,7 +187,7 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
                         if (ptr->prev)
                             ptr->prev->next = 0;
                         while (ptr) {
-                            ref_dec(ptr->content);
+                            del(ptr->content);
                             free(ptr->content);
                             list *tmp = ptr->next;
                             free(ptr);
@@ -193,9 +195,9 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
                         }
                         return;
                     }
-                    ref_dec(ptr->content);
+                    del(ptr->content);
                     ptr->content = ptr2->content;
-                    ref_inc(ptr->content);
+                    ref(ptr->content);
                     if (!ptr->next && ptr2->next)
                         ptr->next = ptr2->next;
                     ptr2 = ptr2->next;
@@ -207,9 +209,9 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
                 return;
             for ( ; i > stop; i--, ptr = ptr->prev) {
                 if ((i - start) % step == 0) {
-                    ref_dec(ptr->content);
+                    del(ptr->content);
                     ptr->content = ptr2->content;
-                    ref_inc(ptr->content);
+                    ref(ptr->content);
                     ptr2 = ptr2->next;
                 }
             }
@@ -220,6 +222,11 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
 pyint *pylist__len__(void *vptr) {
     pylist *ptr = (pylist *)vptr;
     return int_to_pyint(list_len(ptr->values));
+}
+
+int pylist_len2(void *vptr) {
+    pylist *ptr = (pylist *)vptr;
+    return list_len(ptr->values);
 }
 
 void pylist_del(void *vptr) {

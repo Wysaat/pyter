@@ -176,8 +176,10 @@ void assignment_stmtExecute(void *structure, environment *env, int pf) {
     assignment_stmt *stmt = (assignment_stmt *)structure;
     void *values = evaluate(stmt->expressions, env);
     list *ptr;
+    // a = b = c = 3, a, b and c consist the targets_list
     for (ptr = stmt->targets_list; ptr; ptr = ptr->next)
         store(env, ptr->content, values);
+    del(values);
 }
 
 void assignment_stmt_del(void *vptr) {
@@ -406,8 +408,8 @@ void funcdefExecute(void *structure, environment *env, int pf) {
     func->assign_target_list = stmt->assign_target_list;
     if (stmt->assign_target_list)
         func->assign_values = evaluate(stmt->assign_expr_list, env);
+    func->ref = 0;
 
-    ref(func);
     store(env, stmt->id, func);
 }
 
@@ -429,7 +431,6 @@ void classdefExecute(void *structure, environment *env, int pf) {
     class->env->outer = env;
     execute(stmt->_suite, class->env, 0);
     class->env->outer = 0;
-    ref(class);
     store(env, stmt->id, class);
 }
 

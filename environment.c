@@ -28,6 +28,7 @@ val_dict_entry *val_dict_entry_init(char *id, void *value) {
 
 void store(environment *env, void *targets, void *values) {
     if (type(targets) == identifier_t) {
+        ref(values);
         identifier *id = (identifier *)targets;
         if (list_is_empty(env->val_dict)) {
             list_append_content(env->val_dict, val_dict_entry_init(strdup(id->value), values));
@@ -58,19 +59,28 @@ void store(environment *env, void *targets, void *values) {
     }
     else if (type(targets) == subscription_t) {
         subscription *subsc = (subscription *)targets;
-        __setitem__(evaluate(subsc->primary, env), evaluate(subsc->subsc->value, env), values);
+        void *left = evaluate(subsc->primary, env);
+        void *right = evaluate(subsc->subsc->value, env);
+        __setitem__(left, right, values);
+        del(left);
+        del(right);
     }
     else if (type(targets) == slicing_t) {
         slicing *slic = (slicing *)targets;
-        __setitem__(evaluate(slic->primary, env), evaluate(slic->slice, env), values);
+        void *left = evaluate(slic->primary, env);
+        void *right = evaluate(slic->slice, env);
+        __setitem__(left, right, values);
+        del(left);
+        del(right);
     }
     else if (type(targets) == attributeref_t) {
         attributeref *attribref = (attributeref *)targets;
         void *ptr = evaluate(attribref->primary, env);
         if (type(ptr) == instance_t)
-            __setattr__(((instance *)ptr)->class, ptr, PYSTR(attribref->id->value), values);
+            __setattr__(((instance *)ptr)->class, ptr, attribref->id->value, values);
         else if (type(ptr) == pyclass_t)
-            __setattr__(((pyclass *)ptr)->class, ptr, PYSTR(attribref->id->value), values);
+            __setattr__(((pyclass *)ptr)->class, ptr, attribref->id->value, values);
+        del(ptr);
     }
     else if (type(targets) == expression_list_t ||
              type(targets) == list_expr_t || type(targets) == parenth_form_t) {
@@ -79,10 +89,14 @@ void store(environment *env, void *targets, void *values) {
         if (type(values) == pylist_t || type(values) == pytuple_t || type(values) == pyset_t) {
             for (ptr1 = expressions->expr_head,
                  ptr2 = ((pylist *)values)->values; ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next) {
-                ref_inc(ptr2->content);
                 store(env, ptr1->content, ptr2->content);
             }
-            del(values);
+        }
+        else if (type(values) == pydict_t) {
+            for (ptr1 = expressions->expr_head,
+                 ptr2 = ((pydict *)values)->keys; ptr1; ptr1 = ptr1->next, ptr2 = ptr2->next) {
+                store(env, ptr1->content, ptr2->content);
+            }
         }
         else if (type(values) == pyrange_t) {
             pyint *index = int_to_pyint(0);
@@ -111,7 +125,7 @@ void environment_del(void *vptr) {
         while (ptr) {
             val_dict_entry *entry = (val_dict_entry *)ptr->content;
             free(entry->id);
-            free(ptr->content);
+            del(ptr->content);
             tmp = ptr;
             ptr = ptr->next;
             free(tmp);
