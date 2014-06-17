@@ -69,11 +69,12 @@ void *PASS_STMT() {
     return retptr;
 }
 
-void *IMPORT_STMT(char *module_name) {
+void *IMPORT_STMT(list *module_name_list, list *as_name_list) {
     import_stmt *retptr = (import_stmt *)malloc(sizeof(import_stmt));
     memset(retptr, 0, sizeof(*retptr));
     retptr->type = import_stmt_t;
-    retptr->module_name = module_name;
+    retptr->module_name_list = module_name_list;
+    retptr->as_name_list = as_name_list;
     return retptr;
 }
 
@@ -224,17 +225,25 @@ void pass_stmt_del(void *vptr) {
 
 void import_stmtExecute(void *structure, environment *env, int pf) {
     import_stmt *stmt = (import_stmt *)structure;
-    char *filename = stradd(stmt->module_name, ".py");
-    FILE *stream = fopen(filename, "r");
-    pymodule *mptr = pymodule_init(stmt->module_name);
-    interpret(stream, mptr->env);
-    store(env, IDENTIFIER(mptr->name), mptr);
+    list *ptr1, *ptr2;
+    for (ptr1 = stmt->module_name_list, ptr2 = stmt->as_name_list;
+                ptr1 && ptr2; ptr1 = ptr1->next, ptr2 = ptr2->next) {
+        char *filename = stradd((char *)ptr1->content, ".py");
+        FILE *stream = fopen(filename, "r");
+        pymodule *mptr = pymodule_init((char *)ptr1->content);
+        interpret(stream, mptr->env);
+        if (ptr2->content)
+            store(env, IDENTIFIER((char *)ptr2->content), mptr);
+        else
+            store(env, IDENTIFIER(mptr->name), mptr);
+    }
 }
 
 void import_stmt_del(void *vptr) {
-    import_stmt *ptr = (import_stmt *)vptr;
-    free(ptr->module_name);
-    free(ptr);
+    import_stmt *stmt = (import_stmt *)vptr;
+    list *ptr1, *ptr2;
+    for (ptr1 = stmt->module_name_list; ptr1; ptr1 = ptr1->next) {
+    }
 }
 
 void del_stmtExecute(void *structure, environment *env, int pf) {

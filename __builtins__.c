@@ -29,19 +29,38 @@ void *_print(list *val) {
     return pyNone_init();
 }
 
-void *next(list *val) {
-    if (type(val->content) == pygenerator_t)
-        return pygenerator_next(val->content);
-}
-
 void def_print(environment *env) {
     pybuiltin_function *print_func = pybuiltin_function__init__("print", _print);
     store_id(env, "print", print_func);
 }
 
+void *next(list *val) {
+    if (type(val->content) == pygenerator_t)
+        return pygenerator_next(val->content);
+}
+
 void def_next(environment *env) {
     pybuiltin_function *next_func = pybuiltin_function__init__("next", next);
     store_id(env, "next", next_func);
+}
+
+void *_len(list *val) {
+    return len(val->content);
+}
+
+void def_len(environment *env) {
+    pybuiltin_function *len_func = pybuiltin_function__init__("len", _len);
+    store_id(env, "len", len_func);
+}
+
+void def_int(environment *env) {
+    int_class.type = pyclass_t;
+    int_class.ref = 0;
+    int_class.class = &type_class;
+    int_class.id = "int";
+    int_class.env = environment_init(0);
+    int_class.inheritance = 0;
+    store_id(env, "int", &int_class);
 }
 
 /* CAUTION: nested function definition is not standard C, change it someday.. */
@@ -64,62 +83,15 @@ void *def_sort_func_of_list(environment *env) {
     store_id(env, "sort", sort_func_of_list);
 }
 
-void *_len(list *val) {
-    return len(val->content);
-}
-
-void *_pylist__len__(list *val) {
-    return pylist__len__(val->content);
-}
-
 void *_pylist_append(list *val) {
     pylist__append__(val->content, val->next->content);
     return pyNone_init();
-}
-
-void def_len_func_of_list(environment *env) {
-    pybuiltin_function *len_func_of_list = pybuiltin_function__init__("__len__", _pylist__len__);
-    store_id(env, "__len__", len_func_of_list);
 }
 
 void def_append_func_of_list(environment *env) {
     pybuiltin_function *append_func_of_list = pybuiltin_function__init__("append", _pylist_append);
     store_id(env, "append", append_func_of_list);
 }
-
-void def_len(environment *env) {
-    pybuiltin_function *len_func = pybuiltin_function__init__("len", _len);
-    store_id(env, "len", len_func);
-}
-
-void *_str(list *val) {
-    return str(val->content);
-}
-
-void def_str(environment *env) {
-    pybuiltin_function *str_func = pybuiltin_function__init__("str", _str);
-    store_id(env, "str", str_func);
-}
-
-void def_str_func_of_int(environment *env) {
-    pybuiltin_function *str_func = pybuiltin_function__init__("__str__", _str);
-    store_id(env, "__str__", str_func);
-}
-
-void def_int(environment *env) {
-    int_class.type = pyclass_t;
-    int_class.ref = 0;
-    int_class.class = &type_class;
-    int_class.id = "int";
-    int_class.env = environment_init(0);
-    int_class.inheritance = 0;
-    def_str_func_of_int(int_class.env);
-    store_id(env, "int", &int_class);
-}
-
-// void def_bool(environment *env);
-// void def_float(environment *env);
-// void def_complex(environment *env);
 
 void def_list(environment *env) {
     list_class.type = pyclass_t;
@@ -129,7 +101,6 @@ void def_list(environment *env) {
     list_class.env = environment_init(0);
     list_class.inheritance = 0;
     def_sort_func_of_list(list_class.env);
-    def_len_func_of_list(list_class.env);
     def_append_func_of_list(list_class.env);
     store_id(env, "list", &list_class);
 }
@@ -152,4 +123,19 @@ void def_type(environment *env) {
     type_class.env = environment_init(0);
     type_class.inheritance = 0;
     store_id(env, "type", &type_class);
+}
+
+void def__builtins__(environment *env) {
+    __builtins__module.type = pymodule_t;
+    __builtins__module.ref = 0;
+    __builtins__module.name = "__builtins__";
+    __builtins__module.env = environment_init(0);
+    store_id(env, "__builtins__", &__builtins__module);
+    def_print(__builtins__module.env);
+    def_next(__builtins__module.env);
+    def_len(__builtins__module.env);
+    def_int(__builtins__module.env);
+    def_list(__builtins__module.env);
+    def_range(__builtins__module.env);
+    def_type(__builtins__module.env);
 }

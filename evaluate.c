@@ -520,7 +520,10 @@ void *attributerefEvaluate(attributeref *structure, environment *env) {
                     ((pyfunction *)entry->value)->bound = 0;
                 else if (type(entry->value) == pybuiltin_function_t)
                     ((pybuiltin_function *)entry->value)->bound = 0;
-                return entry->value;
+                del(primary_val);
+                void *retptr = entry->value;
+                ref(retptr);
+                return retptr;
             }
         }
     }
@@ -537,7 +540,10 @@ void *attributerefEvaluate(attributeref *structure, environment *env) {
                             ((pyfunction *)entry->value)->bound = 0;
                         else if (type(entry->value) == pybuiltin_function_t)
                             ((pybuiltin_function *)entry->value)->bound = 0;
-                        return entry->value;
+                        del(primary_val);
+                        void *retptr = entry->value;
+                        ref(retptr);
+                        return retptr;
                     }
                 }
             }

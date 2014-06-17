@@ -46,7 +46,8 @@ typedef struct pass_stmt {
 
 typedef struct import_stmt {
     int type;
-    char *module_name;
+    list *module_name_list;
+    list *as_name_list;
 } import_stmt;
 
 typedef struct del_stmt {
@@ -115,7 +116,7 @@ void *YIELD_STMT(void *);
 void *BREAK_STMT();
 void *CONTINUE_STMT();
 void *PASS_STMT();
-void *IMPORT_STMT(char *);
+void *IMPORT_STMT(list *, list *);
 void *DEL_STMT(void *);
 void *STMT_LIST(list *);
 void *IF_STMT(list *condition_list, list *suite_list);

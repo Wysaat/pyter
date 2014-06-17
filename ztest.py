@@ -1,3 +1,10 @@
+b = __builtins__
+print = b.print
+next = b.next
+len = b.len
+range = b.range
+
+
 def f(x, y):
     return x ** y
 a = f(3, 8)

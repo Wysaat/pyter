@@ -1162,11 +1162,36 @@ void *parse_simple_stmt(scanner *sc) {
         return PASS_STMT();
     }
     else if (!strcmp(token, "import")) {
+        list *module_name_list = list_node();
+        list *as_name_list = list_node();
         while (1) {
             token = sc_read(sc);
             if (is_identifier(token)) {
-                return IMPORT_STMT(token);
+                list_append_content(module_name_list, token);
+                token = sc_read(sc);
+                if (!strcmp(token, "as")) {
+                    token = sc_read(sc);
+                    list_append_content(as_name_list, token);
+                    token = sc_read(sc);
+                    if (strcmp(token, ",")) {
+                        rollback(sc);
+                        return IMPORT_STMT(module_name_list, as_name_list);
+                    }
+                }
+                else if (!strcmp(token, ",")) {
+                    list_append_content(as_name_list, 0);
+                }
+                else {
+                    rollback(sc);
+                    return IMPORT_STMT(module_name_list, as_name_list);
+                }
             }
+        }
+    }
+    else if (!strcmp(token, "from")) {
+        token = sc_read(sc);
+        if (strcmp(token, ".")) {
+            rollback(sc);
         }
     }
     else if (!strcmp(token, "del")) {
@@ -1483,14 +1508,7 @@ void *parse_stmt(scanner *sc) {
 
 void interpret(FILE *stream, environment *env)
 {
-    def_print(env);
-    def_next(env);
-    def_len(env);
-    def_str(env);
-    def_int(env);
-    def_list(env);
-    def_range(env);
-    def_type(env);
+    def__builtins__(env);
 
     char *token;
 
