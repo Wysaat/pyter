@@ -78,6 +78,16 @@ void *IMPORT_STMT(list *module_name_list, list *as_name_list) {
     return retptr;
 }
 
+void *IMPORT_STMT2(char *module_name, list *var_name_list, list *as_name_list) {
+    import_stmt2 *retptr = (import_stmt2 *)malloc(sizeof(import_stmt2));
+    memset(retptr, 0, sizeof(*retptr));
+    retptr->type = import_stmt2_t;
+    retptr->module_name = module_name;
+    retptr->var_name_list = var_name_list;
+    retptr->as_name_list = as_name_list;
+    return retptr;
+}
+
 void *DEL_STMT(void *expressions) {
     del_stmt *retptr = (del_stmt *)malloc(sizeof(del_stmt));
     memset(retptr, 0, sizeof(*retptr));
@@ -232,10 +242,32 @@ void import_stmtExecute(void *structure, environment *env, int pf) {
         FILE *stream = fopen(filename, "r");
         pymodule *mptr = pymodule_init((char *)ptr1->content);
         interpret(stream, mptr->env);
-        if (ptr2->content)
+        if (*(char *)ptr2->content)
             store(env, IDENTIFIER((char *)ptr2->content), mptr);
         else
             store(env, IDENTIFIER(mptr->name), mptr);
+    }
+}
+
+void import_stmt2Execute(void *structure, environment *env, int pf) {
+    import_stmt2 *stmt = (import_stmt2 *)structure;
+    list *ptr1, *ptr2;
+    char *filename = stradd(stmt->module_name, ".py");
+    FILE *stream = fopen(filename, "r");
+    pymodule *mptr = pymodule_init(stmt->module_name);
+    interpret(stream, mptr->env);
+    list *ptr;
+    for (ptr1 = stmt->var_name_list, ptr2 = stmt->as_name_list;
+                ptr1 && ptr2; ptr1 = ptr1->next, ptr2 = ptr2->next) {
+        for (ptr = mptr->env->val_dict; ptr; ptr = ptr->next) {
+            val_dict_entry *entry = (val_dict_entry *)ptr->content;
+            if (!strcmp(entry->id, (char *)ptr1->content)) {
+                if (*(char *)ptr2->content)
+                    store(env, IDENTIFIER((char *)ptr2->content), entry->value);
+                else
+                    store(env, IDENTIFIER(entry->id), entry->value);
+            }
+        }
     }
 }
 
@@ -467,7 +499,7 @@ void suite_del(void *vptr) {
 
 /*
  * CAUTION: break!!! NEVER forget to BREAK!!!
- * hours have been wasted !!!
+ * hours has been wasted !!!
  */
 void execute(void *structure, environment *env, int pf) {
     if (env->ret || env->_break || env->_continue)
@@ -493,6 +525,9 @@ void execute(void *structure, environment *env, int pf) {
             break;
         case import_stmt_t:
             import_stmtExecute(structure, env, pf);
+            break;
+        case import_stmt2_t:
+            import_stmt2Execute(structure, env, pf);
             break;
         case del_stmt_t:
             del_stmtExecute(structure, env, pf);

@@ -1178,20 +1178,49 @@ void *parse_simple_stmt(scanner *sc) {
                         return IMPORT_STMT(module_name_list, as_name_list);
                     }
                 }
-                else if (!strcmp(token, ",")) {
-                    list_append_content(as_name_list, 0);
-                }
                 else {
-                    rollback(sc);
-                    return IMPORT_STMT(module_name_list, as_name_list);
+                    list_append_content(as_name_list, strdup(""));
+                    if (strcmp(token, ",")) {
+                        rollback(sc);
+                        return IMPORT_STMT(module_name_list, as_name_list);
+                    }
                 }
             }
         }
     }
     else if (!strcmp(token, "from")) {
         token = sc_read(sc);
-        if (strcmp(token, ".")) {
-            rollback(sc);
+        if (is_identifier(token)) {
+            char *module_name = token;
+            token = sc_read(sc);
+            if (!strcmp(token, "import")) {
+                token = sc_read(sc);
+                list *var_name_list = list_node();
+                list *as_name_list = list_node();
+                while (1) {
+                    token = sc_read(sc);
+                    if (is_identifier(token)) {
+                        list_append_content(var_name_list, token);
+                        token = sc_read(sc);
+                        if (!strcmp(token, "as")) {
+                            token = sc_read(sc);
+                            list_append_content(as_name_list, token);
+                            token = sc_read(sc);
+                            if (strcmp(token, ",")) {
+                                rollback(sc);
+                                return IMPORT_STMT2(module_name, var_name_list, as_name_list);
+                            }
+                        }
+                        else {
+                            list_append_content(as_name_list, strdup(""));
+                            if (strcmp(token, ",")) {
+                                rollback(sc);
+                                return IMPORT_STMT2(module_name, var_name_list, as_name_list);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     else if (!strcmp(token, "del")) {
@@ -1213,6 +1242,8 @@ void *parse_simple_stmt(scanner *sc) {
             while (1) {
                 list *expression_list2 = parse_expression_list(sc, endings);
                 token = sc_read(sc);
+                if (sc->eoff)
+                    return ASSIGNMENT_STMT(targets_list, expression_list2);
                 if (!strcmp(token, "="))
                     list_append_content(targets_list, expression_list2);
                 else {

@@ -50,6 +50,13 @@ typedef struct import_stmt {
     list *as_name_list;
 } import_stmt;
 
+typedef struct import_stmt2 {
+    int type;
+    char *module_name;
+    list *var_name_list;
+    list *as_name_list;
+} import_stmt2;
+
 typedef struct del_stmt {
     int type;
     list *target_list;
@@ -117,6 +124,7 @@ void *BREAK_STMT();
 void *CONTINUE_STMT();
 void *PASS_STMT();
 void *IMPORT_STMT(list *, list *);
+void *IMPORT_STMT2(char *, list *, list *);
 void *DEL_STMT(void *);
 void *STMT_LIST(list *);
 void *IF_STMT(list *condition_list, list *suite_list);
