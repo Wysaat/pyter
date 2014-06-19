@@ -1,8 +1,8 @@
-b = __builtins__
-print = b.print
-next = b.next
-len = b.len
-range = b.range
+           # b = __builtins__
+ # print = b.print
+# next = __builtins__.next
+                # len = b.len
+# range = b.range
 
 
 def f(x, y):

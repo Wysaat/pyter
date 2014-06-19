@@ -155,6 +155,10 @@ void __setattr__(void *first, void *second, char *attr, void *val) {
 pyint *len(void *vptr) {
     if (type(vptr) == pylist_t)
         return pylist__len__(vptr);
+    else if (type(vptr) == pytuple_t)
+        return pytuple__len__(vptr);
+    else if (type(vptr) == pyset_t)
+        return pyset__len__(vptr);
     else if (type(vptr) == pystr_t)
         return pystr_len(vptr);
 }

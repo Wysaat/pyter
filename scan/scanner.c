@@ -66,19 +66,32 @@ void sc_getline(scanner *sc) {
 
     if (sc->stream != stdin) {
         char *ch_ptr;
-        int skip_the_line = 1;
+        int skip_the_line;
         while (1) {
+            skip_the_line = 1;
             read = getline(&line, &len, sc->stream);
             if (read == -1) {
                 sc->eoff = 1;
                 return;
             }
             sc->ln++;
-            for (ch_ptr = line; *ch_ptr != '\n' && *ch_ptr != 0; ch_ptr++)
-                if (*ch_ptr != ' ' && *ch_ptr != '\t')
+            for (ch_ptr = line; *ch_ptr != '\n' && *ch_ptr != 0; ch_ptr++) {
+                if (*ch_ptr != ' ' && *ch_ptr != '\t') {
                     skip_the_line = 0;
-            if (!skip_the_line) {
-                sc->line = line;
+                    break;
+                }
+            }
+            if (!skip_the_line && *ch_ptr != '#') {
+                char *ptr;
+                for (ptr = line; *ptr; ptr++) {
+                    if (*ptr == '#') {
+                        *ptr = '\n';
+                        *(ptr+1) = 0;
+                        break;
+                    }
+                }
+                sc->line = strdup(line);
+                free(line);
                 sc->ll = read;
                 sc->ind = 0;
                 sc->eolf = 0;
@@ -88,8 +101,9 @@ void sc_getline(scanner *sc) {
     }
     else {
         char *ch_ptr;
-        int skip_the_line = 1;
+        int skip_the_line;
         while (1) {
+            skip_the_line = 1;
             read = getline(&line, &len, sc->stream);
             if (read == -1) {
                 puts("");
@@ -104,11 +118,23 @@ void sc_getline(scanner *sc) {
                 sc->eolf = 0;
                 break;
             }
-            for (ch_ptr = line; *ch_ptr != '\n'; ch_ptr++)
-                if (*ch_ptr != ' ' && *ch_ptr != '\t')
+            for (ch_ptr = line; *ch_ptr != '\n'; ch_ptr++) {
+                if (*ch_ptr != ' ' && *ch_ptr != '\t') {
                     skip_the_line = 0;
-            if (!skip_the_line) {
-                sc->line = line;
+                    break;
+                }
+            }
+            if (!skip_the_line && *ch_ptr != '#') {
+                char *ptr;
+                for (ptr = line; *ptr; ptr++) {
+                    if (*ptr == '#') {
+                        *ptr = '\n';
+                        *(ptr+1) = 0;
+                        break;
+                    }
+                }
+                sc->line = strdup(line);
+                free(line);
                 sc->ll = read;
                 sc->ind = 0;
                 sc->eolf = 0;

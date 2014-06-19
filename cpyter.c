@@ -1194,7 +1194,6 @@ void *parse_simple_stmt(scanner *sc) {
             char *module_name = token;
             token = sc_read(sc);
             if (!strcmp(token, "import")) {
-                token = sc_read(sc);
                 list *var_name_list = list_node();
                 list *as_name_list = list_node();
                 while (1) {
@@ -1540,6 +1539,14 @@ void *parse_stmt(scanner *sc) {
 void interpret(FILE *stream, environment *env)
 {
     def__builtins__(env);
+
+    def_print(env);
+    def_next(env);
+    def_len(env);
+    def_int(env);
+    def_list(env);
+    def_range(env);
+    def_type(env);
 
     char *token;
 

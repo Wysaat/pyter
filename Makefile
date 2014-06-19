@@ -5,7 +5,7 @@ all:
 	gen_evaluate.c gen_execute.c \
 	pytype/methods.c \
 	pytype/pyint.c pytype/pyfloat.c pytype/pycomplex.c pytype/pystr.c pytype/pybool.c \
-	pytype/pylist.c pytype/pytuple.c pytype/pydict.c \
+	pytype/pylist.c pytype/pytuple.c pytype/pyset.c pytype/pydict.c \
 	pytype/pyfunction.c pytype/pyclass.c \
 	pytype/py__builtins__.c pytype/pygenerator.c pytype/others.c pytype/pymodule.c \
 	environment.c \

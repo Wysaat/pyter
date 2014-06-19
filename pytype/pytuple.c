@@ -84,3 +84,8 @@ void pytuple_ref(void *vptr) {
             ref_inc(lptr->content);
     }
 }
+
+pyint *pytuple__len__(void *vptr) {
+    pytuple *ptr = (pytuple *)vptr;
+    return int_to_pyint(list_len(ptr->values));
+}
