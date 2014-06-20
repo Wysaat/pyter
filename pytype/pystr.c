@@ -183,3 +183,12 @@ pystr *pystr__getitem__(void *left, void *right) {
 pystr *pystr__str__(void *vptr) {
     return (pystr *)vptr;
 }
+
+pystr *captalize(pystr *ptr) {
+    int len = strlen(ptr->value);
+    char cap[len+1] = strcpy(ptr->value);
+    cap[len] = 0;
+    if (cap[0] >= 'a' && cap[0] <= 'z')
+        cap[0] += 'A' - 'a';
+    return pystr_init2(cap);
+}

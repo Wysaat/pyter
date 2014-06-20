@@ -32,4 +32,6 @@ pystr *pystr__getitem__(void *, void *);
 
 pystr *pystr__str__(void *);
 
+pystr *captalize(pystr *ptr);
+
 #endif /* PYTYPE_PYSTR_H */

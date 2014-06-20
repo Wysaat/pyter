@@ -63,6 +63,16 @@ void def_int(environment *env) {
     store_id(env, "int", &int_class);
 }
 
+void def_str(environment *env) {
+    str_class.type = pyclass_t;
+    str_class.ref = 0;
+    str_class.class = &type_class;
+    str_class.id = "str";
+    str_class.env = environment_init(0);
+    str_class.inheritance = 0;
+    store_id(env, "str", &str_class);
+}
+
 /* CAUTION: nested function definition is not standard C, change it someday.. */
 void *def_sort_func_of_list(environment *env) {
     int comp(void *left, void *right) {
@@ -135,6 +145,7 @@ void def__builtins__(environment *env) {
     def_next(__builtins__module.env);
     def_len(__builtins__module.env);
     def_int(__builtins__module.env);
+    def_str(__builtins__module.env);
     def_list(__builtins__module.env);
     def_range(__builtins__module.env);
     def_type(__builtins__module.env);

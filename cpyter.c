@@ -1544,6 +1544,7 @@ void interpret(FILE *stream, environment *env)
     def_next(env);
     def_len(env);
     def_int(env);
+    def_str(env);
     def_list(env);
     def_range(env);
     def_type(env);

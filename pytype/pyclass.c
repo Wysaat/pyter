@@ -9,6 +9,7 @@
 #include "pylist.h"
 #include "methods.h"
 #include <string.h>
+#include "../builtins/builtins.h"
 
 pyclass *pyclass__init__(char *id) {
     pyclass *retptr = (pyclass *)malloc(sizeof(pyclass));
@@ -43,12 +44,23 @@ void *pyclass__getattribute__(void *first, void *instance, pystr *attr) {
 
 void *pyclass__call__(void *left, void *right) {
     ref(left);
-    if (left == &list_class) {
+    if (left == &int_class) {
+    }
+    else if (left == &float_class) {
+    }
+    else if (left == &complex_class) {
+    }
+    else if (left == &str_class) {
+        void *retptr = str_init(right);
+        ref(retptr);
+        return retptr;
+    }
+    else if (left == &list_class) {
         void *retptr = pylist__init__();
         ref(retptr);
         return retptr;
     }
-    if (left == &range_class) {
+    else if  (left == &range_class) {
         void *retptr = pyrange_init(right);
         ref(retptr);
         return retptr;
