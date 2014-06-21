@@ -2,6 +2,7 @@
 #define PYTYPE_PYMODULE_H
 
 #include "../environment.h"
+typedef struct environment environment;
 
 typedef struct pymodule pymodule;
 

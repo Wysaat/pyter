@@ -5,12 +5,14 @@
 #include "pybool.h"
 #include "pyfloat.h"
 #include "pystr.h"
+#include "../__builtins__.h"
 
 typedef struct pyint pyint;
 
 struct pyint {
     int type;
     int ref;
+    pyclass *class;
     integer *value;
 };
 

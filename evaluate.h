@@ -9,6 +9,7 @@
 typedef struct environment environment;
 typedef struct suite suite;
 typedef struct expression_list expression_list;
+typedef struct pyclass pyclass;
 
 typedef struct identifier {
     int type;
@@ -183,6 +184,7 @@ int type(void *);
 int get_ref(void *);
 void ref_inc(void *);
 void ref_dec(void *);
+pyclass *class(void *);
 
 void *IDENTIFIER(char *);
 void *INT_EXPR(char *);

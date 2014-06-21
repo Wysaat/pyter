@@ -1,8 +1,9 @@
 #ifndef PYTYPE_PYCLASS_H
 #define PYTYPE_PYCLASS_H
 
-#include "../environment.h"
 #include "pystr.h"
+
+typedef struct environment environment;
 
 typedef struct pyclass pyclass;
 

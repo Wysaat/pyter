@@ -1,9 +1,10 @@
 #include <stdlib.h>
-#include "others.h"
 #include "../types.h"
-#include "pyint.h"
-#include "pystr.h"
 #include "../string.h"
+// #include "pyint.h"
+// #include "pystr.h"
+// #include "others.h"
+#include "pytype.h"
 
 pyNone *pyNone_init() {
     pyNone *retptr = (pyNone *)malloc(sizeof(pyNone));
@@ -51,6 +52,16 @@ pystr *pyrange__str__(void *vptr) {
     else
         string = stradd(stradd("range(", stradd(stradd(stradd(stradd(start, ", "), stop), ", "), step)), ")");
     return str_to_pystr(string);
+}
+
+pyint *pyrange_len(void *vptr) {
+    pyrange *range = (pyrange *)vptr;
+    int start = pyint_to_int(range->start);
+    int stop = pyint_to_int(range->stop);
+    int step = pyint_to_int(range->step);
+    if (start >= stop)
+        return int_to_pyint(0);
+    return int_to_pyint((stop-start-1) / step + 1);
 }
 
 void pyargument_del(void *vptr) {

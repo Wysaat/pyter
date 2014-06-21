@@ -291,8 +291,7 @@ void identifier_del(void *vptr) {
 }
 
 void *int_exprEvaluate(int_expr *structure) {
-    pyint *retptr = (pyint *)calloc(sizeof(pyint), 1);
-    retptr->type = pyint_t;
+    pyint *retptr = pyint__init__();
     retptr->value = integer__init__(structure->value);
     ref(retptr);
     return retptr;
@@ -1191,4 +1190,8 @@ void ref_inc(void *val) {
 
 void ref_dec(void *val) {
     --(*((int *)val+1));
+}
+
+pyclass *class(void *val) {
+    return (void *)((int *)val+2);
 }

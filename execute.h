@@ -9,6 +9,7 @@
 typedef struct identifier identifier;
 typedef struct environment environment;
 typedef struct expression_list expression_list;
+typedef struct pyrange pyrange;
 
 typedef struct expression_stmt {
     int type;

@@ -1,10 +1,13 @@
 #ifndef PYTYPE_PYBOOL_H
 #define PYTYPE_PYBOOL_H
 
+#include "pytype.h"
+
 typedef struct pybool pybool;
 struct pybool {
     int type;
     int ref;
+    pyclass *class;
     int value;
 };
 

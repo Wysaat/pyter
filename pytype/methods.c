@@ -161,6 +161,8 @@ pyint *len(void *vptr) {
         return pyset__len__(vptr);
     else if (type(vptr) == pystr_t)
         return pystr_len(vptr);
+    else if (type(vptr) == pyrange_t)
+        return pyrange_len(vptr);
 }
 
 pystr *str(void *vptr) {

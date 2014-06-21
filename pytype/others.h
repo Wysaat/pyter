@@ -1,9 +1,10 @@
 #ifndef PYTYPE_OTHERS_H
 #define PYTYPE_OTHERS_H
 
-#include "pyint.h"
 #include "../list.h"
-#include "pystr.h"
+// #include "pyint.h"
+// #include "pystr.h"
+#include "pytype.h"
 
 typedef struct pyslice pyslice;
 typedef struct pyNone pyNone;
@@ -41,6 +42,7 @@ pyNone *pyNone_init();
 pyrange *pyrange_init(void *);
 void *pyrange__getitem__(void *, void *);
 pystr *pyrange__str__(void *vptr);
+pyint *pyrange_len(void *vptr);
 void pyargument_del(void *);
 
 #endif /* PYTYPE_OTHERS_H */

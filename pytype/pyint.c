@@ -15,6 +15,7 @@ pyint *pyint__init__() {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));
     memset(retptr, 0, sizeof(pyint));
     retptr->type = pyint_t;
+    retptr->class = &int_class;
     return retptr;
 }
 

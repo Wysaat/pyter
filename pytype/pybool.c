@@ -6,6 +6,7 @@ void *PYBOOL(int value) {
     pybool *retptr = (pybool *)malloc(sizeof(pybool));
     retptr->type = pybool_t;
     retptr->ref = 0;
+    retptr->type = &bool_class;
     if (value)
     	retptr->value = 1;
     else

@@ -15,17 +15,39 @@
 #include "pytype/others.h"
 #include "pytype/methods.h"
 
-void *_print(list *val) {
+void *_print(pyargument *argument) {
+    char *sep = " ";
+    char *end = "\n";
+    FILE *file = stdout;
+    int flush = 0;
+    list *val = argument->value_list;
+    if (argument->assign_target_list) {
+        list *ptr, *ptr2;
+        for (ptr = argument->assign_target_list, ptr2 = argument->assign_value_list;
+                    ptr && ptr2; ptr = ptr->next, ptr2 = ptr2->next) {
+            identifier *id = (identifier *)ptr->content;
+            if (!strcmp(id->value, "sep")) {
+                if (type(ptr2->content) == pystr_t)
+                    sep = ((pystr *)ptr2->content)->value;
+            }
+            else if (!strcmp(id->value, "end")) {
+                if (type(ptr2->content) == pystr_t)
+                    end = ((pystr *)ptr2->content)->value;
+            }
+        }
+    }
     if (val && !list_is_empty(val)) {
         for ( ; val; val = val->next) {
             if (type(val->content) == pystr_t)
                 printf("%s", ((pystr *)val->content)->value);
             else
                 print_nnl(val->content);
-            printf(" ");
+            printf("%s", sep);
         }
     }
-    printf("\n");
+    printf("%s", end);
+    if (flush)
+        fflush(file);
     return pyNone_init();
 }
 
@@ -34,7 +56,8 @@ void def_print(environment *env) {
     store_id(env, "print", print_func);
 }
 
-void *next(list *val) {
+void *next(pyargument *argument) {
+    list *val = argument->value_list;
     if (type(val->content) == pygenerator_t)
         return pygenerator_next(val->content);
 }
@@ -44,7 +67,8 @@ void def_next(environment *env) {
     store_id(env, "next", next_func);
 }
 
-void *_len(list *val) {
+void *_len(pyargument *argument) {
+    list *val = argument->value_list;
     return len(val->content);
 }
 
@@ -63,16 +87,6 @@ void def_int(environment *env) {
     store_id(env, "int", &int_class);
 }
 
-void def_str(environment *env) {
-    str_class.type = pyclass_t;
-    str_class.ref = 0;
-    str_class.class = &type_class;
-    str_class.id = "str";
-    str_class.env = environment_init(0);
-    str_class.inheritance = 0;
-    store_id(env, "str", &str_class);
-}
-
 /* CAUTION: nested function definition is not standard C, change it someday.. */
 void *def_sort_func_of_list(environment *env) {
     int comp(void *left, void *right) {
@@ -85,7 +99,8 @@ void *def_sort_func_of_list(environment *env) {
                 return 1;
         }
     }
-    void *sort_of_list(list *val) {
+    void *sort_of_list(pyargument *argument) {
+        list *val = argument->value_list;
         pylist__sort__((pylist *)val->content, comp);
         return pyNone_init();
     }
@@ -93,7 +108,8 @@ void *def_sort_func_of_list(environment *env) {
     store_id(env, "sort", sort_func_of_list);
 }
 
-void *_pylist_append(list *val) {
+void *_pylist_append(pyargument *argument) {
+    list *val = argument->value_list;
     pylist__append__(val->content, val->next->content);
     return pyNone_init();
 }

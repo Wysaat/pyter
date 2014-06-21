@@ -1,8 +1,9 @@
 #ifndef __BUILTINS__H
 #define __BUILTINS__H
 
-#include "environment.h"
 #include "pytype/pymodule.h"
+#include "pytype/pyclass.h"
+typedef struct pymodule pymodule;
 
 pyclass int_class;
 pyclass float_class;
