@@ -2,9 +2,7 @@
 #define ENVIRONMENT_H
 
 #include "list.h"
-#include "evaluate.h"
 
-typedef struct identifier identifier;
 typedef struct environment environment;
 
 /* CAUTION val_dict could be an empty list */

@@ -1,23 +1,13 @@
 #ifndef PYTYPE_METHODS_H
 #define PYTYPE_METHODS_H
 
-#include "../environment.h"
-#include "../types.h"
-#include "../evaluate.h"
-// #include "pyint.h"
-// #include "pyfloat.h"
-// #include "pycomplex.h"
-// #include "pystr.h"
-// #include "pybool.h"
-// #include "pylist.h"
-// #include "pytuple.h"
-// #include "pyset.h"
-// #include "pydict.h"
-// #include "pyfunction.h"
-// #include "pyclass.h"
-// #include "py__builtins__.h"
-// #include "others.h"
-#include "pytype.h"
+typedef struct pybool pybool;
+typedef struct pyint pyint;
+typedef struct pystr pystr;
+typedef struct pyfloat pyfloat;
+typedef struct pycomplex pycomplex;
+typedef struct pylist pylist;
+typedef struct pytuple pytuple;
 
 pybool *__eq__(void *, void *);
 void *__getitem__(void *, void *);
@@ -29,7 +19,7 @@ void *__add__(void *, void *);
 void *__sub__(void *, void *);
 pybool *__bool__(void *);
 void *__call__(void *, void *);
-void *__getattribute__(void *, void *, pystr *);
+void *__getattribute__(void *, void *, char *);
 void __setattr__(void *, void *, char *, void *);
 pyint *len(void *);
 pystr *str(void *vptr);

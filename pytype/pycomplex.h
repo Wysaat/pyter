@@ -1,12 +1,16 @@
 #ifndef PYTYPE_PYCOMPLEX_H
 #define PYTYPE_PYCOMPLEX_H
 
+#include "pyclass.h"
 #include "pyfloat.h"
+#include "pycomplex.h"
+#include "pystr.h"
 
 typedef struct pycomplex pycomplex;
 struct pycomplex {
     int type;
     int ref;
+    pyclass *class;
     pyfloat *real;
     pyfloat *imag;
 };

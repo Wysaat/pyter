@@ -1,13 +1,24 @@
-#include "environment.h"
 #include <string.h>
 #include <stdlib.h>
+#include "environment.h"
 #include "types.h"
-#include "pytype/pylist.h"
+#include "list.h"
+#include "struct_info.h"
+#include "evaluate.h"
+#include "execute.h"
 #include "pytype/methods.h"
-#include "pytype/pyclass.h"
 #include "pytype/pyint.h"
+#include "pytype/pybool.h"
+#include "pytype/pyfloat.h"
+#include "pytype/pycomplex.h"
+#include "pytype/pystr.h"
+#include "pytype/pylist.h"
+#include "pytype/pytuple.h"
+#include "pytype/pyset.h"
+#include "pytype/pydict.h"
+#include "pytype/pyfunction.h"
+#include "pytype/pyclass.h"
 #include "pytype/others.h"
-#include "cpyter.h"
 
 environment *environment_init(environment *outer) {
     environment *retptr = (environment *)malloc(sizeof(environment));
@@ -239,6 +250,8 @@ void del(void *vptr) {
         pytuple_del(vptr);
     else if (type(vptr) == pyfunction_t)
         pyfunction_del(vptr);
+    else if (type(vptr) == pybuiltin_function_t)
+        pybuiltin_function_del(vptr);
     else if (type(vptr) == pyclass_t)
         pyclass_del(vptr);
 }
@@ -256,6 +269,8 @@ void ref(void *vptr) {
         pytuple_ref(vptr);
     else if (type(vptr) == pyfunction_t)
         pyfunction_ref(vptr);
+    else if (type(vptr) == pybuiltin_function_t)
+        pybuiltin_function_ref(vptr);
     else if (type(vptr) == pyclass_t)
         pyclass_ref(vptr);
 }

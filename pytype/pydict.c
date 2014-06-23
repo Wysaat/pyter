@@ -1,4 +1,7 @@
 #include "pydict.h"
+#include "../list.h"
+#include "methods.h"
+#include "../struct_info.h"
 
 void *pydict__getitem__(void *left, void *right) {
     pydict *dict = (pydict *)left;

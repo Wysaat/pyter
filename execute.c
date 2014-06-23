@@ -190,7 +190,7 @@ void assignment_stmtExecute(void *structure, environment *env, int pf) {
     // a = b = c = 3, a, b and c consist the targets_list
     for (ptr = stmt->targets_list; ptr; ptr = ptr->next)
         store(env, ptr->content, values);
-    del(values);
+    // don't need to del values here
 }
 
 void assignment_stmt_del(void *vptr) {
@@ -405,6 +405,9 @@ void for_stmtExecute(void *structure, environment *env, int pf) {
 
     else if (type(values_list) == pyrange_t) {
         pyrange *range = (pyrange *)values_list;
+        range->type = pyrange_t;
+        range->ref = 0;
+        range->class = &range_class;
         pyint *index = int_to_pyint(0);
         while (1) {
             pyint *intval = __getitem__(range, index);
@@ -440,6 +443,8 @@ void funcdefExecute(void *structure, environment *env, int pf) {
     pyfunction *func = (pyfunction *)malloc(sizeof(pyfunction));
     memset(func, 0, sizeof(pyfunction));
     func->type = pyfunction_t;
+    func->ref = 0;
+    func->class = &function_class;
     func->id = stmt->id;
     func->parameters = stmt->parameters;
     func->fsuite = stmt->fsuite;
@@ -449,7 +454,6 @@ void funcdefExecute(void *structure, environment *env, int pf) {
     func->assign_target_list = stmt->assign_target_list;
     if (stmt->assign_target_list)
         func->assign_values = evaluate(stmt->assign_expr_list, env);
-    func->ref = 0;
 
     store(env, stmt->id, func);
 }

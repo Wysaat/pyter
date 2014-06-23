@@ -3,9 +3,10 @@
 #include <string.h>
 #include "../types.h"
 #include "pystr.h"
+#include "../__builtins__.h"
+#include "../struct_info.h"
 #include "pyint.h"
 #include "pybool.h"
-#include "pylist.h"
 #include "others.h"
 #include "../string.h"
 
@@ -13,6 +14,8 @@ pystr *pystr__init__() {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->value = strdup("");
     retptr->type = pystr_t;
+    retptr->ref = 0;
+    retptr->class = &str_class;
     return retptr;
 }
 
@@ -20,6 +23,8 @@ pystr *pystr_init2(char *value) {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->value = strdup(value);
     retptr->type = pystr_t;
+    retptr->ref = 0;
+    retptr->class = &str_class;
     return retptr;
 }
 
@@ -192,4 +197,45 @@ pystr *pystr_capitalize(pystr *ptr) {
     if (cap[0] >= 'a' && cap[0] <= 'z')
         cap[0] += 'A' - 'a';
     return pystr_init2(cap);
+}
+
+pystr *pystr_casefold(pystr *ptr) {
+    int len = strlen(ptr->value);
+    char folded[len+1];
+    int i;
+    for (i = 0; i < len; i++) {
+        folded[i] = ptr->value[i];
+        if (ptr->value[i] >= 'A' && ptr->value[i] <= 'Z')
+            folded[i] += 'a' - 'A';
+    }
+    folded[len] = 0;
+    return pystr_init2(folded);
+}
+
+pystr *pystr_center(pystr *ptr, pyint *width, pystr *fillchar) {
+    int wid = pyint_to_int(width);
+    char fill;
+    if (fillchar)
+        fill = *fillchar->value;
+    else
+        fill = ' ';
+    int len = strlen(ptr->value);
+    if (wid <= len)
+        return ptr;
+    else {
+        char centered[wid+1];
+        int delt = wid - len;
+        int front, end;
+        end = delt / 2;
+        front = delt - end;
+        int i;
+        for (i = 0; i < front; i++)
+            centered[i] = fill;
+        for ( ; i < wid - end; i++)
+            centered[i] = ptr->value[i-front];
+        for ( ; i < wid; i++)
+            centered[i] = fill;
+        centered[wid] = 0;
+        return pystr_init2(centered);
+    }
 }

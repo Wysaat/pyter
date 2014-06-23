@@ -1,9 +1,9 @@
-#include "pytype/py__builtins__.h"
-#include "evaluate.h"
-#include "environment.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pytype/py__builtins__.h"
+#include "evaluate.h"
+#include "environment.h"
 #include "types.h"
 #include "pytype/pytuple.h"
 #include "pytype/pygenerator.h"

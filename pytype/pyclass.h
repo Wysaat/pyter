@@ -1,9 +1,10 @@
 #ifndef PYTYPE_PYCLASS_H
 #define PYTYPE_PYCLASS_H
 
-#include "pystr.h"
+#include "../environment.h"
+#include "../list.h"
 
-typedef struct environment environment;
+typedef struct pystr pystr;
 
 typedef struct pyclass pyclass;
 
@@ -25,7 +26,7 @@ struct instance {
 };
 
 pyclass *pyclass__init__(char *id);
-void *pyclass__getattribute__(void *, void *, pystr *);
+void *pyclass__getattribute__(void *, void *, char *);
 void *pyclass__call__(void *, void *);
 void pyclass__setattr__(void *, void *, char *attr, void *val);
 void pyclass_del(void *);

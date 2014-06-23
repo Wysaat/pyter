@@ -1,19 +1,28 @@
 #include <stdlib.h>
+#include "others.h"
 #include "../types.h"
+#include "../struct_info.h"
+#include "../environment.h"
+#include "../__builtins__.h"
+#include "../list.h"
+#include "pyint.h"
+#include "../integer.h"
 #include "../string.h"
-// #include "pyint.h"
-// #include "pystr.h"
-// #include "others.h"
-#include "pytype.h"
+#include "pystr.h"
 
 pyNone *pyNone_init() {
     pyNone *retptr = (pyNone *)malloc(sizeof(pyNone));
     retptr->type = pyNone_t;
+    retptr->ref = 0;
+    retptr->class = &NoneType_class;
     return retptr;
 }
 
 pyrange *pyrange_init(void *vptr) {
     pyrange *retptr = (pyrange *)malloc(sizeof(pyrange));
+    retptr->type = pyrange_t;
+    retptr->ref = 0;
+    retptr->class = &range_class;
     pyargument *argument = (pyargument *)vptr;
     list *value_list = argument->value_list;
     if (list_len(value_list) == 1) {
@@ -31,7 +40,6 @@ pyrange *pyrange_init(void *vptr) {
         retptr->stop = value_list->next->content;
         retptr->step = value_list->next->next->content;
     }
-    retptr->type = pyrange_t;
     return retptr;
 }
 

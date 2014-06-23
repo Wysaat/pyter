@@ -1,13 +1,12 @@
+#include <stdlib.h>
 #include "pyfunction.h"
-#include "../types.h"
-#include "pytuple.h"
-#include "../execute.h"
-#include "../evaluate.h"
-#include "../gen_execute.h"
+#include "../struct_info.h"
+#include "../environment.h"
 #include "pygenerator.h"
 #include "../list.h"
+#include "../execute.h"
 #include "others.h"
-#include <stdlib.h>
+#include "../gen_execute.h"
 
 void *pyfunction__call__(void *lptr, void *rptr) {
     pyfunction *func = (pyfunction *)lptr;
@@ -60,6 +59,8 @@ void pyfunction_del(void *vptr) {
     pyfunction *func = (pyfunction *)vptr;
     if (func->assign_values)
         del(func->assign_values);
+    if (func->bound)
+        del(func->bound);
     if (get_ref(vptr) == 0) {
         del(func->id);
         if (func->parameters) {

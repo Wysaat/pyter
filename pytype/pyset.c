@@ -1,4 +1,5 @@
 #include "pyset.h"
+#include "pyint.h"
 
 pyint *pyset__len__(void *vptr) {
     pyset *ptr = (pyset *)vptr;

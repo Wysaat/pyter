@@ -1,14 +1,21 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
 #include "pycomplex.h"
 #include "../types.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include "pyfloat.h"
+#include "../struct_info.h"
+#include "../environment.h"
+#include "../__builtins__.h"
 #include "pyint.h"
-#include <math.h>
+#include "pystr.h"
 #include "methods.h"
 
 pycomplex *pycomplex__init__() {
     pycomplex *retptr = (pycomplex *)malloc(sizeof(pycomplex));
     retptr->type = pycomplex_t;
+    retptr->ref = 0;
+    retptr->class = &complex_class;
     retptr->real = pyfloat__init__();
     retptr->imag = pyfloat__init__();
     return retptr;

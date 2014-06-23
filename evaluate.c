@@ -6,6 +6,7 @@
 #include "cpyter.h"
 #include "evaluate.h"
 #include "environment.h"
+#include "struct_info.h"
 
 void *IDENTIFIER(char *token) {
     identifier *retptr = (identifier *)malloc(sizeof(identifier));
@@ -337,9 +338,7 @@ void imag_expr_del(void *vptr) {
 }
 
 void *str_exprEvaluate(str_expr *structure) {
-    pystr *retptr = (pystr *)calloc(sizeof(pystr), 1);
-    retptr->type = pystr_t;
-    retptr->value = strdup(strslice(structure->value, 1, -1, 1));
+    pystr *retptr = pystr_init2(strslice(structure->value, 1, -1, 1));
     ref(retptr);
     return retptr;
 }
@@ -422,6 +421,7 @@ void list_comprehension_del(void *vptr) {
 void *set_exprEvaluate(set_expr *structure, environment *env) {
     pyset *retptr = (pyset *)malloc(sizeof(pyset));
     retptr->ref = 0;
+    retptr->class = &set_class;
     retptr->type = pyset_t;
     retptr->values = list_node();
     list *ptr;
@@ -446,6 +446,7 @@ void *dict_exprEvaluate(dict_expr *structure, environment *env) {
     pydict *retptr = (pydict *)malloc(sizeof(pydict));
     retptr->ref = 0;
     retptr->type = pydict_t;
+    retptr->class = &dict_class;
     retptr->keys = list_node();
     retptr->values = list_node();
     list *ptr = structure->expr_head, *ptr2 = structure->expr_head2;
@@ -484,32 +485,16 @@ void dict_expr_del(void *vptr) {
 void *attributerefEvaluate(attributeref *structure, environment *env) {
     void *primary_val = evaluate(structure->primary, env);
     list *ptr, *val_dict;
-    pyclass *class;
+    pyclass *class = get_class(primary_val);
 
-    if (type(primary_val) == pyclass_t) {
+    if (type(primary_val) == pyclass_t)
         val_dict = ((pyclass *)primary_val)->env->val_dict;
-        class = ((pyclass *)primary_val)->class;
-    }
-    else if (type(primary_val) == instance_t) {
+    else if (type(primary_val) == instance_t)
         val_dict = ((instance *)primary_val)->env->val_dict;
-        class = ((instance *)primary_val)->class;
-    }
-    else if (type(primary_val) == pyint_t) {
-        val_dict = list_node();
-        class = &int_class;
-    }
-    else if (type(primary_val) == pylist_t) {
-        val_dict = list_node();
-        class = &list_class;
-    }
-    else if (type(primary_val) == pyrange_t) {
-        val_dict = list_node();
-        class = &range_class;
-    }
-    else if (type(primary_val) == pymodule_t) {
+    else if (type(primary_val) == pymodule_t)
         val_dict = ((pymodule *)primary_val)->env->val_dict;
-        class = 0;
-    }
+    else
+        val_dict = list_node();
 
     if (!list_is_empty(val_dict)) {
         for (ptr = val_dict; ptr; ptr = ptr->next) {
@@ -548,9 +533,8 @@ void *attributerefEvaluate(attributeref *structure, environment *env) {
             }
         }
     }
-    void *pystrp = PYSTR(structure->id->value);
-    void *retptr = __getattribute__(class, primary_val, pystrp);
-    del(pystrp);
+    void *attr = structure->id->value;
+    void *retptr = __getattribute__(class, primary_val, attr);
     del(primary_val);
     ref(retptr);
     return retptr;
@@ -690,6 +674,7 @@ void *callEvaluate(call *structure, environment *env) {
         retptr = __call__(primary_val, 0);
         del(primary_val);
     }
+
     return retptr;
 }
 
@@ -838,6 +823,7 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
     del(left_val);
     del(right_val);
     ref(retptr);
+
     return retptr;
 }
 
@@ -1192,6 +1178,6 @@ void ref_dec(void *val) {
     --(*((int *)val+1));
 }
 
-pyclass *class(void *val) {
-    return (void *)((int *)val+2);
+pyclass *get_class(void *val) {
+    return *(pyclass **)((int *)val+2);
 }

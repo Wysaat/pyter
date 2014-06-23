@@ -1,11 +1,21 @@
-#include "../cpyter.h"
-#include "pybool.h"
+#include <stdlib.h>
+#include "pylist.h"
+#include "../types.h"
+#include "../__builtins__.h"
 #include "../list.h"
+#include "../struct_info.h"
+#include "../environment.h"
+#include "pyint.h"
+#include "pybool.h"
 #include "others.h"
+#include "pytuple.h"
+#include "pyset.h"
 
 pylist *pylist__init__() {
     pylist *retptr = (pylist *)malloc(sizeof(pylist));
     retptr->type = pylist_t;
+    retptr->ref = 0;
+    retptr->class = &list_class;
     retptr->values = list_node();
     return retptr;
 }
@@ -26,23 +36,18 @@ void pylist__append__(pylist *left, void *rvoid) {
     list_append_content(left->values, rvoid);
 }
 
-/* lvoid, rvoid should not be changed */
 pylist *pylist__mul__(void *lvoid, void *rvoid) {
     pylist *left = (pylist *)lvoid;
     if (type(rvoid) == pyint_t) {
-        pyint *times = pyint_cpy(rvoid);
+        int times = pyint_to_int(rvoid), i;
         pylist *retptr = pylist__init__();
-
-        pyint *zero = int_to_pyint(0);
-
-        while (is_true(pyint__gt__(times, zero))) {
-            list *to_append = list_cpy(left->values);
-            list_append_list(retptr->values, to_append);
-            pyint__dec__(times);
+        for (i = 0; i < times; i++) {
+            list *ptr;
+            for (ptr = left->values; ptr; ptr = ptr->next) {
+                list_append_content(retptr->values, ptr->content);
+                ref(ptr->content);
+            }
         }
-        pyint__del__(zero);
-        pyint__del__(times);
-
         return retptr;
     }
 }
@@ -188,7 +193,6 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
                             ptr->prev->next = 0;
                         while (ptr) {
                             del(ptr->content);
-                            free(ptr->content);
                             list *tmp = ptr->next;
                             free(ptr);
                             ptr = tmp;
@@ -235,7 +239,7 @@ void pylist_del(void *vptr) {
     if (!list_is_empty(ptr->values)) {
         list *lptr;
         for (lptr = ptr->values; lptr; lptr = lptr->next)
-            ref_dec(lptr->content);
+            del(lptr->content);
     }
     if (get_ref(vptr) == 0) {
         list *lptr = ptr->values, *tmp;

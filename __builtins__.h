@@ -1,17 +1,27 @@
 #ifndef __BUILTINS__H
 #define __BUILTINS__H
 
-#include "pytype/pymodule.h"
-#include "pytype/pyclass.h"
+typedef struct pyclass pyclass;
 typedef struct pymodule pymodule;
 
+#include "pytype/pyclass.h"
+#include "pytype/pymodule.h"
+
+pyclass NoneType_class;
 pyclass int_class;
+pyclass bool_class;
 pyclass float_class;
 pyclass complex_class;
 pyclass str_class;
 pyclass list_class;
-pyclass range_class;
+pyclass tuple_class;
+pyclass set_class;
+pyclass dict_class;
+pyclass generator_class;
+pyclass function_class;
 pyclass type_class;
+pyclass module_class;
+pyclass range_class;
 pymodule __builtins__module;
 
 /* functions */

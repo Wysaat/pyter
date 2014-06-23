@@ -1,11 +1,12 @@
 #ifndef PYTYPE_PYINT_H
 #define PYTYPE_PYINT_H
 
+#include "pyclass.h"
 #include "../integer.h"
 #include "pybool.h"
-#include "pyfloat.h"
-#include "pystr.h"
-#include "../__builtins__.h"
+
+typedef struct pyfloat pyfloat;
+typedef struct pycomplex pycomplex;
 
 typedef struct pyint pyint;
 

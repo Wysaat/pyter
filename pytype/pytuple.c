@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include "../types.h"
+#include "../struct_info.h"
+#include "../__builtins__.h"
 #include "pytuple.h"
 #include "pyint.h"
 #include "pybool.h"
@@ -8,6 +10,8 @@
 pytuple *pytuple__init__() {
     pytuple *retptr = (pytuple *)malloc(sizeof(pytuple));
     retptr->type = pytuple_t;
+    retptr->ref = 0;
+    retptr->class = &tuple_class;
     retptr->values = list_node();
     return retptr;
 }
@@ -48,8 +52,7 @@ void *pytuple__getitem__(void *lvoid, void *rvoid) {
     pyint *right = (pyint *)rvoid;
     list *ptr;
 
-    pyint *ind = pyint__init__();
-    ind->value = INTEGER_NODE();
+    pyint *ind = int_to_pyint(0);
 
     for (ptr = left->values; is_true(pyint__lt__(ind, right)); pyint__inc__(ind))
         ptr = ptr->next;
@@ -62,7 +65,7 @@ void pytuple_del(void *vptr) {
     if (!list_is_empty(ptr->values)) {
         list *lptr;
         for (lptr = ptr->values; lptr; lptr = lptr->next)
-            ref_dec(lptr->content);
+            del(lptr->content);
     }
     if (get_ref(vptr) == 0) {
         list *lptr = ptr->values, *tmp;

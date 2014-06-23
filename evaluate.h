@@ -4,12 +4,9 @@
 #include "list.h"
 #include "integer.h"
 #include "environment.h"
-#include "execute.h"
 
-typedef struct environment environment;
 typedef struct suite suite;
 typedef struct expression_list expression_list;
-typedef struct pyclass pyclass;
 
 typedef struct identifier {
     int type;
@@ -179,12 +176,6 @@ struct expression_list {
     list *value_list; /* for yield */
     list *expr_ptr;   /* for yield */
 };
-
-int type(void *);
-int get_ref(void *);
-void ref_inc(void *);
-void ref_dec(void *);
-pyclass *class(void *);
 
 void *IDENTIFIER(char *);
 void *INT_EXPR(char *);

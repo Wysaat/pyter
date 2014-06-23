@@ -1,5 +1,18 @@
 #include <stdlib.h>
-#include "methods.h"
+#include "../struct_info.h"
+#include "../types.h"
+#include "pyint.h"
+#include "pybool.h"
+#include "pyfloat.h"
+#include "pycomplex.h"
+#include "pylist.h"
+#include "pyset.h"
+#include "pytuple.h"
+#include "pydict.h"
+#include "pyfunction.h"
+#include "pyclass.h"
+#include "py__builtins__.h"
+#include "others.h"
 
 pybool *__eq__(void *left, void *right) {
     if (type(left) != type(right))
@@ -142,7 +155,7 @@ void *__call__(void *left, void *right) {
 //         return pyclass__getattribute__(first, second, attr);
 // }
 
-void *__getattribute__(void *first, void *second, pystr *attr) {
+void *__getattribute__(void *first, void *second, char *attr) {
     if (type(first) == pyclass_t)
         return pyclass__getattribute__(first, second, attr);
 }

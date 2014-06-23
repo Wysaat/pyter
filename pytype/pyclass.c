@@ -1,39 +1,43 @@
-#include "pyclass.h"
-#include <string.h>
 #include <stdlib.h>
-#include "../types.h"
-#include "pyfunction.h"
-#include "../environment.h"
-#include "py__builtins__.h"
-#include "../__builtins__.h"
-#include "pylist.h"
-#include "methods.h"
 #include <string.h>
+#include "pyclass.h"
+#include "../types.h"
+#include "../__builtins__.h"
+#include "../environment.h"
+#include "../list.h"
+#include "../struct_info.h"
+#include "pyfunction.h"
+#include "py__builtins__.h"
 #include "../builtins/builtins.h"
+#include "pylist.h"
+#include "others.h"
+#include "methods.h"
 
 pyclass *pyclass__init__(char *id) {
     pyclass *retptr = (pyclass *)malloc(sizeof(pyclass));
     memset(retptr, 0, sizeof(pyclass));
     retptr->type = pyclass_t;
+    retptr->ref = 0;
     retptr->class = &type_class;
     retptr->id = id;
     retptr->env = environment_init(0);
-    retptr->ref = 0;
     retptr->inheritance = 0;
     return retptr;
 }
 
-void *pyclass__getattribute__(void *first, void *instance, pystr *attr) {
+void *pyclass__getattribute__(void *first, void *instance, char *attr) {
     pyclass *class = (pyclass *)first;
     list *ptr;
     if (!list_is_empty(class->env->val_dict)) {
         for (ptr = class->env->val_dict; ptr; ptr = ptr->next) {
             val_dict_entry *entry = (val_dict_entry *)ptr->content;
-            if (!strcmp(entry->id, attr->value)) {
+            if (!strcmp(entry->id, attr)) {
                 if (type(entry->value) == pyfunction_t) {
+                    ref(instance);
                     ((pyfunction *)entry->value)->bound = instance;
                 }
                 else if (type(entry->value) == pybuiltin_function_t) {
+                    ref(instance);
                     ((pybuiltin_function *)entry->value)->bound = instance;
                 }
                 return entry->value;

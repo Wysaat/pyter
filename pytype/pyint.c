@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "../types.h"
+#include "../struct_info.h"
 #include "pyint.h"
+#include "../integer.h"
 #include "pybool.h"
 #include "pycomplex.h"
 #include "pystr.h"
 #include "pylist.h"
 #include "pytuple.h"
-#include "../evaluate.h"
-#include <math.h>
+#include "../__builtins__.h"
 
 pyint *pyint__init__() {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));

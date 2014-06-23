@@ -1,6 +1,7 @@
 #ifndef PYTYPE_PYGENERATOR_H
 #define PYTYPE_PYGENERATOR_H
 
+#include "pyclass.h"
 #include "../environment.h"
 
 typedef struct pygenerator pygenerator;
@@ -8,6 +9,7 @@ typedef struct pygenerator pygenerator;
 struct pygenerator {
     int type;
     int ref;
+    pyclass *class;
     void *_suite;
     environment *local_env;
     char *id;

@@ -1,7 +1,7 @@
 #ifndef PYTYPE_PYBOOL_H
 #define PYTYPE_PYBOOL_H
 
-#include "pytype.h"
+#include "pyclass.h"
 
 typedef struct pybool pybool;
 struct pybool {

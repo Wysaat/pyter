@@ -1,14 +1,15 @@
 #ifndef PYTYPE_PYMODULE_H
 #define PYTYPE_PYMODULE_H
 
+#include "pyclass.h"
 #include "../environment.h"
-typedef struct environment environment;
 
 typedef struct pymodule pymodule;
 
 struct pymodule {
     int type;
     int ref;
+    pyclass *class;
     char *name;
     environment *env;
 };

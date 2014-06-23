@@ -1,14 +1,17 @@
 #ifndef PYTYPE_PYLIST_H
 #define PYTYPE_PYLIST_H
 
+#include "pyclass.h"
 #include "../list.h"
 #include "pybool.h"
+#include "pyint.h"
 
 typedef struct pylist pylist;
 
 struct pylist {
     int type;
     int ref;
+    pyclass *class;
     list *values;
 };
 

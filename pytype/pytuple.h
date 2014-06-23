@@ -1,6 +1,7 @@
 #ifndef PYTYPE_PYTUPLE_H
 #define PYTYPE_PYTUPLE_H
 
+#include "pyclass.h"
 #include "../list.h"
 #include "pyint.h"
 #include "pybool.h"
@@ -9,6 +10,7 @@ typedef struct pytuple pytuple;
 struct pytuple {
     int type;
     int ref;
+    pyclass *class;
     list *values;
 };
 

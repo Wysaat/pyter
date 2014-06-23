@@ -2,9 +2,9 @@
 #define PYTYPE_OTHERS_H
 
 #include "../list.h"
-// #include "pyint.h"
-// #include "pystr.h"
-#include "pytype.h"
+#include "pyclass.h"
+#include "pyint.h"
+#include "pystr.h"
 
 typedef struct pyslice pyslice;
 typedef struct pyNone pyNone;
@@ -22,6 +22,8 @@ struct pyslice {
 
 struct pyNone {
     int type;
+    int ref;
+    pyclass *class;
 };
 
 struct pyargument {
@@ -33,6 +35,8 @@ struct pyargument {
 
 struct pyrange {
     int type;
+    int ref;
+    pyclass *class;
     pyint *start;
     pyint *stop;
     pyint *step;

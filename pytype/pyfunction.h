@@ -1,6 +1,7 @@
 #ifndef PYTYPE_PYFUNCTION_H
 #define PYTYPE_PYFUNCTION_H
 
+#include "pyclass.h"
 #include "../evaluate.h"
 #include "../list.h"
 #include "../environment.h"
@@ -11,6 +12,7 @@ typedef struct pyfunction pyfunction;
 struct pyfunction {
     int type;
     int ref;
+    pyclass *class;
     identifier *id;
     list *parameters;  // can be 0, or a list of identifiers
     void *fsuite;

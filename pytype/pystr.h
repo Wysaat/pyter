@@ -1,6 +1,7 @@
 #ifndef PYTYPE_PYSTR_H
 #define PYTYPE_PYSTR_H
 
+#include "pyclass.h"
 #include "pyint.h"
 #include "pybool.h"
 
@@ -8,6 +9,7 @@ typedef struct pystr pystr;
 struct pystr {
     int type;
     int ref;
+    pyclass *class;
     char *value;
 };
 
@@ -33,5 +35,7 @@ pystr *pystr__getitem__(void *, void *);
 pystr *pystr__str__(void *);
 
 pystr *pystr_capitalize(pystr *ptr);
+pystr *pystr_casefold(pystr *ptr);
+pystr *pystr_center(pystr *ptr, pyint *width, pystr *fillchar);
 
 #endif /* PYTYPE_PYSTR_H */

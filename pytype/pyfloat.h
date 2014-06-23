@@ -1,14 +1,16 @@
 #ifndef PYTYPE_PYFLOAT_H
 #define PYTYPE_PYFLOAT_H
 
-typedef struct pyint pyint;
-typedef struct pycomplex pycomplex;
-typedef struct pystr pystr;
+#include "pyclass.h"
+#include "pyint.h"
+#include "pycomplex.h"
+#include "pystr.h"
 
 typedef struct pyfloat pyfloat;
 struct pyfloat {
     int type;
     int ref;
+    pyclass *class;
     double value;
 };
 

@@ -1,12 +1,14 @@
 #ifndef PYTYPE_PYDICT_H
 #define PYTYPE_PYDICT_H
 
+#include "pyclass.h"
 #include "../list.h"
 
 typedef struct pydict pydict;
 struct pydict {
 	int type;
 	int ref;
+	pyclass *class;
 	list *keys;
 	list *values;
 };
