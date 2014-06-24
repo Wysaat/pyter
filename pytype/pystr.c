@@ -239,3 +239,52 @@ pystr *pystr_center(pystr *ptr, pyint *width, pystr *fillchar) {
         return pystr_init2(centered);
     }
 }
+
+int find_subs(char *string, char *subs) {
+    int i, j = 0;
+    int len = strlen(string), slen = strlen(subs);
+    for (i = 0; i < len; i++) {
+        if (string[i] == subs[j])
+            j++;
+        else
+            j = 0;
+        if (j == slen)
+            return i - slen + 1;
+    }
+    return -1;
+}
+
+pyint *pystr_count(pystr *ptr, pystr *sub, pyint *start, pyint *end) {
+    int _start, _end;
+    if (start)
+        _start = pyint_to_int(start);
+    else
+        _start = 0;
+    if (end)
+        _end = pyint_to_int(end);
+    else
+        _end = strlen(ptr->value);
+    if (_end < 0)
+        _end += strlen(ptr->value);
+    int count = 0, incv;
+    int slen = strlen(sub->value), len = strlen(ptr->value);
+    char *string = strdup(ptr->value);
+    if (_end < len)
+        string[_end] = 0;
+    len = strlen(string);
+    while (1) {
+        if ((incv = find_subs(string+_start, sub->value)) >= 0) {
+            _start += incv;
+            count += 1;
+            _start += slen;
+            if (_start >= len) {
+                free(string);
+                return int_to_pyint(count);
+            }
+        }
+        else {
+            free(string);
+            return int_to_pyint(count);
+        }
+    }
+}

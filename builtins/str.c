@@ -52,6 +52,58 @@ void *def_str_center_func(environment *env) {
     store_id(env, "center", str_center_func);
 }
 
+void *str_count(pyargument *argument) {
+    list *val = argument->value_list;
+    if (!val->next->next)
+        return pystr_count(val->content, val->next->content, 0, 0);
+    else if (!val->next->next->next)
+        return pystr_count(val->content, val->next->content, val->next->next->content, 0);
+    else
+        return pystr_count(val->content, val->next->content, val->next->next->content, val->next->next->next->content);
+}
+
+void *def_str_count_func(environment *env) {
+    pybuiltin_function *str_count_func = pybuiltin_function__init__("count", str_count);
+    store_id(env, "count", str_count_func);
+}
+
+void *str_endswith(pyargument *argument) {
+    int start, end;
+    list *val = argument->value_list;
+    char *string = ((pystr *)val->content)->value;
+    char *suffix = ((pystr *)val->next->content)->value;
+    int len = strlen(string), slen = strlen(suffix);
+    if (val->next->next) {
+        start = pyint_to_int(val->next->next->content);
+        if (val->next->next->next) {
+            end =  pyint_to_int(val->next->next->next->content);
+            if (end < 0)
+                end += len;
+        }
+        else
+            end = len;
+    }
+    else {
+        start = 0;
+        end = len;
+    }
+    if (end - start < slen)
+        return PYBOOL(0);
+    else {
+        int i, j;
+        for (i = slen-1, j = end-1; i >= 0; i--, j--) {
+            if (suffix[i] != string[j])
+                return PYBOOL(0);
+        }
+        return PYBOOL(1);
+    }
+}
+
+void *def_str_endswith_func(environment *env) {
+    pybuiltin_function *str_endswith_func = pybuiltin_function__init__("endswith", str_endswith);
+    store_id(env, "endswith", str_endswith_func);
+}
+
 void def_str(environment *env) {
     str_class.type = pyclass_t;
     str_class.ref = 0;
@@ -62,5 +114,7 @@ void def_str(environment *env) {
     def_str_capitalize_func(str_class.env);
     def_str_casefold_func(str_class.env);
     def_str_center_func(str_class.env);
+    def_str_count_func(str_class.env);
+    def_str_endswith_func(str_class.env);
     store_id(env, "str", &str_class);
 }

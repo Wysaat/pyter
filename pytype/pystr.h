@@ -37,5 +37,7 @@ pystr *pystr__str__(void *);
 pystr *pystr_capitalize(pystr *ptr);
 pystr *pystr_casefold(pystr *ptr);
 pystr *pystr_center(pystr *ptr, pyint *width, pystr *fillchar);
+pyint *pystr_count(pystr *ptr, pystr *sub, pyint *start, pyint *end);
+pybool *pystr_endswith(pystr *ptr, pystr *suffix, pyint *start, pyint *end);
 
 #endif /* PYTYPE_PYSTR_H */

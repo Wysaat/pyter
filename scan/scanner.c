@@ -19,8 +19,10 @@ scanner *sc_init(FILE *stream) {
     retptr->ps1 = strdup(">>> ");
     retptr->ps2 = strdup("... ");
     retptr->ps = retptr->ps1;
+    retptr->line_ptr = 0;
     sc_getline(retptr);
     if (retptr->stream == stdin) {
+        retptr->lines = list_node();
         while (retptr->ll == 1) {
             if (feof(retptr->stream)) {
                 retptr->eoff = 1;
@@ -59,8 +61,15 @@ char *sc_readchs(scanner *sc, int len) {
 }
 
 void sc_getline(scanner *sc) {
-    if (sc->stream == stdin)
+    if (sc->stream == stdin) {
+        if (sc->line)
+            list_append_content(sc->lines, sc->line);
+        if (!sc->line_ptr)
+            sc->line_ptr = sc->lines;
+        else
+            sc->line_ptr = sc->line_ptr->next;
         printf("%s", sc->ps);
+    }
     char *line = 0;
     size_t read, len = 0;
 

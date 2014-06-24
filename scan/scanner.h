@@ -25,6 +25,8 @@ struct scanner {
     char *ps, *ps1, *ps2; /* interpreter prompt strings */
     int skip_newlines;
     int in_suite;
+    list *lines;
+    list *line_ptr;
 };
 
 scanner *sc_init(FILE *stream);
