@@ -20,6 +20,10 @@ void *_print(pyargument *argument) {
     char *end = "\n";
     FILE *file = stdout;
     int flush = 0;
+    if (!argument) {
+        printf("%s", end);
+        return pyNone_init();
+    }
     list *val = argument->value_list;
     if (argument->assign_target_list) {
         list *ptr, *ptr2;

@@ -475,7 +475,7 @@ void classdefExecute(void *structure, environment *env, int pf) {
     }
     class->env->outer = env;
     execute(stmt->_suite, class->env, 0);
-    class->env->outer = 0;
+    // class->env->outer = 0;
     store(env, stmt->id, class);
 }
 

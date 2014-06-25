@@ -254,6 +254,8 @@ void del(void *vptr) {
         pybuiltin_function_del(vptr);
     else if (type(vptr) == pyclass_t)
         pyclass_del(vptr);
+    // else if (type(vptr) == instance_t)
+    //     instance_del(vptr);
 }
 
 void ref(void *vptr) {
@@ -273,6 +275,8 @@ void ref(void *vptr) {
         pybuiltin_function_ref(vptr);
     else if (type(vptr) == pyclass_t)
         pyclass_ref(vptr);
+    // else if (type(vptr) == instance_t)
+    //     instance_ref(vptr);
 }
 
 void store_id(environment *env, char *id, void *value) {
