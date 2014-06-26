@@ -28,6 +28,15 @@ pystr *pystr_init2(char *value) {
     return retptr;
 }
 
+pystr *pystr_init3(char *value) {
+    pystr *retptr = (pystr *)malloc(sizeof(pystr));
+    retptr->value = value;
+    retptr->type = pystr_t;
+    retptr->ref = 0;
+    retptr->class = &str_class;
+    return retptr;
+}
+
 void pystr__del__(void *vptr) {
     ref_dec(vptr);
     if (get_ref(vptr) == 0) {

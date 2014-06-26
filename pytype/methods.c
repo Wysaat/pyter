@@ -187,6 +187,8 @@ pystr *str(void *vptr) {
         return pycomplex__str__(vptr);
     else if (type(vptr) == pystr_t)
         return pystr__str__(vptr);
+    else if (type(vptr) == pylist_t)
+        return pylist_str(vptr);
     else if (type(vptr) == pyrange_t)
         return pyrange__str__(vptr);
 }

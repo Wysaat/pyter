@@ -27,5 +27,6 @@ pyint *pylist__len__(void *);
 int pylist_len2(void *);
 void pylist_del(void *);
 void pylist_ref(void *);
+pystr *pylist_str(void *);
 
 #endif /* PYTYPE_PYLIST_H */

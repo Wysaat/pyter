@@ -176,11 +176,8 @@ pycomplex *pycomplex__complex__(void *vptr) {
 }
 
 pystr *pycomplex__str__(void *vptr) {
+    pycomplex *ptr = (pycomplex *)vptr;
     char value[1024];
-    sprintf(value, "(");
-    sprintf(value, "%f", ((pycomplex *)vptr)->real->value);
-    sprintf(value, "+");
-    sprintf(value, "%f", ((pycomplex *)vptr)->imag->value);
-    sprintf(value, "j)");
+    sprintf(value, "(%f+%fj)", ptr->real->value, ptr->imag->value);
     return pystr_init2(value);
 }

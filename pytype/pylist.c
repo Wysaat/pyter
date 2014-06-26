@@ -1,8 +1,10 @@
 #include <stdlib.h>
+#include <string.h>
 #include "pylist.h"
 #include "../types.h"
 #include "../__builtins__.h"
 #include "../list.h"
+#include "../string.h"
 #include "../struct_info.h"
 #include "../environment.h"
 #include "pyint.h"
@@ -10,6 +12,7 @@
 #include "others.h"
 #include "pytuple.h"
 #include "pyset.h"
+#include "methods.h"
 
 pylist *pylist__init__() {
     pylist *retptr = (pylist *)malloc(sizeof(pylist));
@@ -260,4 +263,18 @@ void pylist_ref(void *vptr) {
         for (lptr = ptr->values; lptr; lptr = lptr->next)
             ref_inc(lptr->content);
     }
+}
+
+pystr *pylist_str(void *vptr) {
+    pylist *lptr = (pylist *)vptr;
+    buffer2 *buff = buff2_init();
+    buff2_add(buff, strdup("["));
+    list *ptr;
+    for (ptr = lptr->values; ptr->next; ptr = ptr->next) {
+        buff2_add(buff, str(ptr->content)->value);
+        buff2_add(buff, strdup(", "));
+    }
+    buff2_add(buff, str(ptr->content)->value);
+    buff2_add(buff, strdup("]"));
+    return pystr_init3(buff2_puts(buff));
 }

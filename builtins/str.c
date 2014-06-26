@@ -11,6 +11,8 @@ void def_func(environment *env, void *func(), char *name);
 void def_str_func(void *func(), char *name);
 
 pystr *str_init(pyargument *argument) {
+    if (!argument)
+        return pystr__init__();
     if (argument->assign_target_list) {
         char *first = ((identifier *)argument->assign_target_list->content)->value;
         if (!strcmp(first, "object")) {

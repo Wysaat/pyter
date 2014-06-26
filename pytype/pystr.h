@@ -15,6 +15,7 @@ struct pystr {
 
 pystr *pystr__init__();
 pystr *pystr_init2(char *value); // value is strduped
+pystr *pystr_init3(char *value);
 void pystr__del__(void *);
 void pystr_ref(void *);
 pystr *pystr__mul__(void *, void *);
