@@ -261,7 +261,7 @@ void pylist_ref(void *vptr) {
     if (!list_is_empty(ptr->values)) {
         list *lptr;
         for (lptr = ptr->values; lptr; lptr = lptr->next)
-            ref_inc(lptr->content);
+            ref(lptr->content);
     }
 }
 
@@ -276,5 +276,5 @@ pystr *pylist_str(void *vptr) {
     }
     buff2_add(buff, str(ptr->content)->value);
     buff2_add(buff, strdup("]"));
-    return pystr_init3(buff2_puts(buff));
+    return pystr_init3(buff2_puts2(buff));
 }

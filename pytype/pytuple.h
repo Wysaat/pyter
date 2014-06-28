@@ -22,5 +22,6 @@ void *pytuple__getitem__(void *, void *);
 void pytuple_del(void *);
 void pytuple_ref(void *);
 pyint *pytuple__len__(void *);
+pystr *pytuple_str(void *);
 
 #endif /* PYTYPE_PYTUPLE_H */

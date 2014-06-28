@@ -14,5 +14,6 @@ struct pyset {
 };
 
 pyint *pyset__len__(void *);
+pystr *pyset_str(void *);
 
 #endif /* PYTYPE_PYSET_H */

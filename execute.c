@@ -190,7 +190,7 @@ void assignment_stmtExecute(void *structure, environment *env, int pf) {
     // a = b = c = 3, a, b and c consist the targets_list
     for (ptr = stmt->targets_list; ptr; ptr = ptr->next)
         store(env, ptr->content, values);
-    // don't need to del values here
+    del(values);
 }
 
 void assignment_stmt_del(void *vptr) {

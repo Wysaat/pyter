@@ -23,7 +23,6 @@ void *__getattribute__(void *, void *, char *);
 void __setattr__(void *, void *, char *, void *);
 pyint *len(void *);
 pystr *str(void *vptr);
-pyint *__int__(void *);
 pyfloat *__float__(void *);
 pycomplex *py__complex__(void *);
 pylist *__list__(void *);

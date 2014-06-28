@@ -81,16 +81,6 @@ void def_len(environment *env) {
     store_id(env, "len", len_func);
 }
 
-void def_int(environment *env) {
-    int_class.type = pyclass_t;
-    int_class.ref = 0;
-    int_class.class = &type_class;
-    int_class.id = "int";
-    int_class.env = environment_init(0);
-    int_class.inheritance = 0;
-    store_id(env, "int", &int_class);
-}
-
 /* CAUTION: nested function definition is not standard C, change it someday.. */
 void *def_sort_func_of_list(environment *env) {
     int comp(void *left, void *right) {

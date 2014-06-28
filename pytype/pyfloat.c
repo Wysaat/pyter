@@ -157,12 +157,34 @@ void *pyfloat__pow__(void *lvoid, void *rvoid) {
     }
 }
 
-// INTEGER_SZ
+/* not perfect yet, test 'int(434239988342466242342.43242342)' */
 pyint *pyfloat__int__(void *vptr) {
-    // pyfloat *ptr = (pyfloat *)vptr;
-    // double *value = ptr->value;
-    // while (1) {
-    // }
+    pyfloat *ptr = (pyfloat *)vptr;
+    double fvalue = ptr->value;
+    char sign = '+';
+    if (fvalue < 0) {
+        fvalue = -fvalue;
+        sign = '-';
+    }
+    int divider = pow(10, INTEGER_SZ);
+    int part = (int)(fvalue - floor(fvalue / divider) * divider);
+    int index = 0;
+    integer *node = INTEGER_NODE(), *new_node;
+    node->value = part;
+    fvalue /= divider;
+    while (fvalue >= 1.0) {
+        part = (int)(fvalue - floor(fvalue / divider) * divider);
+        new_node = INTEGER_NODE();
+        new_node->value = part;
+        new_node->index = ++index;
+        fvalue /= divider;
+        node->higher = new_node;
+        new_node->lower = node;
+        node = new_node;
+    }
+    node->sign = sign;
+    pyint *retptr = pyint__init__();
+    retptr->value = node;
 }
 
 pyfloat *pyfloat__float__(void *vptr) {

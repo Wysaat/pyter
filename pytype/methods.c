@@ -189,17 +189,12 @@ pystr *str(void *vptr) {
         return pystr__str__(vptr);
     else if (type(vptr) == pylist_t)
         return pylist_str(vptr);
+    else if (type(vptr) == pytuple_t)
+        return pytuple_str(vptr);
+    else if (type(vptr) == pyset_t)
+        return pyset_str(vptr);
     else if (type(vptr) == pyrange_t)
         return pyrange__str__(vptr);
-}
-
-pyint *__int__(void *vptr) {
-    if (type(vptr) == pyint_t)
-        return pyint__int__(vptr);
-    else if (type(vptr) == pyfloat_t)
-        return pyfloat__int__(vptr);
-    // else if (type(vptr) == pystr_t)
-    //     return pystr__int__(vptr);
 }
 
 pyfloat *__float__(void *vptr) {

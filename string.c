@@ -69,9 +69,21 @@ char *buff2_puts(buffer2 *buff) {
     return retptr;
 }
 
+/* don't delete it, see how you got wrong, (hint: next) */
+// void buff2_del(buffer2 *buff) {
+//     buffer2 *ptr, *tmp;
+//     for (ptr = buff->next; ptr; ptr = ptr->next) {
+//         free(ptr->content);
+//         tmp = ptr->next;
+//         free(ptr);
+//         ptr = tmp;
+//     }
+//     free(buff);
+// }
+
 void buff2_del(buffer2 *buff) {
     buffer2 *ptr, *tmp;
-    for (ptr = buff->next; ptr; ptr = ptr->next) {
+    while (ptr) {
         free(ptr->content);
         tmp = ptr->next;
         free(ptr);

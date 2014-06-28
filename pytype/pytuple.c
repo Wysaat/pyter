@@ -1,11 +1,15 @@
 #include <stdlib.h>
+#include <string.h>
 #include "../types.h"
 #include "../struct_info.h"
 #include "../__builtins__.h"
 #include "pytuple.h"
 #include "pyint.h"
 #include "pybool.h"
+#include "pystr.h"
+#include "methods.h"
 #include "../list.h"
+#include "../string.h"
 
 pytuple *pytuple__init__() {
     pytuple *retptr = (pytuple *)malloc(sizeof(pytuple));
@@ -84,11 +88,25 @@ void pytuple_ref(void *vptr) {
     if (!list_is_empty(ptr->values)) {
         list *lptr;
         for (lptr = ptr->values; lptr; lptr = lptr->next)
-            ref_inc(lptr->content);
+            ref(lptr->content);
     }
 }
 
 pyint *pytuple__len__(void *vptr) {
     pytuple *ptr = (pytuple *)vptr;
     return int_to_pyint(list_len(ptr->values));
+}
+
+pystr *pytuple_str(void *vptr) {
+    pytuple *tptr = (pytuple *)vptr;
+    buffer2 *buff = buff2_init();
+    buff2_add(buff, strdup("("));
+    list *ptr;
+    for (ptr = tptr->values; ptr->next; ptr = ptr->next) {
+        buff2_add(buff, str(ptr->content)->value);
+        buff2_add(buff, strdup(", "));
+    }
+    buff2_add(buff, str(ptr->content)->value);
+    buff2_add(buff, strdup(")"));
+    return pystr_init3(buff2_puts2(buff));
 }

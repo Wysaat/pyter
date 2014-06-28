@@ -1,3 +1,8 @@
 #include "../pytype/pystr.h"
+#include "../pytype/others.h"
 
-pystr *str_init(void *vptr);
+/* str.c */
+pystr *str_init(pyargument *argument);
+
+/* int.c */
+pyint *int_init(pyargument *argument);
