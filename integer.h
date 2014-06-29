@@ -42,6 +42,8 @@ integer *integer__and__(integer *, integer *);
 integer *integer__xor__(integer *, integer *);
 integer *integer__or__(integer *, integer *);
 
+integer *int_to_integer(int);
+
 char *itoa(int value);
 char *lltoa(long long value);
 

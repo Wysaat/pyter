@@ -30,6 +30,12 @@ void pyint__del__(void *vptr) {
     }
 }
 
+void pyint_del2(void *vptr) {
+    pyint *ptr = (pyint *)vptr;
+    integer__del__(ptr->value);
+    free(ptr);
+}
+
 void pyint_ref(void *vptr) {
     ref_inc(vptr);
 }
@@ -60,6 +66,19 @@ void *pyint__add__(void *lvoid, void *rvoid) {
         pyfloat__del__(fleft);
         return retptr;
     }
+}
+
+void *pyint_add2(void *lvoid, void *rvoid) {
+    pyint *retptr = pyint__add__(lvoid, rvoid);
+    pyint_del2(lvoid);
+    return retptr;
+}
+
+void *pyint_add3(void *lvoid, void *rvoid) {
+    pyint *retptr = pyint__add__(lvoid, rvoid);
+    pyint_del2(lvoid);
+    pyint_del2(rvoid);
+    return retptr;
 }
 
 void *pyint__sub__(void *lvoid, void *rvoid) {
@@ -96,6 +115,19 @@ void *pyint__mul__(void *lvoid, void *rvoid) {
         return pylist__mul__(rvoid, lvoid);
     else if (type(rvoid) == pytuple_t)
         return pytuple__mul__(rvoid, lvoid);
+}
+
+void *pyint_mul2(void *lvoid, void *rvoid) {
+    pyint *retptr = pyint__mul__(lvoid, rvoid);
+    pyint_del2(lvoid);
+    return retptr;
+}
+
+void *pyint_mul3(void *lvoid, void *rvoid) {
+    pyint *retptr = pyint__mul__(lvoid, rvoid);
+    pyint_del2(lvoid);
+    pyint_del2(rvoid);
+    return retptr;
 }
 
 void *pyint__div__(void *lvoid, void *rvoid) {

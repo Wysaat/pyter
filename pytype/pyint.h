@@ -19,11 +19,16 @@ struct pyint {
 
 pyint *pyint__init__();
 void pyint__del__(void *);
+void pyint_del2(void *);
 void pyint_ref(void *);
 pybool *pyint__bool__(void *);
 void *pyint__add__(void *, void *);
+void *pyint_add2(void *, void *);    // left deleted
+void *pyint_add3(void *, void *);    // left and right both deleted
 void *pyint__sub__(void *, void *);
 void *pyint__mul__(void *, void *);
+void *pyint_mul2(void *, void *);    // left deleted
+void *pyint_mul3(void *, void *);    // left and right both deleted
 void *pyint__div__(void *, void *);
 void *pyint__rfloordiv__(void *, void *);
 pyint *pyint__mod__(pyint *, pyint *);

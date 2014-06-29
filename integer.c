@@ -668,3 +668,13 @@ integer *integer__or__(integer *left, integer *right) {
     free(zero);
     return retptr;
 }
+
+integer *int_to_integer(int val) {
+    integer *retptr = INTEGER_NODE();
+    if (val < 0) {
+        retptr->sign = '-';
+        val = -val;
+    }
+    retptr->value = val;
+    return retptr;
+}

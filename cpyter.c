@@ -5,6 +5,29 @@ void rollback(scanner *sc) {
 }
 
 char *sc_read_num_lit(scanner *sc, buffer *buff) {
+    if (sc_curch(sc) == '0') {
+        buff_add(buff, sc_readch(sc));
+        if (sc_curch(sc) == 'b' || sc_curch(sc) == 'B') {
+            buff_add(buff, sc_readch(sc));
+            while (sc_curch(sc) == '0' || sc_curch(sc) == '1')
+                buff_add(buff, sc_readch(sc));
+            return buff_puts(buff);
+        }
+        else if (sc_curch(sc) == 'o' || sc_curch(sc) == 'O') {
+            buff_add(buff, sc_readch(sc));
+            while (sc_curch(sc) >= '0' && sc_curch(sc) <= '7')
+                buff_add(buff, sc_readch(sc));
+            return buff_puts(buff);
+        }
+        else if (sc_curch(sc) == 'x' || sc_curch(sc) == 'X') {
+            buff_add(buff, sc_readch(sc));
+            while (sc_curch(sc) >= '0' && sc_curch(sc) <= '9' ||
+                   sc_curch(sc) >= 'a' && sc_curch(sc) <= 'f' ||
+                   sc_curch(sc) >= 'A' && sc_curch(sc) <= 'F')
+                buff_add(buff, sc_readch(sc));
+            return buff_puts(buff);
+        }
+    }
     if (sc_curch(sc) == '.') {
         buff_add(buff, sc_readch(sc));
         while ((sc_curch(sc) >= '0' && sc_curch(sc) <= '9'))

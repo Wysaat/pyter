@@ -4,6 +4,7 @@
 int is_spctk(char *token);
 int is_strprfx(char *token);
 int is_cmpop(char *token);
+int is_identifier(char *token);
 int is_int(char *token);
 int is_float(char *token);
 int is_imag(char *token);
