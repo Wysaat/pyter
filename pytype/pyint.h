@@ -18,6 +18,7 @@ struct pyint {
 };
 
 pyint *pyint__init__();
+pyint *pyint_init2(void *, pyint *);
 void pyint__del__(void *);
 void pyint_del2(void *);
 void pyint_ref(void *);

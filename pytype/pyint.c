@@ -21,6 +21,56 @@ pyint *pyint__init__() {
     return retptr;
 }
 
+pyint *pyint_init2(void *x, pyint *base) {
+
+    pyint *order = int_to_pyint(1);
+    pyint *retptr = int_to_pyint(0);
+    pyint *val;
+
+    char *string, *ptr;
+    switch (type(x)) {
+        case pyint_t:
+            return x;
+        case pyfloat_t:
+            return pyfloat__int__(x);
+        case pystr_t:
+            string = ((pystr *)x)->value;
+            while (*string == ' ' || *string == '\t' || *string == '\n')
+                string++;
+            if (*string == '0') {
+                if (*(string+1) == 'b' || *(string+1) == 'B') {
+                    base = int_to_pyint(2);
+                    string += 2;
+                }
+                else if (*(string+1) == 'o' || *(string+1) == 'O') {
+                    base = int_to_pyint(8);
+                    string += 2;
+                }
+                else if (*(string+1) == 'x' || *(string+1) == 'X') {
+                    base = int_to_pyint(16);
+                    string += 2;
+                }
+            }
+            if (pyint_to_int(base) == 0)
+                base = int_to_pyint(10);
+            ptr = string;
+            while (*ptr != 0 && *ptr != ' ' && *ptr != '\t' && *ptr != '\n')
+                ptr++;
+            ptr--;
+            for ( ; ptr != string-1; ptr--) {
+                if (*ptr >= '0' && *ptr <= '9')
+                    val = pyint_mul2(int_to_pyint(*ptr - '0'), order);
+                else if (*ptr >= 'a' && *ptr <= 'z')
+                    val = pyint_mul2(int_to_pyint(*ptr - 'a' + 10), order);
+                else if (*ptr >= 'A' && *ptr <= 'Z')
+                    val = pyint_mul2(int_to_pyint(*ptr - 'A' + 10), order);
+                order = pyint_mul2(order, base);
+                retptr = pyint_add3(retptr, val);
+            }
+            return retptr;
+    }
+}
+
 void pyint__del__(void *vptr) {
     ref_dec(vptr);
     if (get_ref(vptr) == 0) {

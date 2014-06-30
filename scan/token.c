@@ -39,6 +39,11 @@ int is_identifier(char *token) {
 }
 
 int is_int(char *token) {
+    if (token[0] == '0') {
+        if (token[1] == 'b' || token[1] == 'B' || token[1] == 'o' ||
+                token[1] == 'O' || token[1] == 'x' || token[1] == 'X')
+            return 1;
+    }
     int i;
     for (i = 0; i < strlen(token); i++)
         if (token[i] < '0' || token[i] > '9')

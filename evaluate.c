@@ -19,7 +19,6 @@ void *IDENTIFIER(char *token) {
     return retptr;
 }
 
-/* op should be copied(use memory.c function mem_cpy) */
 void *INT_EXPR(char *token) {
     int_expr *retptr = (int_expr *)malloc(sizeof(int_expr));
     memset(retptr, 0, sizeof(*retptr));
@@ -293,6 +292,9 @@ void identifier_del(void *vptr) {
 
 void *int_exprEvaluate(int_expr *structure) {
     pyint *retptr = pyint__init__();
+    char *ptr = structure->value;
+    if (*ptr == '0')
+        return pyint_init2(pystr_init2(ptr), int_to_pyint(0));
     retptr->value = integer__init__(structure->value);
     ref(retptr);
     return retptr;

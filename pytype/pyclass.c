@@ -82,7 +82,7 @@ void *pyclass__call__(void *left, void *right) {
         val_dict_entry *entry = (val_dict_entry *)ptr->content;
         if (entry->id && !strcmp(entry->id, "__init__")) {
             ((pyfunction *)entry->value)->bound = retptr;
-            __call__(entry->value, right);
+            __call__(entry->value, right);  // __init__ should return None
         }
     }
 

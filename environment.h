@@ -27,10 +27,9 @@ val_dict_entry *val_dict_entry_init(char *id, void *value);
 void store(environment *env, void *targets, void *values);
 environment *environment_copy(environment *env);
 void environment_del(void *vptr);
-
 void del(void *vptr);
 void ref(void *vptr);
-
 void store_id(environment *env, char *id, void *value); // short-hand function for storing identifiers
+void *env_find(environment *env, char *name);
 
 #endif /* ENVIRONMENT_H */

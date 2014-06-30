@@ -2,8 +2,10 @@
 #include "../pytype/pyfloat.h"
 #include "../pytype/py__builtins__.h"
 #include "../pytype/others.h"
+#include "../pytype/methods.h"
 #include "../types.h"
 #include "../__builtins__.h"
+#include "../evaluate.h"
 
 
 /* from the Python 3.4 doc:
@@ -23,43 +25,52 @@
 pyint *int_init(pyargument *argument) {
     if (!argument)
         return int_to_pyint(0);
-    if (argument->assign_target_list) {
+
+    void *x;
+    pyint *base;
+
+    if (argument->value_list) {
+        x = argument->value_list->content;
+        if (argument->value_list->next)
+            base = argument->value_list->next->content;
+        else if (argument->assign_target_list) {
+            char *id1 = ((identifier *)argument->assign_target_list->content)->value;
+            if (!strcmp(id1, "base"))
+                base = argument->assign_value_list->content;
+        }
+        else
+            base = int_to_pyint(10);
     }
     else {
-        void *vptr = argument->value_list->content;
-
-        pyint *base = int_to_pyint(10);
-        pyint *order = int_to_pyint(1);
-        pyint *retptr = int_to_pyint(0);
-        pyint *val;
-
-        char *string, *ptr;
-        switch (type(vptr)) {
-            case pyint_t:
-                return vptr;
-            case pyfloat_t:
-                return pyfloat__int__(vptr);
-            case pystr_t:
-                if (argument->value_list->next)
-                    base = argument->value_list->next->content;
-                string = ((pystr *)vptr)->value;
-                ptr = string;
-                while (*ptr)
-                    ptr++;
-                ptr--;
-                for ( ; ptr != string-1; ptr--) {
-                    if (*ptr >= '0' && *ptr <= '9')
-                        val = pyint_mul2(int_to_pyint(*ptr - '0'), order);
-                    else if (*ptr >= 'a' && *ptr <= 'z')
-                        val = pyint_mul2(int_to_pyint(*ptr - 'a' + 10), order);
-                    else if (*ptr >= 'A' && *ptr <= 'Z')
-                        val = pyint_mul2(int_to_pyint(*ptr - 'A' + 10), order);
-                    order = pyint_mul2(order, base);
-                    retptr = pyint_add3(retptr, val);
+        if (argument->assign_target_list) {
+            char *id1 = ((identifier *)argument->assign_target_list->content)->value;
+            if (!strcmp(id1, "base")) {
+                base = argument->assign_value_list->content;
+                if (argument->assign_target_list->next) {
+                    char *id2 = ((identifier *)argument->assign_target_list->next->content)->value;
+                    if (!strcmp(id2, "x"))
+                        x = argument->assign_value_list->next->content;
                 }
-                return retptr;
+            }
+            else if (!strcmp(id1, "x")) {
+                x = argument->assign_value_list->content;
+                if (argument->assign_target_list->next) {
+                    char *id2 = ((identifier *)argument->assign_target_list->next->content)->value;
+                    if (!strcmp(id2, "base"))
+                        base = argument->assign_value_list->next->content;
+                }
+                else
+                    base = int_to_pyint(10);
+            }
         }
     }
+
+    if (type(x) == instance_t) {
+        pyclass *class = ((instance *)x)->class;
+        return __call__(env_find(class->env, "__int__"), argument);
+    }
+
+    return pyint_init2(x, base);
 }
 
 void def_func(environment *env, void *func(), char *name);

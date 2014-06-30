@@ -284,3 +284,12 @@ void store_id(environment *env, char *id, void *value) {
     store(env, _id, value);
     del(_id);
 }
+
+void *env_find(environment *env, char *name) {
+    list *ptr;
+    for (ptr = env->val_dict; ptr; ptr = ptr->next) {
+        val_dict_entry *entry = (val_dict_entry *)ptr->content;
+        if (entry->id && !strcmp(entry->id, name))
+            return entry->value;
+    }
+}
