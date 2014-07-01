@@ -60,5 +60,6 @@ pyint *pyint__int__(void *);
 pyfloat *pyint__float__(void *);
 pycomplex *pyint__complex__(void *);
 pystr *pyint__str__(void *);
+pyint *pyint__abs__(void *);
 
 #endif /* PYTYPE_PYINT_H */

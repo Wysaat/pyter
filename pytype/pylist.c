@@ -30,13 +30,37 @@ void pylist__sort__(pylist *val, int comp()) {
 pylist *pylist__add__(void *lvoid, void *rvoid) {
     pylist *left = (pylist *)lvoid;
     pylist *right = (pylist *)rvoid;
+    if (list_is_empty(left->values))
+        return right;
+    if (list_is_empty(right->values))
+        return left;
     pylist *retptr = pylist__init__();
-    list_append_list(retptr->values, list_add(left->values, right->values));
+    list *ptr = retptr->values;
+    list *ptr2 = left->values;
+    list *ptr3 = right->values;
+
+    for ( ; ptr2; ptr2 = ptr2->next) {
+        ptr->content = ptr2->content;
+        ptr->next = list_node();
+        ptr->next->prev = ptr;
+        ptr = ptr->next;
+    }
+    for ( ; ptr3; ptr3 = ptr3->next) {
+        ptr->content = ptr3->content;
+        ptr->next = list_node();
+        ptr->next->prev = ptr;
+        ptr = ptr->next;
+    }
+    ptr = ptr->prev;
+    free(ptr->next);
+    ptr->next = 0;
+
     return retptr;
 }
 
 void pylist__append__(pylist *left, void *rvoid) {
     list_append_content(left->values, rvoid);
+    ref(rvoid);
 }
 
 pylist *pylist__mul__(void *lvoid, void *rvoid) {

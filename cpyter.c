@@ -445,9 +445,13 @@ void *parse_atom(scanner *sc) {
             rollback(sc);
             void *to_add = LIST_EXPR(expr_head);
             void *right_side = B_EXPR(IDENTIFIER(0), "+", to_add);
-            void *stmt = ASSIGNMENT_STMT(IDENTIFIER(0), right_side);
+            list *tmpl = list_node();
+            list_append_content(tmpl, IDENTIFIER(0));
+            void *stmt = ASSIGNMENT_STMT(tmpl, right_side);
             list *stmts = list_node();
-            list_append_content(stmts, ASSIGNMENT_STMT(IDENTIFIER(0), LIST_EXPR(list_node())));
+            list *targets_list = list_node();
+            list_append_content(targets_list, IDENTIFIER(0));
+            list_append_content(stmts, ASSIGNMENT_STMT(targets_list, LIST_EXPR(list_node())));
             list_append_content(stmts, parse_comp_for(sc, stmt));
             token = sc_read(sc);
             if (!strcmp(token, "]")) {
@@ -1563,9 +1567,10 @@ void interpret(FILE *stream, environment *env)
 {
     def__builtins__(env);
 
-    def_print(env);
-    def_next(env);
-    def_len(env);
+    def_func(env, _print, "print");
+    def_func(env, _next, "next");
+    def_func(env, _len, "len");
+    def_func(env, _abs, "abs");
     def_int(env);
     def_str(env);
     def_list(env);

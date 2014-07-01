@@ -6,6 +6,7 @@ typedef struct pymodule pymodule;
 
 #include "pytype/pyclass.h"
 #include "pytype/pymodule.h"
+#include "pytype/others.h"
 
 pyclass NoneType_class;
 pyclass int_class;
@@ -23,11 +24,6 @@ pyclass type_class;
 pyclass module_class;
 pyclass range_class;
 pymodule __builtins__module;
-
-/* functions */
-void def_print(environment *);
-void def_next(environment *);
-void def_len(environment *env);
 
 /* classes */
 void def_int(environment *env);

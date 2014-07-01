@@ -381,12 +381,12 @@ void generator_del(void *vptr) {
 }
 
 void *list_exprEvaluate(list_expr *structure, environment *env) {
-    pylist *retptr = (pylist *)calloc(sizeof(pylist), 1);
-    retptr->type = pylist_t;
-    retptr->values = list_node();
+    pylist *retptr = pylist__init__();
     list *ptr;
-    if (list_is_empty(structure->expr_head))
+    if (list_is_empty(structure->expr_head)) {
+        ref(retptr);
         return retptr;
+    }
     for (ptr = structure->expr_head; ptr; ptr = ptr->next) {
         void *appendp = evaluate(ptr->content, env);
         list_append_content(retptr->values, appendp);
@@ -822,9 +822,9 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
         }
     }
 
+    ref(retptr);
     del(left_val);
     del(right_val);
-    ref(retptr);
 
     return retptr;
 }

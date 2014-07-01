@@ -18,6 +18,7 @@ pyint *pyint__init__() {
     memset(retptr, 0, sizeof(pyint));
     retptr->type = pyint_t;
     retptr->class = &int_class;
+    retptr->ref = 0;
     return retptr;
 }
 
@@ -381,4 +382,10 @@ pystr *pyint__str__(void *vptr) {
     pystr *retptr = pystr_init2(value);
     free(value);
     return retptr;
+}
+
+pyint *pyint__abs__(void *vptr) {
+    pyint *ptr = (pyint *)vptr;
+    ptr->value->sign = '+';
+    return ptr;
 }

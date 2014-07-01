@@ -42,7 +42,10 @@ void store(environment *env, void *targets, void *values) {
         ref(values);
         identifier *id = (identifier *)targets;
         if (list_is_empty(env->val_dict)) {
-            list_append_content(env->val_dict, val_dict_entry_init(strdup(id->value), values));
+            if (id->value)
+                list_append_content(env->val_dict, val_dict_entry_init(strdup(id->value), values));
+            else
+                list_append_content(env->val_dict, val_dict_entry_init(0, values));
             return;
         }
         list *ptr;
