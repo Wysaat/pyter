@@ -153,6 +153,8 @@ void del(void *vptr) {
         identifier_del(vptr);
     else if (type(vptr) == int_expr_t)
         int_expr_del(vptr);
+    else if (type(vptr) == bool_expr_t)
+        bool_expr_del(vptr);
     else if (type(vptr) == float_expr_t)
         float_expr_del(vptr);
     else if (type(vptr) == imag_expr_t)

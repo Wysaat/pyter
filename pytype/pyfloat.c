@@ -204,3 +204,25 @@ pystr *pyfloat__str__(void *vptr) {
     sprintf(value, "%f", ((pyfloat *)vptr)->value);
     return pystr_init2(value);
 }
+
+pyfloat *pyfloat__abs__(void *vptr) {
+    pyfloat *retptr = pyfloat__init__();
+    retptr->value = -((pyfloat *)vptr)->value;
+    return retptr;
+}
+
+pyfloat *pyfloat__mod__(void *lvoid, void *rvoid) {
+    pyfloat *left = (pyfloat *)lvoid;
+    pyfloat *retptr = pyfloat__init__();
+    if (type(rvoid) == pyfloat_t) {
+        pyfloat *right = (pyfloat *)rvoid;
+        retptr->value = left->value - floor(left->value / right->value) * right->value;
+        return retptr;
+    }
+    else if (type(rvoid) == pyint_t) {
+        pyfloat *right = pyint__float__(rvoid);
+        retptr->value = left->value - floor(left->value / right->value) * right->value;
+        pyfloat__del__(right);
+        return retptr;
+    }
+}

@@ -72,10 +72,7 @@ void *pyclass__call__(void *left, void *right) {
         ref(retptr);
         return retptr;
     }
-    instance *retptr = (instance *)malloc(sizeof(instance));
-    retptr->type = instance_t;
-    retptr->class = (pyclass *)left;
-    retptr->env = environment_init(0);
+    instance *retptr = instance_init((pyclass *)left);
 
     list *ptr;
     for (ptr = retptr->class->env->val_dict; ptr; ptr = ptr->next) {
@@ -132,4 +129,13 @@ void pyclass_ref(void *vptr) {
         for (ptr = class->inheritance; ptr; ptr = ptr->next)
             ref(ptr->content);
     }
+}
+
+instance *instance_init(pyclass *class) {
+    instance *retptr = (instance *)malloc(sizeof(instance));
+    retptr->type = instance_t;
+    retptr->ref = 0;
+    retptr->class = class;
+    retptr->env = environment_init(0);
+    return retptr;
 }

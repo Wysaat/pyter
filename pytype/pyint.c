@@ -201,10 +201,20 @@ void *pyint__rfloordiv__(void *lvoid, void *rvoid) {
     return result;
 }
 
-pyint *pyint__mod__(pyint *left, pyint *right) {
-    pyint *retptr = pyint__init__();
-    retptr->value = integer__mod__(left->value, right->value);
-    return retptr;
+void *pyint__mod__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    if (type(rvoid) == pyint_t) {
+        pyint *retptr = pyint__init__();
+        pyint *right = (pyint *)rvoid;
+        retptr->value = integer__mod__(left->value, right->value);
+        return retptr;
+    }
+    else if (type(rvoid) == pyfloat_t) {
+        pyfloat *fleft = pyint__float__(left);
+        pyfloat *retptr = pyfloat__mod__(fleft, rvoid);
+        pyfloat__del__(fleft);
+        return retptr;
+    }
 }
 
 pyint *pyint__lshift__(pyint *left, pyint *right) {

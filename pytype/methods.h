@@ -29,5 +29,6 @@ pylist *__list__(void *);
 pytuple *__tuple__(void *);
 void *__pow__(void *, void *);
 void *__abs__(void *);
+void *_mod_(void *, void *);
 
 #endif /* PYTYPE_METHODS_H */

@@ -32,7 +32,7 @@ void *pyint_mul2(void *, void *);    // left deleted
 void *pyint_mul3(void *, void *);    // left and right both deleted
 void *pyint__div__(void *, void *);
 void *pyint__rfloordiv__(void *, void *);
-pyint *pyint__mod__(pyint *, pyint *);
+void *pyint__mod__(void *, void *);
 pyint *pyint__lshift__(pyint *, pyint *);
 pyint *pyint__rshift__(pyint *, pyint *);
 pybool *pyint__lt__(void *, void *);

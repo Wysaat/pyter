@@ -11,3 +11,15 @@ class G:
 g = G()
 # g.__abs__()
 print(abs(g))
+
+class T:
+    def __mod__(self, x):
+        return self.value % x
+    def __init__(self, val):  
+        self.value = val ** 2
+
+t = T(12)
+
+a = t % 4
+
+print(a)

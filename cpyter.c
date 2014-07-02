@@ -355,6 +355,10 @@ int is_alphnum(char ch) {
 
 void *parse_atom(scanner *sc) {
     char *token = sc_read(sc);
+    if (!strcmp(token, "True"))
+        return BOOL_EXPR(1);
+    else if (!strcmp(token, "False"))
+        return BOOL_EXPR(0);
     if (is_identifier(token))
         return IDENTIFIER(token);
     if (is_int(token))

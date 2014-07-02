@@ -27,6 +27,14 @@ void *INT_EXPR(char *token) {
     return retptr;
 }
 
+void *BOOL_EXPR(int value) {
+    bool_expr *retptr = (bool_expr *)malloc(sizeof(bool_expr));
+    memset(retptr, 0, sizeof(*retptr));
+    retptr->type = bool_expr_t;
+    retptr->value = value;
+    return retptr;
+}
+
 void *FLOAT_EXPR(char *token) {
     float_expr *retptr = (float_expr *)malloc(sizeof(float_expr));
     memset(retptr, 0, sizeof(*retptr));
@@ -304,6 +312,14 @@ void int_expr_del(void *vptr) {
     int_expr *ptr = (int_expr *)vptr;
     free(ptr->value);
     free(ptr);
+}
+
+void *bool_exprEvaluate(bool_expr *structure) {
+    return PYBOOL(structure->value);
+}
+
+void bool_expr_del(void *vptr) {
+    free(vptr);
 }
 
 void *float_exprEvaluate(float_expr *structure) {
@@ -755,10 +771,31 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
         retptr = __div__(left_val, right_val);
     else if (!strcmp(structure->op, "//"))
         retptr = __rfloordiv__(left_val, right_val);
+    else if (!strcmp(structure->op, "%"))
+        retptr = _mod_(left_val, right_val);
     else if (!strcmp(structure->op, "+"))
         retptr = __add__(left_val, right_val);
     else if (!strcmp(structure->op, "-"))
         retptr =  __sub__(left_val, right_val);
+    else if (!strcmp(structure->op, "is")) {
+        if (type(left_val) != type(right_val))
+            return PYBOOL(0);
+        else if (type(left_val) == pyint_t || type(left_val) == pystr_t)
+            return __eq__(left_val, right_val);
+        else
+            return PYBOOL(left_val == right_val);
+    }
+    else if (!strcmp(structure->op, "is not")) {
+        if (type(left_val) != type(right_val))
+            return PYBOOL(1);
+        else if (type(left_val) == pyint_t || type(left_val) == pystr_t) {
+            if (is_true(__eq__(left_val, right_val)))
+                return PYBOOL(0);
+            return PYBOOL(1);
+        }
+        else
+            return PYBOOL(left_val != right_val);
+    }
     else if (!strcmp(structure->op, "in")) {
         if (type(right_val) == pylist_t) {
             if (list_find(((pylist *)right_val)->values, left_val) >= 0)
@@ -780,9 +817,7 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
     else if (*left_val == pyint_t && *right_val == pyint_t) {
         integer *left = ((pyint *)left_val)->value;
         integer *right = ((pyint *)right_val)->value;
-        if (!strcmp(structure->op, "%"))
-            retptr = pyint__mod__((pyint *)left_val, (pyint *)right_val);
-        else if (!strcmp(structure->op, "<<"))
+        if (!strcmp(structure->op, "<<"))
             retptr = pyint__lshift__((pyint *)left_val, (pyint *)right_val);
         else if (!strcmp(structure->op, ">>"))
             retptr = pyint__rshift__((pyint *)left_val, (pyint *)right_val);
@@ -980,6 +1015,9 @@ void *evaluate(void *structure, environment *env) {
         case int_expr_t:
             retptr = int_exprEvaluate((int_expr *)structure);
             break;
+        case bool_expr_t:
+            retptr = bool_exprEvaluate((bool_expr *)structure);
+            break;
         case float_expr_t:
             retptr = float_exprEvaluate((float_expr *)structure);
             break;
@@ -1060,6 +1098,12 @@ void print_nnl(void *structure) {
         case pyint_t:
             printf("%s", integer__str__(((pyint *)structure)->value));
             break;
+        case pybool_t:
+            if (((pybool *)structure)->value)
+                printf("True");
+            else
+                printf("False");
+            break;
         case pyfloat_t:
             printf("%le", ((pyfloat *)structure)->value);
             break;
@@ -1072,12 +1116,6 @@ void print_nnl(void *structure) {
             break;
         case pystr_t:
             pystr_print_nnl((pystr *)structure);
-            break;
-        case pybool_t:
-            if (((pybool *)structure)->value)
-                printf("True");
-            else
-                printf("False");
             break;
         case pytuple_t:
             printf("(");

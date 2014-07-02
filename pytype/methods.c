@@ -228,3 +228,18 @@ void *__abs__(void *vptr) {
     if (type(vptr) == pycomplex_t)
         return pycomplex__abs__(vptr);
 }
+
+void *_mod_(void *left, void *right) {
+    if (type(left) == pyint_t)
+        return pyint__mod__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__mod__(left, right);
+    else if (type(left) == instance_t) {
+        void *func = env_find(((instance *)left)->class->env, "__mod__");
+        pyargument *argument = pyargument_init();
+        list *value_list = list_node();
+        list_append_content(value_list, left);
+        list_append_content(value_list, right);
+        return __call__(func, argument);
+    }
+}

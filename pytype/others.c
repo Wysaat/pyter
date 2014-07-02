@@ -82,3 +82,9 @@ void pyargument_del(void *vptr) {
         del(ptr->value_list);
     free(ptr);
 }
+
+pyargument *pyargument_init() {
+    pyargument *retptr = (pyargument *)malloc(sizeof(pyargument));
+    retptr->type = __pyargument_t;
+    return retptr;
+}

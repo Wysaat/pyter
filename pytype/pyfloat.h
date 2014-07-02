@@ -30,5 +30,7 @@ pyint *pyfloat__int__(void *);
 pyfloat *pyfloat__float__(void *);
 pycomplex *pyfloat__complex__(void *);
 pystr *pyfloat__str__(void *);
+pyfloat *pyfloat__abs__(void *);
+pyfloat *pyfloat__mod__(void *, void *);
 
 #endif /* PYTYPE_PYFLOAT_H */

@@ -16,8 +16,8 @@ void *_abs(pyargument *argument) {
         return pyint__abs__(vptr);
     // else if (type(vptr) == pybool_t)
     //     return pybool__abs__(vptr);
-    // else if (type(vptr) == pyfloat_t)
-    //     return pyfloat__abs__(vptr);
+    else if (type(vptr) == pyfloat_t)
+        return pyfloat__abs__(vptr);
     else if (type(vptr) == pycomplex_t)
         return pycomplex__abs__(vptr);
     else if (type(vptr) == instance_t)
@@ -78,3 +78,6 @@ void *_print(pyargument *argument) {
         fflush(file);
     return pyNone_init();
 }
+
+
+void __mod__(pyargument *argument) {}

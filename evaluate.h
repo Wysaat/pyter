@@ -18,6 +18,11 @@ typedef struct int_expr {
     char *value;
 } int_expr;
 
+typedef struct bool_expr {
+    int type;
+    int value;
+} bool_expr;
+
 typedef struct float_expr {
     int type;
     char *value;
@@ -179,6 +184,7 @@ struct expression_list {
 
 void *IDENTIFIER(char *);
 void *INT_EXPR(char *);
+void *BOOL_EXPR(int );
 void *FLOAT_EXPR(char *);
 void *IMAG_EXPR(char *);
 void *STR_EXPR(char *);
@@ -205,11 +211,9 @@ void *EXPRESSION_LIST(list *);
 void *PYINT(integer *);
 void *PYSTR(char *);
 
-void identifier_del(void *vptr);
-void int_expr_del(void *vptr);
-
 void *identifierEvaluate(identifier *, environment *);
 void *int_exprEvaluate(int_expr *);
+void *bool_exprEvalaute(bool_expr *);
 void *float_exprEvaluate(float_expr *);
 void *imag_exprEvaluate(imag_expr *);
 void *str_exprEvaluate(str_expr *);
@@ -239,6 +243,7 @@ void print(void *);
 
 void idenfitier_del(void *);
 void int_expr_del(void *);
+void bool_expr_del(void *);
 void float_expr_del(void *);
 void imag_expr_del(void *);
 void str_expr_del(void *);
