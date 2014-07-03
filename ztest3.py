@@ -20,6 +20,8 @@ class T:
 
 t = T(12)
 
-a = t % 4
+# a = t % 4
+
+a = t.__mod__(4)
 
 print(a)

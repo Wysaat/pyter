@@ -73,12 +73,13 @@ pyint *pyint_init2(void *x, pyint *base) {
 }
 
 void pyint__del__(void *vptr) {
+    pyint *ptr = (pyint *)vptr;
+    integer__del__(ptr->value);
+    free(ptr);
+}
+
+void pyint_nref(void *vptr) {
     ref_dec(vptr);
-    if (get_ref(vptr) == 0) {
-        pyint *ptr = (pyint *)vptr;
-        integer__del__(ptr->value);
-        free(ptr);
-    }
 }
 
 void pyint_del2(void *vptr) {

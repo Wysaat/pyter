@@ -6,11 +6,11 @@
 
 typedef struct pydict pydict;
 struct pydict {
-	int type;
-	int ref;
-	pyclass *class;
-	list *keys;
-	list *values;
+    int type;
+    int ref;
+    pyclass *class;
+    list *keys;
+    list *values;
 };
 
 void *pydict__getitem__(void *left, void *right);

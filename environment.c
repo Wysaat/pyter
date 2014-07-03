@@ -284,6 +284,27 @@ void ref(void *vptr) {
     //     instance_ref(vptr);
 }
 
+void nref(void *vptr) {
+    if (type(vptr) == pyint_t)
+        pyint_nref(vptr);
+    else if (type(vptr) == pybool_t)
+        pybool_nref(vptr);
+    else if (type(vptr) == pystr_t)
+        pystr_nref(vptr);
+    else if (type(vptr) == pylist_t)
+        pylist_nref(vptr);
+    else if (type(vptr) == pytuple_t)
+        pytuple_nref(vptr);
+    else if (type(vptr) == pyfunction_t)
+        pyfunction_nref(vptr);
+    else if (type(vptr) == pybuiltin_function_t)
+        pybuiltin_function_nref(vptr);
+    else if (type(vptr) == pyclass_t)
+        pyclass_nref(vptr);
+    // else if (type(vptr) == instance_t)
+    //     instance_nref(vptr);
+}
+
 void store_id(environment *env, char *id, void *value) {
     identifier *_id = IDENTIFIER(id);
     store(env, _id, value);

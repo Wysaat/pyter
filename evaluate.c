@@ -269,10 +269,8 @@ void *identifierEvaluate(identifier *structure, environment *env) {
             if (!list_is_empty(env_ptr->val_dict)) {
                 for (ptr = env_ptr->val_dict; ptr; ptr = ptr->next) {
                     val_dict_entry *entry = (val_dict_entry *)ptr->content;
-                    if (entry->id && !strcmp(entry->id, structure->value)) {
-                        ref(entry->value);
+                    if (entry->id && !strcmp(entry->id, structure->value))
                         return entry->value;
-                    }
                 }
             }
         }
@@ -282,10 +280,8 @@ void *identifierEvaluate(identifier *structure, environment *env) {
             if (!list_is_empty(env_ptr->val_dict)) {
                 for (ptr = env_ptr->val_dict; ptr; ptr = ptr->next) {
                     val_dict_entry *entry = (val_dict_entry *)ptr->content;
-                    if (!entry->id) {
-                        ref(entry->value);
+                    if (!entry->id)
                         return entry->value;
-                    }
                 }
             }
         }
@@ -299,12 +295,11 @@ void identifier_del(void *vptr) {
 }
 
 void *int_exprEvaluate(int_expr *structure) {
-    pyint *retptr = pyint__init__();
     char *ptr = structure->value;
     if (*ptr == '0')
         return pyint_init2(pystr_init2(ptr), int_to_pyint(0));
+    pyint *retptr = pyint__init__();
     retptr->value = integer__init__(structure->value);
-    ref(retptr);
     return retptr;
 }
 
