@@ -12,16 +12,13 @@ typedef struct pyint pyint;
 
 struct pyint {
     int type;
-    int ref;
     pyclass *class;
     integer *value;
 };
 
 pyint *pyint__init__();
 pyint *pyint_init2(void *, pyint *);
-void pyint__del__(void *);
 void pyint_del2(void *);
-void pyint_ref(void *);
 pybool *pyint__bool__(void *);
 void *pyint__add__(void *, void *);
 void *pyint_add2(void *, void *);    // left deleted

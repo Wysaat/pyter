@@ -18,22 +18,20 @@ pyint *pyint__init__() {
     memset(retptr, 0, sizeof(pyint));
     retptr->type = pyint_t;
     retptr->class = &int_class;
-    retptr->ref = 0;
     return retptr;
 }
 
 pyint *pyint_init2(void *x, pyint *base) {
-
     pyint *order = int_to_pyint(1);
-    pyint *retptr = int_to_pyint(0);
-    pyint *val;
+    pyint *val, *retptr;
 
     char *string, *ptr;
     switch (type(x)) {
         case pyint_t:
             return x;
         case pyfloat_t:
-            return pyfloat__int__(x);
+            retptr = pyfloat__int__(x);
+            return retptr;
         case pystr_t:
             string = ((pystr *)x)->value;
             while (*string == ' ' || *string == '\t' || *string == '\n')
@@ -52,34 +50,27 @@ pyint *pyint_init2(void *x, pyint *base) {
                     string += 2;
                 }
             }
-            if (pyint_to_int(base) == 0)
+            if (pyint_to_int(base) == 0) {
                 base = int_to_pyint(10);
+            }
             ptr = string;
             while (*ptr != 0 && *ptr != ' ' && *ptr != '\t' && *ptr != '\n')
                 ptr++;
             ptr--;
+            retptr = int_to_pyint(0);
             for ( ; ptr != string-1; ptr--) {
                 if (*ptr >= '0' && *ptr <= '9')
-                    val = pyint_mul2(int_to_pyint(*ptr - '0'), order);
+                    val = pyint__mul__(int_to_pyint(*ptr - '0'), order);
                 else if (*ptr >= 'a' && *ptr <= 'z')
-                    val = pyint_mul2(int_to_pyint(*ptr - 'a' + 10), order);
+                    val = pyint__mul__(int_to_pyint(*ptr - 'a' + 10), order);
                 else if (*ptr >= 'A' && *ptr <= 'Z')
-                    val = pyint_mul2(int_to_pyint(*ptr - 'A' + 10), order);
-                order = pyint_mul2(order, base);
-                retptr = pyint_add3(retptr, val);
+                    val = pyint__mul__(int_to_pyint(*ptr - 'A' + 10), order);
+                order = pyint__mul__(order, base);
+                retptr = pyint__add__(retptr, val);
             }
+
             return retptr;
     }
-}
-
-void pyint__del__(void *vptr) {
-    pyint *ptr = (pyint *)vptr;
-    integer__del__(ptr->value);
-    free(ptr);
-}
-
-void pyint_nref(void *vptr) {
-    ref_dec(vptr);
 }
 
 void pyint_del2(void *vptr) {
@@ -88,19 +79,12 @@ void pyint_del2(void *vptr) {
     free(ptr);
 }
 
-void pyint_ref(void *vptr) {
-    ref_inc(vptr);
-}
-
 pybool *pyint__bool__(void *vptr) {
-    pyint *intptr = (pyint *)vptr;
-    integer *zero = INTEGER_NODE();
     pybool *retptr;
-    if (integer__eq__(intptr->value, zero))
+    if (pyint__eq__(vptr, int_to_pyint(0)))
         retptr = PYBOOL(0);
     else
         retptr = PYBOOL(1);
-    free(zero);
     return retptr;
 }
 
@@ -113,9 +97,7 @@ void *pyint__add__(void *lvoid, void *rvoid) {
         return retptr;
     }
     else if (type(rvoid) == pyfloat_t || type(rvoid) == pycomplex_t) {
-        pyfloat *fleft = pyint__float__(left);
-        void *retptr = pyfloat__add__(fleft, rvoid);
-        pyfloat__del__(fleft);
+        void *retptr = pyfloat__add__(pyint__float__(left), rvoid);
         return retptr;
     }
 }
@@ -142,9 +124,7 @@ void *pyint__sub__(void *lvoid, void *rvoid) {
         return retptr;
     }
     else if (type(rvoid) == pyfloat_t || type(rvoid) == pycomplex_t) {
-        pyfloat *fleft = pyint__float__(left);
-        void *retptr = pyfloat__sub__(fleft, rvoid);
-        pyfloat__del__(fleft);
+        void *retptr = pyfloat__sub__(pyint__float__(left), rvoid);
         return retptr;
     }
 }
@@ -183,9 +163,7 @@ void *pyint_mul3(void *lvoid, void *rvoid) {
 }
 
 void *pyint__div__(void *lvoid, void *rvoid) {
-    pyfloat *left = pyint__float__(lvoid);
-    void *retptr = pyfloat__div__(left, rvoid);
-    pyfloat__del__(left);
+    void *retptr = pyfloat__div__(pyint__float__(lvoid), rvoid);
     return retptr;
 }
 
@@ -211,9 +189,7 @@ void *pyint__mod__(void *lvoid, void *rvoid) {
         return retptr;
     }
     else if (type(rvoid) == pyfloat_t) {
-        pyfloat *fleft = pyint__float__(left);
-        pyfloat *retptr = pyfloat__mod__(fleft, rvoid);
-        pyfloat__del__(fleft);
+        pyfloat *retptr = pyfloat__mod__(pyint__float__(left), rvoid);
         return retptr;
     }
 }
@@ -333,8 +309,6 @@ void *pyint__pow__(void *lvoid, void *rvoid) {
             pyfloat *fleft = pyint__float__(lvoid);
             pyfloat *fright = pyint__float__(rvoid);
             void *retptr = pyfloat__pow__(fleft, fright);
-            del(fleft);
-            del(fright);
             return retptr;
         }
         else {
@@ -346,13 +320,11 @@ void *pyint__pow__(void *lvoid, void *rvoid) {
     else if (type(rvoid) == pyfloat_t) {
         pyfloat *fptr = pyint__float__(lvoid);
         void *retptr = pyfloat__pow__(fptr, rvoid);
-        del(fptr);
         return retptr;
     }
     else if (type(rvoid) == pycomplex_t) {
         pycomplex *cptr = pyint__complex__(lvoid);
         void *retptr = pycomplex__pow__(cptr, rvoid);
-        del(cptr);
         return retptr;
     }
 }

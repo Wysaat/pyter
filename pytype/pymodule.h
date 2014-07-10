@@ -8,7 +8,6 @@ typedef struct pymodule pymodule;
 
 struct pymodule {
     int type;
-    int ref;
     pyclass *class;
     char *name;
     environment *env;

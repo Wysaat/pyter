@@ -11,15 +11,9 @@
 pyfloat *pyfloat__init__() {
     pyfloat *retptr = (pyfloat *)malloc(sizeof(pyfloat));
     retptr->type = pyfloat_t;
-    retptr->ref = 0;
     retptr->class = &float_class;
     retptr->value = (double)0.0;
     return retptr;
-}
-
-void pyfloat__del__(void *vptr) {
-    pyfloat *fptr = (pyfloat *)vptr;
-    free(fptr);
 }
 
 void *pyfloat__mul__(void *lvoid, void *rvoid) {
@@ -33,7 +27,6 @@ void *pyfloat__mul__(void *lvoid, void *rvoid) {
     else if (type(rvoid) == pyint_t) {
         pyfloat *fright = pyint__float__(rvoid);
         pyfloat *retptr = pyfloat__mul__(lvoid, fright);
-        pyfloat__del__(fright);
         return retptr;
     }
     else if (type(rvoid) == pycomplex_t)
@@ -51,7 +44,6 @@ void *pyfloat__div__(void *lvoid, void *rvoid) {
     else if (type(rvoid) == pyint_t) {
         pyfloat *fright = pyint__float__(rvoid);
         pyfloat *retptr = pyfloat__div__(lvoid, fright);
-        pyfloat__del__(fright);
         return retptr;
     }
     else if (type(rvoid) == pycomplex_t) {
@@ -86,8 +78,6 @@ void *pyfloat__add__(void *lvoid, void *rvoid) {
     else if (type(rvoid) == pycomplex_t) {
         pycomplex *right = (pycomplex *)rvoid;
         pycomplex *retptr = pycomplex__init__();
-        free(retptr->real);
-        free(retptr->imag);
         retptr->real = pyfloat__add__(left, right->real);
         retptr->imag = right->imag;
         return retptr;
@@ -105,13 +95,11 @@ void *pyfloat__sub__(void *lvoid, void *rvoid) {
     else if (type(rvoid) == pyint_t) {
         pyfloat *right = pyint__float__(rvoid);
         pyfloat *retptr = pyfloat__sub__(lvoid, right);
-        pyfloat__del__(right);
         return retptr;
     }
     else if (type(rvoid) == pycomplex_t) {
         pycomplex *right = (pycomplex *)rvoid;
         pycomplex *retptr = pycomplex__init__();
-        free(retptr->real);
         retptr->real = pyfloat__sub__(left, right->real);
         retptr->imag->value = -(right->imag->value);
         return retptr;
@@ -124,22 +112,10 @@ pyfloat *pyfloat__neg__(pyfloat *ptr) {
     return retptr;
 }
 
-// pyint *pyfloat__int__(void *vptr) {
-//     pyfloat *fptr = (pyfloat *)vptr;
-//     double *fvalue;
-//     if (fptr->value >= 0)
-//         fvalue = floor(fptr->value);
-//     else
-//         fvalue = ceil(fptr->value);
-//     while (1) {
-//     }
-// }
-
 void *pyfloat__pow__(void *lvoid, void *rvoid) {
     if (type(rvoid) == pyint_t) {
         pyfloat *right = pyint__float__(rvoid);
         void *retptr = pyfloat__pow__(lvoid, right);
-        del(right);
         return retptr;
     }
     else if (type(rvoid) == pyfloat_t) {
@@ -152,7 +128,6 @@ void *pyfloat__pow__(void *lvoid, void *rvoid) {
     else if (type(rvoid) == pycomplex_t) {
         pycomplex *left = pyfloat__complex__(lvoid);
         void *retptr = pycomplex__pow__(left, rvoid);
-        del(left);
         return retptr;
     }
 }
@@ -222,7 +197,6 @@ pyfloat *pyfloat__mod__(void *lvoid, void *rvoid) {
     else if (type(rvoid) == pyint_t) {
         pyfloat *right = pyint__float__(rvoid);
         retptr->value = left->value - floor(left->value / right->value) * right->value;
-        pyfloat__del__(right);
         return retptr;
     }
 }

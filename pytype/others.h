@@ -22,7 +22,6 @@ struct pyslice {
 
 struct pyNone {
     int type;
-    int ref;
     pyclass *class;
 };
 
@@ -35,7 +34,6 @@ struct pyargument {
 
 struct pyrange {
     int type;
-    int ref;
     pyclass *class;
     pyint *start;
     pyint *stop;

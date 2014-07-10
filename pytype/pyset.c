@@ -1,9 +1,19 @@
 #include <string.h>
+#include <stdlib.h>
 #include "pyset.h"
 #include "pyint.h"
 #include "pystr.h"
 #include "methods.h"
 #include "../string.h"
+#include "../types.h"
+#include "../__builtins__.h"
+
+pyset *pyset_init() {
+    pyset *retptr = (pyset *)malloc(sizeof(pyset));
+    retptr->type = pyset_t;
+    retptr->class = &set_class;
+    return retptr;
+}
 
 pyint *pyset__len__(void *vptr) {
     pyset *ptr = (pyset *)vptr;

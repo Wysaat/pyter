@@ -81,7 +81,6 @@ void def_int_func(void *func(), char *name) {
 
 void def_int(environment *env) {
     int_class.type = pyclass_t;
-    int_class.ref = 0;
     int_class.class = &type_class;
     int_class.id = "int";
     int_class.env = environment_init(0);

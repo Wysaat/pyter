@@ -10,7 +10,6 @@ typedef struct pylist pylist;
 
 struct pylist {
     int type;
-    int ref;
     pyclass *class;
     list *values;
 };
@@ -25,8 +24,6 @@ void *pylist__getitem__(void *, void *);
 void pylist__setitem__(void *, void *, void *value);
 pyint *pylist__len__(void *);
 int pylist_len2(void *);
-void pylist_del(void *);
-void pylist_ref(void *);
 pystr *pylist_str(void *);
 
 #endif /* PYTYPE_PYLIST_H */

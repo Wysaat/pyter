@@ -9,13 +9,11 @@
 typedef struct pyfloat pyfloat;
 struct pyfloat {
     int type;
-    int ref;
     pyclass *class;
     double value;
 };
 
 pyfloat *pyfloat__init__();
-void pyfloat__del__(void *);
 void *pyfloat__mul__(void *, void *);
 void *pyfloat__div__(void *, void *);
 void *pyfloat__rfloordiv__(void *, void *);

@@ -7,6 +7,15 @@
 #include "../execute.h"
 #include "others.h"
 #include "../gen_execute.h"
+#include "../types.h"
+#include "../__builtins__.h"
+
+pyfunction *pyfunction_init() {
+    pyfunction *retptr = (pyfunction *)malloc(sizeof(pyfunction));
+    retptr->type = pyfunction_t;
+    retptr->class = &function_class;
+    return retptr;
+}
 
 void *pyfunction__call__(void *lptr, void *rptr) {
     pyfunction *func = (pyfunction *)lptr;
@@ -50,37 +59,5 @@ void *pyfunction__call__(void *lptr, void *rptr) {
     else
         retptr = pyNone_init();
 
-    environment_del(local_env);
     return retptr;
-}
-
-void pyfunction_del(void *vptr) {
-    ref_dec(vptr);
-    pyfunction *func = (pyfunction *)vptr;
-    if (func->assign_values)
-        del(func->assign_values);
-    if (func->bound)
-        del(func->bound);
-    if (get_ref(vptr) == 0) {
-        del(func->id);
-        if (func->parameters) {
-            list *ptr = func->parameters, *tmp;
-            while (ptr) {
-                tmp = ptr;
-                ptr = ptr->next;
-                free(tmp);
-            }
-        }
-        del(func->fsuite);
-        if (func->assign_target_list)
-            del(func->assign_target_list);
-        free(func);
-    }
-}
-
-void pyfunction_ref(void *vptr) {
-    ref_inc(vptr);
-    pyfunction *func = (pyfunction *)vptr;
-    if (func->assign_values)
-        ref_inc(func->assign_values);
 }

@@ -8,7 +8,6 @@ typedef struct pygenerator pygenerator;
 
 struct pygenerator {
     int type;
-    int ref;
     pyclass *class;
     void *_suite;
     environment *local_env;

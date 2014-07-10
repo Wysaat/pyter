@@ -9,7 +9,6 @@
 typedef struct pytuple pytuple;
 struct pytuple {
     int type;
-    int ref;
     pyclass *class;
     list *values;
 };
@@ -19,8 +18,6 @@ pytuple *pytuple__add__(void *, void *);
 pytuple *pytuple__mul__(pytuple *, void *);
 pybool *pytuple__eq__(void *, void *);
 void *pytuple__getitem__(void *, void *);
-void pytuple_del(void *);
-void pytuple_ref(void *);
 pyint *pytuple__len__(void *);
 pystr *pytuple_str(void *);
 

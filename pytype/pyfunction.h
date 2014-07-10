@@ -11,7 +11,6 @@ typedef struct pyfunction pyfunction;
 
 struct pyfunction {
     int type;
-    int ref;
     pyclass *class;
     identifier *id;
     list *parameters;  // can be 0, or a list of identifiers
@@ -23,8 +22,7 @@ struct pyfunction {
     pytuple *assign_values;  // can be 0
 };
 
-void *pyfunction__call__(void *, void *);
-void pyfunction_del(void *);
-void pyfunction_ref(void *);
+pyfunction *pyfunction_init();
+void *pyfunction__call__(void *, void *);;
 
 #endif /* PYTYPE_PYFUNCTION_H */

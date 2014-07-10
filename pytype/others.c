@@ -13,7 +13,6 @@
 pyNone *pyNone_init() {
     pyNone *retptr = (pyNone *)malloc(sizeof(pyNone));
     retptr->type = pyNone_t;
-    retptr->ref = 0;
     retptr->class = &NoneType_class;
     return retptr;
 }
@@ -21,7 +20,6 @@ pyNone *pyNone_init() {
 pyrange *pyrange_init(void *vptr) {
     pyrange *retptr = (pyrange *)malloc(sizeof(pyrange));
     retptr->type = pyrange_t;
-    retptr->ref = 0;
     retptr->class = &range_class;
     pyargument *argument = (pyargument *)vptr;
     list *value_list = argument->value_list;

@@ -8,11 +8,11 @@
 typedef struct pyset pyset;
 struct pyset {
     int type;
-    int ref;
     pyclass *class;
     list *values;
 };
 
+pyset *pyset_init();
 pyint *pyset__len__(void *);
 pystr *pyset_str(void *);
 

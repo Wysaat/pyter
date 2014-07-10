@@ -18,6 +18,8 @@
 #include "pytype/pydict.h"
 #include "pytype/pyfunction.h"
 #include "pytype/pyclass.h"
+#include "pytype/pymodule.h"
+#include "pytype/py__builtins__.h"
 #include "pytype/others.h"
 
 environment *environment_init(environment *outer) {
@@ -39,7 +41,6 @@ val_dict_entry *val_dict_entry_init(char *id, void *value) {
 
 void store(environment *env, void *targets, void *values) {
     if (type(targets) == identifier_t) {
-        ref(values);
         identifier *id = (identifier *)targets;
         if (list_is_empty(env->val_dict)) {
             if (id->value)
@@ -53,7 +54,6 @@ void store(environment *env, void *targets, void *values) {
             for (ptr = env->val_dict; ptr; ptr = ptr->next) {
                 val_dict_entry *entry = (val_dict_entry *)ptr->content;
                 if (entry->id && !strcmp(entry->id, id->value)) {
-                    del(entry->value);
                     entry->value = values;
                     return;
                 }
@@ -63,7 +63,6 @@ void store(environment *env, void *targets, void *values) {
             for (ptr = env->val_dict; ptr; ptr = ptr->next) {
                 val_dict_entry *entry = (val_dict_entry *)ptr->content;
                 if (!entry->id) {
-                    del(entry->value);
                     entry->value = values;
                     return;
                 }
@@ -76,16 +75,12 @@ void store(environment *env, void *targets, void *values) {
         void *left = evaluate(subsc->primary, env);
         void *right = evaluate(subsc->subsc->value, env);
         __setitem__(left, right, values);
-        del(left);
-        del(right);
     }
     else if (type(targets) == slicing_t) {
         slicing *slic = (slicing *)targets;
         void *left = evaluate(slic->primary, env);
         void *right = evaluate(slic->slice, env);
         __setitem__(left, right, values);
-        del(left);
-        del(right);
     }
     else if (type(targets) == attributeref_t) {
         attributeref *attribref = (attributeref *)targets;
@@ -94,7 +89,6 @@ void store(environment *env, void *targets, void *values) {
             __setattr__(((instance *)ptr)->class, ptr, attribref->id->value, values);
         else if (type(ptr) == pyclass_t)
             __setattr__(((pyclass *)ptr)->class, ptr, attribref->id->value, values);
-        del(ptr);
     }
     else if (type(targets) == expression_list_t ||
              type(targets) == list_expr_t || type(targets) == parenth_form_t) {
@@ -130,25 +124,23 @@ environment *environment_copy(environment *env) {
     return retptr;
 }
 
-void environment_del(void *vptr) {
-    environment *env = (environment *)vptr;
-    if (list_is_empty(env->val_dict))
-        free(env->val_dict);
-    else {
-        list *ptr = env->val_dict, *tmp;
-        while (ptr) {
-            val_dict_entry *entry = (val_dict_entry *)ptr->content;
-            free(entry->id);
-            del(ptr->content);
-            tmp = ptr;
-            ptr = ptr->next;
-            free(tmp);
-        }
+void store_id(environment *env, char *id, void *value) {
+    identifier *_id = IDENTIFIER(id);
+    store(env, _id, value);
+}
+
+void *env_find(environment *env, char *name) {
+    list *ptr;
+    for (ptr = env->val_dict; ptr; ptr = ptr->next) {
+        val_dict_entry *entry = (val_dict_entry *)ptr->content;
+        if (entry->id && !strcmp(entry->id, name))
+            return entry->value;
     }
-    free(env);
 }
 
 void del(void *vptr) {
+    if (!vptr)
+        return;
     if (type(vptr) == identifier_t)
         identifier_del(vptr);
     else if (type(vptr) == int_expr_t)
@@ -236,86 +228,4 @@ void del(void *vptr) {
         classdef_del(vptr);
     else if (type(vptr) == suite_t)
         suite_del(vptr);
-
-    else if (type(vptr) == __pyargument_t)
-        pyargument_del(vptr);
-
-    else if (type(vptr) == environment_t)
-        environment_del(vptr);
-
-    else if (type(vptr) == pyint_t)
-        pyint__del__(vptr);
-    else if (type(vptr) == pybool_t)
-        pybool_del(vptr);
-    else if (type(vptr) == pystr_t)
-        pystr__del__(vptr);
-    else if (type(vptr) == pylist_t)
-        pylist_del(vptr);
-    else if (type(vptr) == pytuple_t)
-        pytuple_del(vptr);
-    else if (type(vptr) == pyfunction_t)
-        pyfunction_del(vptr);
-    else if (type(vptr) == pybuiltin_function_t)
-        pybuiltin_function_del(vptr);
-    else if (type(vptr) == pyclass_t)
-        pyclass_del(vptr);
-    // else if (type(vptr) == instance_t)
-    //     instance_del(vptr);
-}
-
-void ref(void *vptr) {
-    if (type(vptr) == pyint_t)
-        pyint_ref(vptr);
-    else if (type(vptr) == pybool_t)
-        pybool_ref(vptr);
-    else if (type(vptr) == pystr_t)
-        pystr_ref(vptr);
-    else if (type(vptr) == pylist_t)
-        pylist_ref(vptr);
-    else if (type(vptr) == pytuple_t)
-        pytuple_ref(vptr);
-    else if (type(vptr) == pyfunction_t)
-        pyfunction_ref(vptr);
-    else if (type(vptr) == pybuiltin_function_t)
-        pybuiltin_function_ref(vptr);
-    else if (type(vptr) == pyclass_t)
-        pyclass_ref(vptr);
-    // else if (type(vptr) == instance_t)
-    //     instance_ref(vptr);
-}
-
-void nref(void *vptr) {
-    if (type(vptr) == pyint_t)
-        pyint_nref(vptr);
-    else if (type(vptr) == pybool_t)
-        pybool_nref(vptr);
-    else if (type(vptr) == pystr_t)
-        pystr_nref(vptr);
-    else if (type(vptr) == pylist_t)
-        pylist_nref(vptr);
-    else if (type(vptr) == pytuple_t)
-        pytuple_nref(vptr);
-    else if (type(vptr) == pyfunction_t)
-        pyfunction_nref(vptr);
-    else if (type(vptr) == pybuiltin_function_t)
-        pybuiltin_function_nref(vptr);
-    else if (type(vptr) == pyclass_t)
-        pyclass_nref(vptr);
-    // else if (type(vptr) == instance_t)
-    //     instance_nref(vptr);
-}
-
-void store_id(environment *env, char *id, void *value) {
-    identifier *_id = IDENTIFIER(id);
-    store(env, _id, value);
-    del(_id);
-}
-
-void *env_find(environment *env, char *name) {
-    list *ptr;
-    for (ptr = env->val_dict; ptr; ptr = ptr->next) {
-        val_dict_entry *entry = (val_dict_entry *)ptr->content;
-        if (entry->id && !strcmp(entry->id, name))
-            return entry->value;
-    }
 }

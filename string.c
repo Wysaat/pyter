@@ -97,15 +97,3 @@ char *buff2_puts2(buffer2 *buff) {
     buff2_del(buff);
     return retptr;
 }
-
-pstring *pstring_init(char *value) {
-    pstring *retptr = (pstring *)malloc(sizeof(pstring));
-    retptr->value = strdup(value);
-    retptr->ref = 0;
-    return retptr;
-}
-
-pystring *pstring_del(pstring *psptr) {
-    free(psptr->value);
-    free(psptr);
-}

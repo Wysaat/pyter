@@ -14,7 +14,6 @@
 pytuple *pytuple__init__() {
     pytuple *retptr = (pytuple *)malloc(sizeof(pytuple));
     retptr->type = pytuple_t;
-    retptr->ref = 0;
     retptr->class = &tuple_class;
     retptr->values = list_node();
     return retptr;
@@ -39,7 +38,6 @@ pytuple *pytuple__mul__(pytuple *left, void *right) {
         list_append_list(retptr->values, to_append);
         pyint__dec__(times);
     }
-    pyint__del__(zero);
 
     return retptr;
 }
@@ -61,35 +59,6 @@ void *pytuple__getitem__(void *lvoid, void *rvoid) {
     for (ptr = left->values; is_true(pyint__lt__(ind, right)); pyint__inc__(ind))
         ptr = ptr->next;
     return ptr->content;
-}
-
-void pytuple_del(void *vptr) {
-    ref_dec(vptr);
-    pytuple *ptr = (pytuple *)vptr;
-    if (!list_is_empty(ptr->values)) {
-        list *lptr;
-        for (lptr = ptr->values; lptr; lptr = lptr->next)
-            del(lptr->content);
-    }
-    if (get_ref(vptr) == 0) {
-        list *lptr = ptr->values, *tmp;
-        while (lptr) {
-            tmp = lptr;
-            lptr = lptr->next;
-            free(tmp);
-        }
-        free(ptr);
-    }
-}
-
-void pytuple_ref(void *vptr) {
-    ref_inc(vptr);
-    pytuple *ptr = (pytuple *)vptr;
-    if (!list_is_empty(ptr->values)) {
-        list *lptr;
-        for (lptr = ptr->values; lptr; lptr = lptr->next)
-            ref(lptr->content);
-    }
 }
 
 pyint *pytuple__len__(void *vptr) {

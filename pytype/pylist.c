@@ -17,7 +17,6 @@
 pylist *pylist__init__() {
     pylist *retptr = (pylist *)malloc(sizeof(pylist));
     retptr->type = pylist_t;
-    retptr->ref = 0;
     retptr->class = &list_class;
     retptr->values = list_node();
     return retptr;
@@ -60,7 +59,6 @@ pylist *pylist__add__(void *lvoid, void *rvoid) {
 
 void pylist__append__(pylist *left, void *rvoid) {
     list_append_content(left->values, rvoid);
-    ref(rvoid);
 }
 
 pylist *pylist__mul__(void *lvoid, void *rvoid) {
@@ -72,7 +70,6 @@ pylist *pylist__mul__(void *lvoid, void *rvoid) {
             list *ptr;
             for (ptr = left->values; ptr; ptr = ptr->next) {
                 list_append_content(retptr->values, ptr->content);
-                ref(ptr->content);
             }
         }
         return retptr;
@@ -164,9 +161,7 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
         list *ptr = primary->values;
         while (i++ < index)
             ptr = ptr->next;
-        del(ptr->content);
         ptr->content = value;
-        ref(ptr->content);
     }
     else if (type(rvoid) == pyslice_t) {
         pyslice *slice = (pyslice *)rvoid;
@@ -219,16 +214,13 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
                         if (ptr->prev)
                             ptr->prev->next = 0;
                         while (ptr) {
-                            del(ptr->content);
                             list *tmp = ptr->next;
                             free(ptr);
                             ptr = tmp;
                         }
                         return;
                     }
-                    del(ptr->content);
                     ptr->content = ptr2->content;
-                    ref(ptr->content);
                     if (!ptr->next && ptr2->next)
                         ptr->next = ptr2->next;
                     ptr2 = ptr2->next;
@@ -240,9 +232,7 @@ void pylist__setitem__(void *lvoid, void *rvoid, void *value) {
                 return;
             for ( ; i > stop; i--, ptr = ptr->prev) {
                 if ((i - start) % step == 0) {
-                    del(ptr->content);
                     ptr->content = ptr2->content;
-                    ref(ptr->content);
                     ptr2 = ptr2->next;
                 }
             }
@@ -258,35 +248,6 @@ pyint *pylist__len__(void *vptr) {
 int pylist_len2(void *vptr) {
     pylist *ptr = (pylist *)vptr;
     return list_len(ptr->values);
-}
-
-void pylist_del(void *vptr) {
-    ref_dec(vptr);
-    pylist *ptr = (pylist *)vptr;
-    if (!list_is_empty(ptr->values)) {
-        list *lptr;
-        for (lptr = ptr->values; lptr; lptr = lptr->next)
-            del(lptr->content);
-    }
-    if (get_ref(vptr) == 0) {
-        list *lptr = ptr->values, *tmp;
-        while (lptr) {
-            tmp = lptr;
-            lptr = lptr->next;
-            free(tmp);
-        }
-        free(ptr);
-    }
-}
-
-void pylist_ref(void *vptr) {
-    ref_inc(vptr);
-    pylist *ptr = (pylist *)vptr;
-    if (!list_is_empty(ptr->values)) {
-        list *lptr;
-        for (lptr = ptr->values; lptr; lptr = lptr->next)
-            ref(lptr->content);
-    }
 }
 
 pystr *pylist_str(void *vptr) {

@@ -323,6 +323,26 @@ typedef struct attributeref {
     identifier *id;
 } attributeref;
 
+void attributeref_del(attributeref *ptr) {
+    if (!nref(ptr->primary))
+        del(ptr->primary);
+    if (!nref(ptr->id))
+        del(ptr->id);
+    free(ptr);
+}
+
+void attributeref_ref(attributeref *ptr) {
+    ref(ptr->primary)
+    ptr->id->ref++;
+    ptr->ref++;
+}
+
+void attributeref_nref(attributeref *ptr) {
+    nref(ptr->primary);
+    ptr->id->ref--;
+    ptr->ref--;
+}
+
 typedef struct slice_expr {
     int type;
     void *start;
@@ -332,6 +352,30 @@ typedef struct slice_expr {
     void *stop_val;  /* for yield */
     void *step_val;  /* for yield */
 } slice_expr;
+
+void slice_expr_del(slice_expr *ptr) {
+    if (!nref(ptr->step))
+        del(ptr->stop);
+    if (!nref(ptr->stop))
+        del(ptr->stop);
+    if (!nref(ptr->step))
+        del(ptr->step);
+    free(ptr);
+}
+
+void slice_expr_ref(slice_expr *ptr) {
+    ref(ptr->start);
+    ref(ptr->stop);
+    ref(ptr->step);
+    ptr->ref++;
+}
+
+void slice_expr_nref(slice_expr *ptr) {
+    nref(ptr->start);
+    nref(ptr->stop);
+    nref(ptr->step);
+    ptr->ref--;
+}
 
 typedef struct subsc_expr {
     int type;
@@ -533,6 +577,22 @@ struct pyint {
     integer *value;
 };
 
+void pyint_del(pyint *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    free(ptr);
+}
+
+void pyint_ref(pyint *ptr) {
+    ref(ptr->class);
+    ++ptr->ref;
+}
+
+int pyint_nref(pyint *ptr) {
+    nref(ptr->class);
+    return --ptr->ref;
+}
+
 struct pybool {
     int type;
     int ref;
@@ -540,12 +600,44 @@ struct pybool {
     int value;
 };
 
+void pybool_del(pybool *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    free(ptr);
+}
+
+void pybool_ref(pybool *ptr) {
+    ref(ptr->class);
+    ++ptr->ref;
+}
+
+int pybool_nref(pybool *ptr) {
+    nref(ptr->class);
+    --ptr->ref;
+}
+
 struct pyfloat {
     int type;
     int ref;
     pyclass *class;
     double value;
 };
+
+void pyfloat_del(pyfloat *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    free(ptr);
+}
+
+void pyfloat_ref(pyfloat *ptr) {
+    ref(ptr->class);
+    ++ptr->ref;
+}
+
+int pyfloat_nref(pyfloat *ptr) {
+    nref(ptr->class);
+    return --ptr->ref;
+}
 
 struct pycomplex {
     int type;
@@ -555,12 +647,52 @@ struct pycomplex {
     pyfloat *imag;
 };
 
+void pycomplex_del(pycomplex *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    if (!nref(ptr->real))
+        del(ptr->real);
+    if (!nref(ptr->imag))
+        del(ptr->imag);
+    free(ptr);
+}
+
+void pycomplex_ref(pycomplex *ptr) {
+    ref(ptr->class);
+    ref(ptr->real);
+    ref(ptr->imag);
+    ++ptr->ref;
+}
+
+int pycomplex_nref(pycomplex *ptr) {
+    nref(ptr->class);
+    nref(ptr->real);
+    nref(ptr->imag);
+    return --ptr->ref;
+}
+
 struct pystr {
     int type;
     int ref;
     pyclass *class;
     char *value;
 };
+
+void pystr_del(pystr *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    free(ptr);
+}
+
+void pystr_ref(pystr *ptr) {
+    ref(ptr->class);
+    ++ptr->ref;
+}
+
+int pystr_nref(pystr *ptr) {
+    nref(ptr->class);
+    return --ptr->ref;
+}
 
 struct pylist {
     int type;
@@ -569,12 +701,66 @@ struct pylist {
     list *values;
 };
 
+void pylist_del(pylist *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    list *lptr;
+    for (lptr = ptr->values; lptr; lptr = lptr->next) {
+        if (!nref(lptr->content))
+            del(lptr->content);
+    }
+    free(ptr);
+}
+
+void pylist_ref(pylist *ptr) {
+    ref(ptr->class);
+    list *lptr;
+    for (lptr = ptr->values; lptr; lptr = lptr->next)
+        ref(lptr->content);
+    ++ptr->ref;
+}
+
+int pylist_nref(pylist *ptr) {
+    nref(ptr->class);
+    list *lptr;
+    for (lptr = ptr->values; lptr; lptr = lptr->next)
+        nref(lptr->content);
+    return --ptr->ref;
+}
+
 struct pytuple {
     int type;
     int ref;
     pyclass *class;
     list *values;
 };
+
+void pytuple_del(pytuple *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    list *lptr;
+    for (lptr = ptr->values; lptr; lptr = lptr->next) {
+        if (!nref(lptr->content))
+            del(lptr->content);
+    }
+    free(ptr);
+}
+
+void pytuple_ref(pytuple *ptr) {
+    ref(ptr->class);
+    list *lptr;
+    for (lptr = ptr->values; lptr; lptr = lptr->next)
+        ref(lptr->content);
+    ++ptr->ref;
+}
+
+int pytuple_nref(pytuple *ptr) {
+    nref(ptr->class);
+    list *lptr;
+    for (lptr = ptr->values; lptr; lptr = lptr->next)
+        nref(lptr->content);
+    return --ptr->ref;
+}
 
 struct pyset {
     int type;
@@ -583,6 +769,33 @@ struct pyset {
     list *values;
 };
 
+void pyset_del(pyset *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    list *lptr;
+    for (lptr = ptr->values; lptr; lptr = lptr->next) {
+        if (!nref(lptr->content))
+            del(lptr->content);
+    }
+    free(ptr);
+}
+
+void pyset_ref(pyset *ptr) {
+    ref(ptr->class);
+    list *lptr;
+    for (lptr = ptr->values; lptr; lptr = lptr->next)
+        ref(lptr->content);
+    ++ptr->ref;
+}
+
+int pyset_nref(pyset *ptr) {
+    nref(ptr->class);
+    list *lptr;
+    for (lptr = ptr->values; lptr; lptr = lptr->next)
+        nref(lptr->content);
+    return --ptr->ref;
+}
+
 struct pydict {
     int type;
     int ref;
@@ -590,6 +803,41 @@ struct pydict {
     list *keys;
     list *values;
 };
+
+void pydict_del(pydict *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    list *lptr;
+    for (lptr = ptr->keys; lptr; lptr = lptr->next) {
+        if (!nref(lptr->content))
+            del(lptr->content);
+    }
+    for (lptr = ptr->values; lptr; lptr = lptr->next) {
+        if (!nref(lptr->content))
+            del(lptr->content);
+    }
+    free(ptr);
+}
+
+void pydict_ref(pydict *ptr) {
+    ref(ptr->class);
+    list *lptr;
+    for (lptr = ptr->keys; lptr; lptr = lptr->next)
+        ref(lptr->content);
+    for (lptr = ptr->values; lptr; lptr = lptr->next)
+        ref(lptr->content);
+    ++ptr->ref;
+}
+
+int pydict_nref(pydict *ptr) {
+    nref(ptr->class);
+    list *lptr;
+    for (lptr = ptr->keys; lptr; lptr = lptr->next)
+        nref(lptr->content);
+    for (lptr = ptr->values; lptr; lptr = lptr->next)
+        nref(lptr->content);
+    return --ptr->ref;
+}
 
 struct pyfunction {
     int type;
@@ -605,6 +853,26 @@ struct pyfunction {
     pytuple *assign_values;  // can be 0
 };
 
+void pyfunction_del(pyfunction *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    if (!nref(ptr->assign_values))
+        del(ptr->assign_values);
+    free(ptr);
+}
+
+void pyfunction_ref(pyfunction *ptr) {
+    ref(ptr->class);
+    ref(ptr->assign_values);
+    ++ptr->ref;
+}
+
+int pyfunction_nref(pyfunction *ptr) {
+    nref(ptr->class);
+    nref(ptr->assign_values);
+    return --ptr->ref;
+}
+
 struct pyclass {
     int type;
     int ref;
@@ -614,6 +882,41 @@ struct pyclass {
     list *inheritance;  // can be zero
 };
 
+void pyclass_del(pyclass *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    if (ptr->inheritance) {
+        list *lptr;
+        for (lptr = ptr->inheritance; lptr; lptr = lptr->next) {
+            if (!nref(lptr->content))
+                del(lptr->content);
+        }
+    }
+    free(ptr);
+}
+
+void pyclass_ref(pyclass *ptr) {
+    ref(ptr->class);
+    if (ptr->inheritance) {
+        list *lptr;
+        for (lptr = ptr->inheritance; lptr; lptr = lptr->next) {
+            ref(lptr->content);
+        }
+    }
+    ++ptr->ref;
+}
+
+int pyclass_nref(pyclass *ptr) {
+    nref(ptr->class);
+    if (ptr->inheritance) {
+        list *lptr;
+        for (lptr = ptr->inheritance; lptr; lptr = lptr->next) {
+            nref(lptr->content);
+        }
+    }
+    return --ptr->ref;
+}
+
 struct pymodule {
     int type;
     int ref;
@@ -621,6 +924,22 @@ struct pymodule {
     char *name;
     environment *env;
 };
+
+void pymodule_del(pymodule *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    free(ptr);
+}
+
+void pymodule_ref(pymodule *ptr) {
+    ref(ptr->class);
+    ++ptr->ref;
+}
+
+int pymodule_nref(pymodule *ptr) {
+    nref(ptr->class);
+    return --ptr->ref;
+}
 
 struct pyslice {
     int type;
@@ -636,6 +955,22 @@ struct pyNone {
     int ref;
     pyclass *class;
 };
+
+void pyNone_del(pyNone *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    free(ptr);
+}
+
+void pyNone_ref(pyNone *ptr) {
+    ref(ptr->class);
+    ++ptr->ref;
+}
+
+int pyNone_nref(pyNone *ptr) {
+    nref(ptr->class);
+    return --ptr->ref;
+}
 
 struct pyargument {
     int type;
@@ -653,6 +988,34 @@ struct pyrange {
     pyint *step;
 };
 
+void pyrange_del(pyrange *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    if (!nref(ptr->start))
+        del(ptr->start);
+    if (!nref(ptr->stop))
+        del(ptr->stop);
+    if (!nref(ptr->step))
+        del(ptr->step);
+    free(ptr);
+}
+
+void pyrange_ref(pyrange *ptr) {
+    ref(ptr->class);
+    ref(ptr->start);
+    ref(ptr->stop);
+    ref(ptr->step);
+    ++ptr->ref;
+}
+
+int pyrange_nref(pyrange *ptr) {
+    nref(ptr->class);
+    nref(ptr->start);
+    nref(ptr->stop);
+    nref(ptr->step);
+    return --ptr->ref;
+}
+
 struct pybuiltin_function {
     int type;
     int ref;
@@ -661,3 +1024,19 @@ struct pybuiltin_function {
     void *(* func)();
     void *bound;
 };
+
+void pybuiltin_function_del(pybuiltin_function *ptr) {
+    if (!nref(ptr->class))
+        del(ptr->class);
+    free(ptr);
+}
+
+void pybuiltin_function_ref(pybuiltin_function *ptr) {
+    ref(ptr->class);
+    ++ptr->ref;
+}
+
+int pybuiltin_function_nref(pybuiltin_function *ptr) {
+    nref(ptr->class);
+    return --ptr->ref;
+}

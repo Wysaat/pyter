@@ -12,11 +12,6 @@ struct buffer2 {
     buffer2 *next;
 };
 
-typedef struct pstring {
-	char *value;
-	int ref;
-} pstring;
-
 buffer2 *buff2_init();
 void *buff2_add(buffer2 *buff, char *value);
 char *buff2_puts(buffer2 *buff);

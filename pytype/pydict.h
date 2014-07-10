@@ -7,12 +7,12 @@
 typedef struct pydict pydict;
 struct pydict {
     int type;
-    int ref;
     pyclass *class;
     list *keys;
     list *values;
 };
 
+pydict *pydict_init();
 void *pydict__getitem__(void *left, void *right);
 void pydict__setitem__(void *left, void *right, void *value);
 

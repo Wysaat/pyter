@@ -39,7 +39,6 @@ void def_list_func(void *func(), char *name) {
 
 void def_list(environment *env) {
     list_class.type = pyclass_t;
-    list_class.ref = 0;
     list_class.class = &type_class;
     list_class.id = "list";
     list_class.env = environment_init(0);

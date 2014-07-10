@@ -174,7 +174,6 @@ void expression_stmtExecute(void *structure, environment *env, int pf) {
     void *ptr = evaluate(stmt->expression_list, env);
     if (pf && type(ptr)!=pyNone_t)
         print(ptr);
-    del(ptr);
 }
 
 void expression_stmt_del(void *vptr) {
@@ -190,7 +189,6 @@ void assignment_stmtExecute(void *structure, environment *env, int pf) {
     // a = b = c = 3, a, b and c consist the targets_list
     for (ptr = stmt->targets_list; ptr; ptr = ptr->next)
         store(env, ptr->content, values);
-    del(values);
 }
 
 void assignment_stmt_del(void *vptr) {
@@ -286,7 +284,6 @@ void del_stmtExecute(void *structure, environment *env, int pf) {
             for (ptr2 = env->val_dict; ptr2; ptr2 = ptr2->next) {
                 val_dict_entry *entry = (val_dict_entry *)ptr2->content;
                 if (!strcmp(entry->id, ((identifier *)ptr->content)->value)) {
-                    del(entry->value);
                     if (ptr2->prev)
                         ptr2->prev->next = ptr2->next;
                     if (ptr2->next)
@@ -328,12 +325,8 @@ void if_stmtExecute(void *structure, environment *env, int pf) {
         pybool *temp2 = __bool__(temp1);
         if (is_true(temp2)) {
             execute(ptr2->content, env, pf);
-            del(temp2);
-            del(temp1);
             return;
         }
-        del(temp2);
-        del(temp1);
     }
     if (ptr2)
         execute(ptr2->content, env, pf);
@@ -351,8 +344,6 @@ void while_stmtExecute(void *structure, environment *env, int pf) {
     void *cond = evaluate(stmt->condition, env);
     pybool *truth = __bool__(cond);
     while (is_true(truth) && !env->ret) {
-        del(truth);
-        del(cond);
         execute(stmt->suite_list->content, env, pf);
         if (env->_break)
             break;
@@ -364,10 +355,6 @@ void while_stmtExecute(void *structure, environment *env, int pf) {
     if (env->_break) {
         env->_break = 0;
         return;
-    }
-    else {
-        del(truth);
-        del(cond);
     }
     if (stmt->suite_list->next)
         execute(stmt->suite_list->next->content, env, pf);
@@ -406,7 +393,6 @@ void for_stmtExecute(void *structure, environment *env, int pf) {
     else if (type(values_list) == pyrange_t) {
         pyrange *range = (pyrange *)values_list;
         range->type = pyrange_t;
-        range->ref = 0;
         range->class = &range_class;
         pyint *index = int_to_pyint(0);
         while (1) {
@@ -440,11 +426,7 @@ void for_stmt_del(void *vptr) {
 
 void funcdefExecute(void *structure, environment *env, int pf) {
     funcdef *stmt = (funcdef *)structure;
-    pyfunction *func = (pyfunction *)malloc(sizeof(pyfunction));
-    memset(func, 0, sizeof(pyfunction));
-    func->type = pyfunction_t;
-    func->ref = 0;
-    func->class = &function_class;
+    pyfunction *func = pyfunction_init();
     func->id = stmt->id;
     func->parameters = stmt->parameters;
     func->fsuite = stmt->fsuite;
@@ -452,8 +434,9 @@ void funcdefExecute(void *structure, environment *env, int pf) {
     func->yield = stmt->yield;
     func->env = env;
     func->assign_target_list = stmt->assign_target_list;
-    if (stmt->assign_target_list)
+    if (stmt->assign_target_list) {
         func->assign_values = evaluate(stmt->assign_expr_list, env);
+    }
 
     store(env, stmt->id, func);
 }
@@ -470,7 +453,8 @@ void classdefExecute(void *structure, environment *env, int pf) {
         class->inheritance = list_node();
         list *ptr;
         for (ptr = stmt->inheritance; ptr; ptr = ptr->next) {
-            list_append_content(class->inheritance, evaluate(ptr->content, env));
+            void *val = evaluate(ptr->content, env);
+            list_append_content(class->inheritance, val);
         }
     }
     class->env->outer = env;

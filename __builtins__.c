@@ -18,7 +18,6 @@
 
 void def_range(environment *env) {
     range_class.type = pyclass_t;
-    range_class.ref = 0;
     range_class.class = &type_class;
     range_class.id = "range";
     range_class.env = environment_init(0);
@@ -28,7 +27,6 @@ void def_range(environment *env) {
 
 void def_type(environment *env) {
     type_class.type = pyclass_t;
-    type_class.ref = 0;
     type_class.class = &type_class;
     type_class.id = "type";
     type_class.env = environment_init(0);
@@ -38,7 +36,6 @@ void def_type(environment *env) {
 
 void def__builtins__(environment *env) {
     __builtins__module.type = pymodule_t;
-    __builtins__module.ref = 0;
     __builtins__module.name = "__builtins__";
     __builtins__module.env = environment_init(0);
     store_id(env, "__builtins__", &__builtins__module);

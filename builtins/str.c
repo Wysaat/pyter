@@ -168,7 +168,6 @@ void def_str_func(void *func(), char *name) {
 
 void def_str(environment *env) {
     str_class.type = pyclass_t;
-    str_class.ref = 0;
     str_class.class = &type_class;
     str_class.id = "str";
     str_class.env = environment_init(0);

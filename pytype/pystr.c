@@ -14,7 +14,6 @@ pystr *pystr__init__() {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->value = strdup("");
     retptr->type = pystr_t;
-    retptr->ref = 0;
     retptr->class = &str_class;
     return retptr;
 }
@@ -23,7 +22,6 @@ pystr *pystr_init2(char *value) {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->value = strdup(value);
     retptr->type = pystr_t;
-    retptr->ref = 0;
     retptr->class = &str_class;
     return retptr;
 }
@@ -32,22 +30,8 @@ pystr *pystr_init3(char *value) {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));
     retptr->value = value;
     retptr->type = pystr_t;
-    retptr->ref = 0;
     retptr->class = &str_class;
     return retptr;
-}
-
-void pystr__del__(void *vptr) {
-    ref_dec(vptr);
-    if (get_ref(vptr) == 0) {
-        pystr *strptr = (pystr *)vptr;
-        free(strptr->value);
-        free(strptr);
-    }
-}
-
-void pystr_ref(void *vptr) {
-    ref_inc(vptr);
 }
 
 pystr *pystr__mul__(void *left, void *right) {
@@ -57,11 +41,9 @@ pystr *pystr__mul__(void *left, void *right) {
     zero->value = INTEGER_NODE();
     while (is_true(pyint__gt__(times, zero))) {
         new_retptr = pystr__add__(retptr, strptr);
-        pystr__del__(retptr);
         retptr = new_retptr;
         pyint__dec__(times);
     }
-    pyint__del__(zero);
     return retptr;
 }
 
