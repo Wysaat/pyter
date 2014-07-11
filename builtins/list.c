@@ -3,8 +3,8 @@
 #include "../pytype/others.h"
 #include "../list.h"
 #include "../environment.h"
-#include "../__builtins__.h"
 #include "../types.h"
+#include "builtins.h"
 
 // /* CAUTION: nested function definition is not standard C, change it someday.. */
 // void *def_sort_func_of_list(environment *env) {

@@ -37,7 +37,6 @@
 
 #include "environment.h"
 
-#include "__builtins__.h"
 #include "builtins/builtins.h"
 
 int is_alph(char );

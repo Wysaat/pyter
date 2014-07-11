@@ -11,7 +11,7 @@
 #include "pystr.h"
 #include "pylist.h"
 #include "pytuple.h"
-#include "../__builtins__.h"
+#include "../builtins/builtins.h"
 
 pyint *pyint__init__() {
     pyint *retptr = (pyint *)malloc(sizeof(pyint));

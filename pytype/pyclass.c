@@ -2,7 +2,6 @@
 #include <string.h>
 #include "pyclass.h"
 #include "../types.h"
-#include "../__builtins__.h"
 #include "../environment.h"
 #include "../list.h"
 #include "../struct_info.h"
@@ -49,6 +48,7 @@ void *pyclass__call__(void *left, void *right) {
         return retptr;
     }
     else if (left == &float_class) {
+        return float_init(right);
     }
     else if (left == &complex_class) {
     }

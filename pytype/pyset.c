@@ -6,7 +6,7 @@
 #include "methods.h"
 #include "../string.h"
 #include "../types.h"
-#include "../__builtins__.h"
+#include "../builtins/builtins.h"
 
 pyset *pyset_init() {
     pyset *retptr = (pyset *)malloc(sizeof(pyset));

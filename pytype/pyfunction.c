@@ -8,7 +8,7 @@
 #include "others.h"
 #include "../gen_execute.h"
 #include "../types.h"
-#include "../__builtins__.h"
+#include "../builtins/builtins.h"
 
 pyfunction *pyfunction_init() {
     pyfunction *retptr = (pyfunction *)malloc(sizeof(pyfunction));

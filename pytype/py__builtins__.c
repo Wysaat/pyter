@@ -3,8 +3,8 @@
 #include "py__builtins__.h"
 #include "../types.h"
 #include "../list.h"
-#include "../__builtins__.h"
 #include "others.h"
+#include "../builtins/builtins.h"
 
 pybuiltin_function *pybuiltin_function__init__(char *id, void *func) {
     pybuiltin_function *retptr = (pybuiltin_function *)malloc(sizeof(pybuiltin_function));

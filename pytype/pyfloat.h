@@ -14,6 +14,7 @@ struct pyfloat {
 };
 
 pyfloat *pyfloat__init__();
+pyfloat *pyfloat_init2(double );
 void *pyfloat__mul__(void *, void *);
 void *pyfloat__div__(void *, void *);
 void *pyfloat__rfloordiv__(void *, void *);

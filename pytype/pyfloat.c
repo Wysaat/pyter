@@ -3,16 +3,24 @@
 #include <math.h>
 #include "pyfloat.h"
 #include "../types.h"
-#include "../__builtins__.h"
 #include "../struct_info.h"
 #include "pyint.h"
 #include "pycomplex.h"
+#include "../builtins/builtins.h"
 
 pyfloat *pyfloat__init__() {
     pyfloat *retptr = (pyfloat *)malloc(sizeof(pyfloat));
     retptr->type = pyfloat_t;
     retptr->class = &float_class;
     retptr->value = (double)0.0;
+    return retptr;
+}
+
+pyfloat *pyfloat_init2(double value) {
+    pyfloat *retptr = (pyfloat *)malloc(sizeof(pyfloat));
+    retptr->type = pyfloat_t;
+    retptr->class = &float_class;
+    retptr->value = value;
     return retptr;
 }
 

@@ -4,9 +4,8 @@
 #include "../pytype/others.h"
 #include "../pytype/methods.h"
 #include "../types.h"
-#include "../__builtins__.h"
 #include "../evaluate.h"
-
+#include "builtins.h"
 
 /* from the Python 3.4 doc:
  *

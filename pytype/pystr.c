@@ -3,12 +3,12 @@
 #include <string.h>
 #include "../types.h"
 #include "pystr.h"
-#include "../__builtins__.h"
 #include "../struct_info.h"
 #include "pyint.h"
 #include "pybool.h"
 #include "others.h"
 #include "../string.h"
+#include "../builtins/builtins.h"
 
 pystr *pystr__init__() {
     pystr *retptr = (pystr *)malloc(sizeof(pystr));

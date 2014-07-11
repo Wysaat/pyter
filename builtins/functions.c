@@ -9,6 +9,7 @@
 #include "../pytype/methods.h"
 #include "../types.h"
 #include "../evaluate.h"
+#include "builtins.h"
 
 void *_abs(pyargument *argument) {
     void *vptr = argument->value_list->content;

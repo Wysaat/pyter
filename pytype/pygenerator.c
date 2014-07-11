@@ -2,9 +2,9 @@
 #include <string.h>
 #include "pygenerator.h"
 #include "../types.h"
-#include "../__builtins__.h"
 #include "../gen_execute.h"
 #include "../environment.h"
+#include "../builtins/builtins.h"
 
 pygenerator *pygenerator_init(void *_suite, environment *local_env, char *id) {
     pygenerator *retptr = (pygenerator *)malloc(sizeof(pygenerator));

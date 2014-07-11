@@ -5,7 +5,7 @@
 #include "../pytype/methods.h"
 #include "../evaluate.h"
 #include "../types.h"
-#include "../__builtins__.h"
+#include "builtins.h"
 
 void def_func(environment *env, void *func(), char *name);
 void def_str_func(void *func(), char *name);

@@ -52,6 +52,8 @@ int is_int(char *token) {
 }
 
 int is_float(char *token) {
+    if (token[0] == '"' || token[0] == '\'')
+        return 0;
     if (strlen(token) < 2)
         return 0;
     if (token[strlen(token)-1] == 'j' ||
@@ -61,7 +63,7 @@ int is_float(char *token) {
     for (i = 0; i < strlen(token); i++)
         if (token[i] == '.')
             return 1;
-    if (token[0] == '.' || (token[0] >= '0' && token[0] <= '9'))
+    if (token[0] >= '0' && token[0] <= '9')
         for (i = 0; i < strlen(token); i++)
             if (token[i] == 'e' || token[i] == 'E')
                 return 1;

@@ -359,9 +359,9 @@ void *parse_atom(scanner *sc) {
         return BOOL_EXPR(1);
     else if (!strcmp(token, "False"))
         return BOOL_EXPR(0);
-    if (is_identifier(token))
+    else if (is_identifier(token))
         return IDENTIFIER(token);
-    if (is_int(token))
+    else if (is_int(token))
         return INT_EXPR(token);
     else if (is_float(token))
         return FLOAT_EXPR(token);
@@ -1576,6 +1576,7 @@ void interpret(FILE *stream, environment *env)
     def_func(env, _len, "len");
     def_func(env, _abs, "abs");
     def_int(env);
+    def_float(env);
     def_str(env);
     def_list(env);
     def_range(env);

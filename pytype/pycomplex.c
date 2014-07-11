@@ -6,10 +6,10 @@
 #include "pyfloat.h"
 #include "../struct_info.h"
 #include "../environment.h"
-#include "../__builtins__.h"
 #include "pyint.h"
 #include "pystr.h"
 #include "methods.h"
+#include "../builtins/builtins.h"
 
 pycomplex *pycomplex__init__() {
     pycomplex *retptr = (pycomplex *)malloc(sizeof(pycomplex));

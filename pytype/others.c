@@ -3,7 +3,7 @@
 #include "../types.h"
 #include "../struct_info.h"
 #include "../environment.h"
-#include "../__builtins__.h"
+#include "../builtins/builtins.h"
 #include "../list.h"
 #include "pyint.h"
 #include "../integer.h"

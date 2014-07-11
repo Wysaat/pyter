@@ -9,8 +9,9 @@ all:
 	pytype/pyfunction.c pytype/pyclass.c \
 	pytype/py__builtins__.c pytype/pygenerator.c pytype/others.c pytype/pymodule.c \
 	environment.c \
-	__builtins__.c \
-	builtins/str.c builtins/int.c builtins/list.c builtins/functions.c \
+	builtins/builtins.c \
+	builtins/int.c builtins/float.c builtins/complex.c builtins/str.c builtins/list.c builtins/functions.c \
+	builtins/range.c \
 	scan/scanner.c scan/buffer.c scan/token.c -o $(OUT) -g -lm
 
 clean:

@@ -2,7 +2,6 @@
 #include <string.h>
 #include "pylist.h"
 #include "../types.h"
-#include "../__builtins__.h"
 #include "../list.h"
 #include "../string.h"
 #include "../struct_info.h"
@@ -13,6 +12,7 @@
 #include "pytuple.h"
 #include "pyset.h"
 #include "methods.h"
+#include "../builtins/builtins.h"
 
 pylist *pylist__init__() {
     pylist *retptr = (pylist *)malloc(sizeof(pylist));

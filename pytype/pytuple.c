@@ -2,7 +2,6 @@
 #include <string.h>
 #include "../types.h"
 #include "../struct_info.h"
-#include "../__builtins__.h"
 #include "pytuple.h"
 #include "pyint.h"
 #include "pybool.h"
@@ -10,6 +9,7 @@
 #include "methods.h"
 #include "../list.h"
 #include "../string.h"
+#include "../builtins/builtins.h"
 
 pytuple *pytuple__init__() {
     pytuple *retptr = (pytuple *)malloc(sizeof(pytuple));

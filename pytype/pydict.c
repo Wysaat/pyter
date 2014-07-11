@@ -4,7 +4,7 @@
 #include "methods.h"
 #include "../struct_info.h"
 #include "../types.h"
-#include "../__builtins__.h"
+#include "../builtins/builtins.h"
 
 pydict *pydict_init() {
     pydict *retptr = (pydict *)malloc(sizeof(pydict));

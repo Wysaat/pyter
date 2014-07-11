@@ -2,7 +2,7 @@
 #include "pybool.h"
 #include "../types.h"
 #include "../struct_info.h"
-#include "../__builtins__.h"
+#include "../builtins/builtins.h"
 
 void *PYBOOL(int value) {
     pybool *retptr = (pybool *)malloc(sizeof(pybool));
