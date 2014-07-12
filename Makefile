@@ -11,7 +11,7 @@ all:
 	environment.c \
 	builtins/builtins.c \
 	builtins/int.c builtins/float.c builtins/complex.c builtins/str.c builtins/list.c builtins/functions.c \
-	builtins/range.c \
+	builtins/type.c builtins/range.c \
 	scan/scanner.c scan/buffer.c scan/token.c -o $(OUT) -g -lm
 
 clean:

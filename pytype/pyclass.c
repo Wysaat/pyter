@@ -57,8 +57,7 @@ void *pyclass__call__(void *left, void *right) {
         return retptr;
     }
     else if (left == &list_class) {
-        void *retptr = pylist__init__();
-        return retptr;
+        return list_init(right);
     }
     else if  (left == &range_class) {
         void *retptr = pyrange_init(right);

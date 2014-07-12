@@ -440,7 +440,7 @@ void set_expr_del(void *vptr) {
 }
 
 void *dict_exprEvaluate(dict_expr *structure, environment *env) {
-    pydict *retptr = (pydict *)malloc(sizeof(pydict));
+    pydict *retptr = pydict_init();
     retptr->keys = list_node();
     retptr->values = list_node();
     list *ptr = structure->expr_head, *ptr2 = structure->expr_head2;

@@ -22,6 +22,14 @@ pylist *pylist__init__() {
     return retptr;
 }
 
+pylist *pylist_init2(list *values) {
+    pylist *retptr = (pylist *)malloc(sizeof(pylist));
+    retptr->type = pylist_t;
+    retptr->class = &list_class;
+    retptr->values = values;
+    return retptr;
+}
+
 void pylist__sort__(pylist *val, int comp()) {
     list_sort(val->values, comp);
 }

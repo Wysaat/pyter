@@ -69,3 +69,52 @@ print((-3+4j)**(4-8j))
 print((-3-4j)**(4-8j))
 print((-3+4j)**(-4-8j))
 print((-3-4j)**(-4+8j))      
+
+
+
+
+class Point:      
+  def __init__(self, x, y):
+      self.x, self.y = x, y
+  def __str__(self):
+      return 'Point('+str(self.x)+', '+str(self.y)+')'
+
+a = Point(432,2)
+a.__str__()
+print(a.__str__())
+
+
+
+a = [123, [43,7,9], "hello"]
+print(str(a))
+print(a)
+print(a)
+print(str(a))
+
+class G:
+    def __abs__(self):
+        return 1024234
+
+g = G()
+# g.__abs__()
+print(abs(g))
+
+class T:
+    def __mod__(self, x):
+        return self.value % x
+    def __init__(self, val):  
+        self.value = val ** 2
+
+t = T(12)
+
+# a = t % 4
+
+a = t.__mod__(4)
+
+print(a)
+
+
+
+          
+
+          

@@ -14,25 +14,7 @@
 #include "../pytype/methods.h"
 #include "builtins.h"
 
-void def_range(environment *env) {
-    range_class.type = pyclass_t;
-    range_class.class = &type_class;
-    range_class.id = "range";
-    range_class.env = environment_init(0);
-    range_class.inheritance = 0;
-    store_id(env, "range", &range_class);
-}
-
-void def_type(environment *env) {
-    type_class.type = pyclass_t;
-    type_class.class = &type_class;
-    type_class.id = "type";
-    type_class.env = environment_init(0);
-    type_class.inheritance = 0;
-    store_id(env, "type", &type_class);
-}
-
-void def__builtins__(environment *env) {
+void def___builtins__(environment *env) {
     __builtins__module.type = pymodule_t;
     __builtins__module.name = "__builtins__";
     __builtins__module.env = environment_init(0);
@@ -47,4 +29,18 @@ void def__builtins__(environment *env) {
     def_list(__builtins__module.env);
     def_range(__builtins__module.env);
     def_type(__builtins__module.env);
+}
+
+void def_builtins(environment *env) {
+    def_func(env, _print, "print");
+    def_func(env, _next, "next");
+    def_func(env, _len, "len");
+    def_func(env, _abs, "abs");
+    def_int(env);
+    def_float(env);
+    def_str(env);
+    def_list(env);
+    def_range(env);
+    def_type(env);
+    def___builtins__(env);
 }

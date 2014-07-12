@@ -1,4 +1,8 @@
+#include <string.h>
 #include "../pytype/pylist.h"
+#include "../pytype/pytuple.h"
+#include "../pytype/pyset.h"
+#include "../pytype/pydict.h"
 #include "../pytype/pyclass.h"
 #include "../pytype/others.h"
 #include "../list.h"
@@ -6,26 +10,34 @@
 #include "../types.h"
 #include "builtins.h"
 
-// /* CAUTION: nested function definition is not standard C, change it someday.. */
-// void *def_sort_func_of_list(environment *env) {
-//     int comp(void *left, void *right) {
-//         if (type(left) == pyint_t && type(right) == pyint_t) {
-//             if (is_true(pyint__lt__((pyint *)left, (pyint *)right)))
-//                 return -1;
-//             else if (is_true(pyint__eq__((pyint *)left, (pyint *)right)))
-//                 return 0;
-//             else
-//                 return 1;
-//         }
-//     }
-//     void *sort_of_list(pyargument *argument) {
-//         list *val = argument->value_list;
-//         pylist__sort__((pylist *)val->content, comp);
-//         return pyNone_init();
-//     }
-//     pybuiltin_function *sort_func_of_list = pybuiltin_function__init__("sort", sort_of_list);
-//     store_id(env, "sort", sort_func_of_list);
-// }
+pylist *list_init(pyargument *argument) {
+    if (!argument)
+        return pylist__init__();
+    void *iterable = argument->value_list->content;
+    if (type(iterable) == pylist_t)
+        return iterable;
+    else if (type(iterable) == pytuple_t) {
+        return pylist_init2(((pytuple *)iterable)->values);
+    }
+    else if (type(iterable) == pyset_t) {
+        return pylist_init2(((pyset *)iterable)->values);
+    }
+    else if (type(iterable) == pydict_t) {
+        return pylist_init2(((pydict *)iterable)->keys);
+    }
+    else if (type(iterable) == pystr_t) {
+        list *values = list_node();
+        char *string = ((pystr *)iterable)->value;
+        int i;
+        for (i = 0; i < strlen(string); i++) {
+            char val[2];
+            val[0] = string[i];
+            val[1] = 0;
+            list_append_content(values, pystr_init2(val));
+        }
+        return pylist_init2(values);
+    }
+}
 
 void *_append(pyargument *argument) {
     list *val = argument->value_list;

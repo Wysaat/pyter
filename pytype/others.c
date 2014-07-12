@@ -43,8 +43,11 @@ pyrange *pyrange_init(void *vptr) {
 
 void *pyrange__getitem__(void *lvoid, void *rvoid) {
     pyrange *range = (pyrange *)lvoid;
-    if (type(rvoid) == pyint_t)
-        return pyint__add__(range->start, pyint__mul__(range->step, rvoid));
+    if (type(rvoid) == pyint_t) {
+        pyint *rptr = (pyint *)rvoid;
+        if (rptr->value->sign == '+')
+            return pyint__add__(range->start, pyint__mul__(range->step, rvoid));
+    }
 }
 
 pystr *pyrange__str__(void *vptr) {

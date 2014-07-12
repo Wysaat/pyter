@@ -1,4 +1,5 @@
 #include "../pytype/pystr.h"
+#include "../pytype/pylist.h"
 #include "../pytype/pymodule.h"
 #include "../pytype/others.h"
 
@@ -28,6 +29,9 @@ pyfloat *float_init(pyargument *argument);
 /* str.c */
 pystr *str_init(pyargument *argument);
 
+/* list.c */
+pylist *list_init(pyargument *argument);
+
 /* functions.c */
 void *_abs(pyargument *argument);
 void *_len(pyargument *argument);
@@ -46,4 +50,7 @@ void def_range(environment *env);
 void def_type(environment *env);
 
 /* modules */
-void def__builtins__(environment *);
+void def___builtins__(environment *);
+
+/* everything */
+void def_builtins(environment *env);

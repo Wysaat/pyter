@@ -15,6 +15,7 @@ struct pylist {
 };
 
 pylist *pylist__init__();
+pylist *pylist_init2(list *values);
 pylist *pylist__add__(void *, void *);
 void pylist__append__(pylist *, void *);
 pylist *pylist__mul__(void *, void *);

@@ -1569,18 +1569,7 @@ void *parse_stmt(scanner *sc) {
 
 void interpret(FILE *stream, environment *env)
 {
-    def__builtins__(env);
-
-    def_func(env, _print, "print");
-    def_func(env, _next, "next");
-    def_func(env, _len, "len");
-    def_func(env, _abs, "abs");
-    def_int(env);
-    def_float(env);
-    def_str(env);
-    def_list(env);
-    def_range(env);
-    def_type(env);
+    def_builtins(env);
 
     char *token;
 
