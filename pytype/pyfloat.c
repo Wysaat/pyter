@@ -208,3 +208,29 @@ pyfloat *pyfloat__mod__(void *lvoid, void *rvoid) {
         return retptr;
     }
 }
+
+pybool *pyfloat__gt__(void *lvoid, void *rvoid) {
+    pyfloat *left = (pyfloat *)lvoid;
+    if (type(rvoid) == pyfloat_t) {
+        if (left->value > ((pyfloat *)rvoid)->value)
+            return PYBOOL(1);
+        return PYBOOL(0);
+    }
+    else if (type(rvoid) == pyint_t) {
+        pyfloat *right = pyint__float__(rvoid);
+        return pyfloat__gt__(lvoid, right);
+    }
+}
+
+pybool *pyfloat__lt__(void *lvoid, void *rvoid) {
+    pyfloat *left = (pyfloat *)lvoid;
+    if (type(rvoid) == pyfloat_t) {
+        if (left->value < ((pyfloat *)rvoid)->value)
+            return PYBOOL(1);
+        return PYBOOL(0);
+    }
+    else if (type(rvoid) == pyint_t) {
+        pyfloat *right = pyint__float__(rvoid);
+        return pyfloat__lt__(lvoid, right);
+    }
+}

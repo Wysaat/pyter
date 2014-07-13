@@ -89,3 +89,12 @@ pyargument *pyargument_init() {
     retptr->type = __pyargument_t;
     return retptr;
 }
+
+pyargument *pyargument_init2(list *value_list) {
+    pyargument *retptr = (pyargument *)malloc(sizeof(pyargument));
+    retptr->type = __pyargument_t;
+    retptr->assign_target_list = 0;
+    retptr->assign_value_list = 0;
+    retptr->value_list = value_list;
+    return retptr;
+}

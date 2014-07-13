@@ -279,3 +279,23 @@ pyint *pystr_count(pystr *ptr, pystr *sub, pyint *start, pyint *end) {
         }
     }
 }
+
+pybool *pystr__gt__(void *lvoid, void *rvoid) {
+    pystr *left = (pystr *)lvoid;
+    if (type(rvoid) == pystr_t) {
+        pystr *right = (pystr *)rvoid;
+        if (strcmp(left->value, right->value) > 0)
+            return PYBOOL(1);
+        return PYBOOL(0);
+    }
+}
+
+pybool *pystr__lt__(void *lvoid, void *rvoid) {
+    pystr *left = (pystr *)lvoid;
+    if (type(rvoid) == pystr_t) {
+        pystr *right = (pystr *)rvoid;
+        if (strcmp(left->value, right->value) < 0)
+            return PYBOOL(1);
+        return PYBOOL(0);
+    }
+}

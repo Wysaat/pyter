@@ -38,6 +38,11 @@ void *_len(pyargument *argument);
 void *_next(pyargument *argument);
 void *_print(pyargument *argument);
 
+/* functions.c,  methods */
+void *__mod__(pyargument *argument);
+void *__gt__(pyargument *argument);
+void *__lt__(pyargument *argument);
+
 /* classes */
 void def_int(environment *env);
 void def_bool(environment *env);

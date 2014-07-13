@@ -208,14 +208,18 @@ pyint *pyint__rshift__(pyint *left, pyint *right) {
 
 pybool *pyint__lt__(void *lvoid, void *rvoid) {
     pyint *left = (pyint *)lvoid;
-    pyint *right = (pyint *)rvoid;
-    return PYBOOL(integer__lt__(left->value, right->value));
+    if (type(rvoid) == pyint_t)
+        return PYBOOL(integer__lt__(left->value, ((pyint *)rvoid)->value));
+    else if (type(rvoid) == pyfloat_t)
+        return pyfloat__lt__(pyint__float__(lvoid), rvoid);
 }
 
 pybool *pyint__gt__(void *lvoid, void *rvoid) {
     pyint *left = (pyint *)lvoid;
-    pyint *right = (pyint *)rvoid;
-    return PYBOOL(integer__gt__(left->value, right->value));
+    if (type(rvoid) == pyint_t)
+        return PYBOOL(integer__gt__(left->value, ((pyint *)rvoid)->value));
+    else if (type(rvoid) == pyfloat_t)
+        return pyfloat__gt__(pyint__float__(lvoid), rvoid);
 }
 
 int pyint__cmp__(pyint *left, pyint *right) {

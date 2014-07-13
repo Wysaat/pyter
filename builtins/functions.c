@@ -81,4 +81,49 @@ void *_print(pyargument *argument) {
 }
 
 
-void __mod__(pyargument *argument) {}
+void *__mod__(pyargument *argument) {
+    void *left = argument->value_list->content;
+    void *right = argument->value_list->next->content;
+    if (type(left) == pyint_t)
+        return pyint__mod__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__mod__(left, right);
+    else if (type(left) == instance_t) {
+        void *func = env_find(((instance *)left)->class->env, "__mod__");
+        return __call__(func, argument);
+    }
+}
+
+void *__gt__(pyargument *argument) {
+    void *left = argument->value_list->content;
+    void *right = argument->value_list->next->content;
+    if (type(left) == pyint_t)
+        return pyint__gt__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__gt__(left, right);
+    else if (type(left) == pystr_t)
+        return pystr__gt__(left, right);
+    else if (type(left) == pylist_t)
+        return pylist__gt__(left, right);
+    else if (type(left) == instance_t) {
+        void *func = env_find(((instance *)left)->class->env, "__gt__");
+        return __call__(func, argument);
+    }
+}
+
+void *__lt__(pyargument *argument) {
+    void *left = argument->value_list->content;
+    void *right = argument->value_list->next->content;
+    if (type(left) == pyint_t)
+        return pyint__lt__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__lt__(left, right);
+    else if (type(left) == pystr_t)
+        return pystr__lt__(left, right);
+    else if (type(left) == pylist_t)
+        return pylist__lt__(left, right);
+    else if (type(left) == instance_t) {
+        void *func = env_find(((instance *)left)->class->env, "__lt__");
+        return __call__(func, argument);
+    }
+}

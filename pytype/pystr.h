@@ -38,4 +38,7 @@ pystr *pystr_center(pystr *ptr, pyint *width, pystr *fillchar);
 pyint *pystr_count(pystr *ptr, pystr *sub, pyint *start, pyint *end);
 pybool *pystr_endswith(pystr *ptr, pystr *suffix, pyint *start, pyint *end);
 
+pybool *pystr__gt__(void *lvoid, void *rvoid);
+pybool *pystr__lt__(void *lvoid, void *rvoid);
+
 #endif /* PYTYPE_PYSTR_H */

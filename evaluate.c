@@ -721,8 +721,24 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
         retptr = __div__(left_val, right_val);
     else if (!strcmp(structure->op, "//"))
         retptr = __rfloordiv__(left_val, right_val);
-    else if (!strcmp(structure->op, "%"))
-        retptr = _mod_(left_val, right_val);
+    else if (!strcmp(structure->op, "%")) {
+        list *value_list = list_node();
+        list_append_content(value_list, left_val);
+        list_append_content(value_list, right_val);
+        retptr = __mod__(pyargument_init2(value_list));
+    }
+    else if (!strcmp(structure->op, ">")) {
+        list *value_list = list_node();
+        list_append_content(value_list, left_val);
+        list_append_content(value_list, right_val);
+        retptr = __gt__(pyargument_init2(value_list));
+    }
+    else if (!strcmp(structure->op, "<")) {
+        list *value_list = list_node();
+        list_append_content(value_list, left_val);
+        list_append_content(value_list, right_val);
+        retptr = __lt__(pyargument_init2(value_list));
+    }
     else if (!strcmp(structure->op, "+"))
         retptr = __add__(left_val, right_val);
     else if (!strcmp(structure->op, "-"))
@@ -777,10 +793,6 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
             retptr = PYINT(integer__xor__(left, right));
         else if (!strcmp(structure->op, "|"))
             retptr = PYINT(integer__or__(left, right));
-        else if (!strcmp(structure->op, "<"))
-            retptr = pyint__lt__((pyint *)left_val, (pyint *)right_val);
-        else if (!strcmp(structure->op, ">"))
-            retptr = PYBOOL(integer__gt__(left, right));
         else if (!strcmp(structure->op, "=="))
             retptr = PYBOOL(integer__eq__(left, right));
         else if (!strcmp(structure->op, "<="))

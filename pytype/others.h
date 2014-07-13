@@ -47,5 +47,6 @@ pystr *pyrange__str__(void *vptr);
 pyint *pyrange_len(void *vptr);
 void pyargument_del(void *);
 pyargument *pyargument_init();
+pyargument *pyargument_init2(list *value_list);
 
 #endif /* PYTYPE_OTHERS_H */

@@ -26,5 +26,7 @@ void pylist__setitem__(void *, void *, void *value);
 pyint *pylist__len__(void *);
 int pylist_len2(void *);
 pystr *pylist_str(void *);
+pybool *pylist__gt__(void *lvoid, void *rvoid);
+pybool *pylist__lt__(void *lvoid, void *rvoid);
 
 #endif /* PYTYPE_PYLIST_H */

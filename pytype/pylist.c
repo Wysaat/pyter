@@ -271,3 +271,45 @@ pystr *pylist_str(void *vptr) {
     buff2_add(buff, strdup("]"));
     return pystr_init3(buff2_puts2(buff));
 }
+
+pybool *pylist__gt__(void *lvoid, void *rvoid) {
+    pylist *left = (pylist *)lvoid;
+    if (type(rvoid) == pylist_t) {
+        pylist *right = (pylist *)rvoid;
+        list *ptr1, *ptr2;
+        for (ptr1 = left->values, ptr2 = right->values; ptr1 && ptr2;
+                  ptr1 = ptr1->next, ptr2 = ptr2->next) {
+            list *value_list = list_node();
+            list_append_content(value_list, ptr1->content);
+            list_append_content(value_list, ptr2->content);
+            if (is_true(__gt__(pyargument_init2(value_list))))
+                return PYBOOL(1);
+            else if (is_true(__lt__(pyargument_init2(value_list))))
+                return PYBOOL(0);
+        }
+        if (ptr1)
+            return PYBOOL(1);
+        return PYBOOL(0);
+    }
+}
+
+pybool *pylist__lt__(void *lvoid, void *rvoid) {
+    pylist *left = (pylist *)lvoid;
+    if (type(rvoid) == pylist_t) {
+        pylist *right = (pylist *)rvoid;
+        list *ptr1, *ptr2;
+        for (ptr1 = left->values, ptr2 = right->values; ptr1 && ptr2;
+                  ptr1 = ptr1->next, ptr2 = ptr2->next) {
+            list *value_list = list_node();
+            list_append_content(value_list, ptr1->content);
+            list_append_content(value_list, ptr2->content);
+            if (is_true(__lt__(pyargument_init2(value_list))))
+                return PYBOOL(1);
+            else if (is_true(__gt__(pyargument_init2(value_list))))
+                return PYBOOL(0);
+        }
+        if (ptr1)
+            return PYBOOL(1);
+        return PYBOOL(0);
+    }
+}
