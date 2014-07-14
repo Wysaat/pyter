@@ -41,13 +41,81 @@ pyrange *pyrange_init(void *vptr) {
     return retptr;
 }
 
+pyrange *pyrange_init2(pyint *start, pyint *stop, pyint *step) {
+    pyrange *retptr = (pyrange *)malloc(sizeof(pyrange));
+    retptr->type = pyrange_t;
+    retptr->class = &range_class;
+    retptr->start = start;
+    retptr->stop = stop;
+    retptr->step = step;
+    return retptr;
+}
+
+pyrange *pyrange_init3(int start, int stop, int step) {
+    pyrange *retptr = (pyrange *)malloc(sizeof(pyrange));
+    retptr->type = pyrange_t;
+    retptr->class = &range_class;
+    retptr->start = int_to_pyint(start);
+    retptr->stop = int_to_pyint(stop);
+    retptr->step = int_to_pyint(step);
+    return retptr;
+}
+
 void *pyrange__getitem__(void *lvoid, void *rvoid) {
     pyrange *range = (pyrange *)lvoid;
     if (type(rvoid) == pyint_t) {
-        pyint *rptr = (pyint *)rvoid;
-        if (rptr->value->sign == '+')
-            return pyint__add__(range->start, pyint__mul__(range->step, rvoid));
+        int right = pyint_to_int(rvoid);
+        int start = pyint_to_int(range->start);
+        int step = pyint_to_int(range->step);
+        if (((pyint *)rvoid)->value->sign == '-')
+            right += pyrange_len2(range);
+        return int_to_pyint(start+step*right);
     }
+    else if (type(rvoid) == pyslice_t) {
+        pyslice *slice = (pyslice *)rvoid;
+        int length = pyrange_len2(range);
+        int start, stop, step = slice->step;
+        if (slice->nostart) {
+            if (step > 0)
+                start = 0;
+            else
+                start = length - 1;
+        }
+        else {
+            start = slice->start;
+            if (start < 0)
+                start += length;
+            else if (step < 0 && start >= length)
+                start = length - 1;
+        }
+        if (slice->nostop) {
+            if (step > 0)
+                stop = length;
+            else
+                stop = -1;
+        }
+        else {
+            stop = slice->stop;
+            if (stop < 0)
+                stop += length;
+            else if (step > 0 && stop > length)
+                stop = length;
+        }
+
+        pyint *_start = pyrange_getitem2(range, start);
+        pyint *_stop = pyrange_getitem2(range, stop);
+        pyint *_step = int_to_pyint(step * pyint_to_int(range->step));
+        return pyrange_init2(_start, _stop, _step);
+    }
+}
+
+void *pyrange_getitem2(void *lvoid, int pos) {
+    pyrange *range = (pyrange *)lvoid;
+    int start = pyint_to_int(range->start);
+    int step = pyint_to_int(range->step);
+    if (pos < 0)
+        pos += pyrange_len2(range);
+    return int_to_pyint(start+step*pos);
 }
 
 pystr *pyrange__str__(void *vptr) {
@@ -68,9 +136,40 @@ pyint *pyrange_len(void *vptr) {
     int start = pyint_to_int(range->start);
     int stop = pyint_to_int(range->stop);
     int step = pyint_to_int(range->step);
-    if (start >= stop)
+
+    if (start > stop && step > 0)
         return int_to_pyint(0);
-    return int_to_pyint((stop-start-1) / step + 1);
+    else if (stop > start && step < 0)
+        return int_to_pyint(0);
+
+    if (step < 0) {
+        int tmp = start;
+        start = stop;
+        stop = tmp;
+        step = -step;
+    }
+    int len = (stop-start-1) / step + 1;
+    return int_to_pyint(len);
+}
+
+int pyrange_len2(void *vptr) {
+    pyrange *range = (pyrange *)vptr;
+    int start = pyint_to_int(range->start);
+    int stop = pyint_to_int(range->stop);
+    int step = pyint_to_int(range->step);
+
+    if (start > stop && step > 0)
+        return 0;
+    else if (stop > start && step < 0)
+        return 0;
+
+    if (step < 0) {
+        int tmp = start;
+        start = stop;
+        stop = tmp;
+        step = -step;
+    }
+    return (stop-start-1) / step + 1;
 }
 
 void pyargument_del(void *vptr) {

@@ -37,6 +37,13 @@ pylist *list_init(pyargument *argument) {
         }
         return pylist_init2(values);
     }
+    else if (type(iterable) == pyrange_t) {
+        list *values = list_node();
+        int len = pyrange_len2(iterable), i;
+        for (i = 0; i < len; i++)
+            list_append_content(values, pyrange_getitem2(iterable, i));
+        return pylist_init2(values);
+    }
 }
 
 void *_append(pyargument *argument) {

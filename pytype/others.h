@@ -42,9 +42,13 @@ struct pyrange {
 
 pyNone *pyNone_init();
 pyrange *pyrange_init(void *);
+pyrange *pyrange_init2(pyint *start, pyint *stop, pyint *step);
+pyrange *pyrange_init3(int start, int stop, int step);
 void *pyrange__getitem__(void *, void *);
+void *pyrange_getitem2(void *lvoid, int pos);
 pystr *pyrange__str__(void *vptr);
 pyint *pyrange_len(void *vptr);
+int pyrange_len2(void *vptr);
 void pyargument_del(void *);
 pyargument *pyargument_init();
 pyargument *pyargument_init2(list *value_list);
