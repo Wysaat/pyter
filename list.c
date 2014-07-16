@@ -8,8 +8,10 @@
 #include "list.h"
 #include "pytype/methods.h"
 #include "pytype/pybool.h"
+#include "pytype/others.h"
 #include "types.h"
 #include "environment.h"
+#include "builtins/builtins.h"
 
 list *list_node() {
     list *retptr = (list *)malloc(sizeof(list));
@@ -153,7 +155,7 @@ int list_find(list *head, void *val) {
     list *ptr;
     int retval = 0;
     for (ptr = head; ptr; ptr = ptr->next) {
-        if (is_true(__eq__(ptr->content, val)))
+        if (is_true(__eq__(pyargument_init3(ptr->content, val))))
             return retval;
         retval++;
     }
@@ -175,7 +177,7 @@ int list_eq(list *left, list *right) {
                 return 0;
             return 1;
         }
-        if (!is_true(__eq__(ptr1->content, ptr2->content)))
+        if (!is_true(__eq__(pyargument_init3(ptr1->content, ptr2->content))))
             return 0;
         ptr1 = ptr1->next;
         ptr2 = ptr2->next;

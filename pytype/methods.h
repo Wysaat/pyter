@@ -9,7 +9,6 @@ typedef struct pycomplex pycomplex;
 typedef struct pylist pylist;
 typedef struct pytuple pytuple;
 
-pybool *__eq__(void *, void *);
 void *__getitem__(void *, void *);
 void __setitem__(void *, void *, void *);
 void *__mul__(void *, void *);

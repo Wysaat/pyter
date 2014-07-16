@@ -711,6 +711,22 @@ void u_expr_del(void *vptr) {
 }
 
 void *b_exprEvaluate(b_expr *structure, environment *env) {
+    if (!strcmp(structure->op, "and")) {
+        list *value_list = list_node();
+        void *l = evaluate(structure->left, env);
+        list_append_content(value_list, l);
+        if (!is_true(bool_init(pyargument_init2(value_list))))
+            return l;
+        return evaluate(structure->right, env);
+    }
+    else if (!strcmp(structure->op, "or")) {
+        list *value_list = list_node();
+        void *l = evaluate(structure->left, env);
+        list_append_content(value_list, l);
+        if (is_true(bool_init(pyargument_init2(value_list))))
+            return l;
+        return evaluate(structure->right, env);
+    }
     int *left_val = evaluate(structure->left, env);
     int *right_val = evaluate(structure->right, env);
     integer *zero = INTEGER_NODE();
@@ -727,58 +743,11 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
         list_append_content(value_list, right_val);
         retptr = __mod__(pyargument_init2(value_list));
     }
-    else if (!strcmp(structure->op, ">")) {
-        list *value_list = list_node();
-        list_append_content(value_list, left_val);
-        list_append_content(value_list, right_val);
-        retptr = __gt__(pyargument_init2(value_list));
-    }
-    else if (!strcmp(structure->op, "<")) {
-        list *value_list = list_node();
-        list_append_content(value_list, left_val);
-        list_append_content(value_list, right_val);
-        retptr = __lt__(pyargument_init2(value_list));
-    }
     else if (!strcmp(structure->op, "+"))
         retptr = __add__(left_val, right_val);
     else if (!strcmp(structure->op, "-"))
         retptr =  __sub__(left_val, right_val);
-    else if (!strcmp(structure->op, "is")) {
-        if (type(left_val) != type(right_val))
-            return PYBOOL(0);
-        else if (type(left_val) == pyint_t || type(left_val) == pystr_t)
-            return __eq__(left_val, right_val);
-        else
-            return PYBOOL(left_val == right_val);
-    }
-    else if (!strcmp(structure->op, "is not")) {
-        if (type(left_val) != type(right_val))
-            return PYBOOL(1);
-        else if (type(left_val) == pyint_t || type(left_val) == pystr_t) {
-            if (is_true(__eq__(left_val, right_val)))
-                return PYBOOL(0);
-            return PYBOOL(1);
-        }
-        else
-            return PYBOOL(left_val != right_val);
-    }
-    else if (!strcmp(structure->op, "in")) {
-        if (type(right_val) == pylist_t) {
-            if (list_find(((pylist *)right_val)->values, left_val) >= 0)
-                retptr = PYBOOL(1);
-            else
-                retptr = PYBOOL(0);
-        }
-        else if (type(right_val) == pyrange_t) {
-            pyrange *range = (pyrange *)right_val;
-            if (is_true(pyint__ge__(left_val, range->stop)) || is_true(pyint__lt__(left_val, range->start)))
-                retptr = PYBOOL(0);
-            else if (!is_true(__bool__(pyint__mod__(pyint__sub__(left_val, range->start), range->step))))
-                retptr = PYBOOL(1);
-            else
-                retptr = PYBOOL(0);
-        }
-    }
+
 
     else if (*left_val == pyint_t && *right_val == pyint_t) {
         integer *left = ((pyint *)left_val)->value;
@@ -793,30 +762,16 @@ void *b_exprEvaluate(b_expr *structure, environment *env) {
             retptr = PYINT(integer__xor__(left, right));
         else if (!strcmp(structure->op, "|"))
             retptr = PYINT(integer__or__(left, right));
-        else if (!strcmp(structure->op, "=="))
-            retptr = PYBOOL(integer__eq__(left, right));
-        else if (!strcmp(structure->op, "<="))
-            retptr = PYBOOL(integer__le__(left, right));
-        else if (!strcmp(structure->op, ">="))
-            retptr = PYBOOL(integer__ge__(left, right));
-        else if (!strcmp(structure->op, "<>"))
-            retptr = PYBOOL(!integer__eq__(left, right));
-        else if (!strcmp(structure->op, "!="))
-            retptr = PYBOOL(!integer__eq__(left, right));
-        else if (!strcmp(structure->op, "and")) {
-            if (!integer__eq__(left, zero) && !integer__eq__(right, zero))
-                retptr = PYINT(right);
-            else
-                retptr = PYINT(zero);
-        }
-        else if (!strcmp(structure->op, "or")) {
-            if (!integer__eq__(left, zero))
-                retptr = PYINT(left);
-            else if (!integer__eq__(right, zero))
-                retptr = PYINT(right);
-            else
-                retptr = PYINT(0);
-        }
+        // else if (!strcmp(structure->op, "=="))
+        //     retptr = PYBOOL(integer__eq__(left, right));
+        // else if (!strcmp(structure->op, "<="))
+        //     retptr = PYBOOL(integer__le__(left, right));
+        // else if (!strcmp(structure->op, ">="))
+        //     retptr = PYBOOL(integer__ge__(left, right));
+        // else if (!strcmp(structure->op, "<>"))
+        //     retptr = PYBOOL(!integer__eq__(left, right));
+        // else if (!strcmp(structure->op, "!="))
+        //     retptr = PYBOOL(!integer__eq__(left, right));
     }
 
     return retptr;
@@ -861,18 +816,101 @@ void not_test_del(void *vptr) {
 
 void *comparisonEvaluate(comparison *structure, environment *env) {
     list *ptr;
-    int *val;
-    void *retptr;
-    for (ptr = structure->comparisons; ptr != 0; ptr = ptr->next) {
-        val = evaluate(ptr->content, env);
-        if (type(val) == pyint_t && integer__eq__(((pyint *)val)->value, INTEGER_NODE())) {
-            return PYBOOL(0);
+    void *left, *right = 0, *retptr;
+    for (ptr = structure->comparisons; ptr; ptr = ptr->next) {
+        b_expr *expr = ptr->content;
+        left = right ? right : evaluate(expr->left, env);
+        right = evaluate(expr->right, env);
+        if (!strcmp(expr->op, ">")) {
+            list *value_list = list_node();
+            list_append_content(value_list, left);
+            list_append_content(value_list, right);
+            retptr = __gt__(pyargument_init2(value_list));
         }
-        else if (type(val) == pybool_t && ((pybool *)val)->value == 0) {
-            return PYBOOL(0);
+        else if (!strcmp(expr->op, "<")) {
+            list *value_list = list_node();
+            list_append_content(value_list, left);
+            list_append_content(value_list, right);
+            retptr = __lt__(pyargument_init2(value_list));
         }
+        else if (!strcmp(expr->op, "==")) {
+            list *value_list = list_node();
+            list_append_content(value_list, left);
+            list_append_content(value_list, right);
+            retptr = __eq__(pyargument_init2(value_list));
+        }
+        else if (!strcmp(expr->op, "is")) {
+            if (type(left) != type(right))
+                return PYBOOL(0);
+            else if (type(left) == pyint_t || type(left) == pystr_t)
+                return __eq__(pyargument_init3(left, right));
+            else
+                return PYBOOL(left == right);
+        }
+        else if (!strcmp(expr->op, "is not")) {
+            if (type(left) != type(right))
+                return PYBOOL(1);
+            else if (type(left) == pyint_t || type(left) == pystr_t) {
+                if (is_true(__eq__(pyargument_init3(left, right))))
+                    return PYBOOL(0);
+                return PYBOOL(1);
+            }
+            else
+                return PYBOOL(left != right);
+        }
+        else if (!strcmp(expr->op, "in") || !strcmp(expr->op, "not in")) {
+            void *A, *B;
+            if (!strcmp(expr->op, "in")) {
+                A = PYBOOL(0);
+                B = PYBOOL(1);
+            }
+            else {
+                A = PYBOOL(1);
+                B = PYBOOL(0);
+            }
+
+            if (type(right) == pylist_t) {
+                if (list_find(((pylist *)right)->values, left) >= 0)
+                    retptr = B;
+                else
+                    retptr = A;
+            }
+            else if (type(right) == pytuple_t) {
+                if (list_find(((pytuple *)right)->values, left) >= 0)
+                    retptr = B;
+                else
+                    retptr = A;
+            }
+            else if (type(right) == pyset_t) {
+                if (list_find(((pytuple *)right)->values, left) >= 0)
+                    retptr = B;
+                else
+                    retptr = A;
+            }
+            else if (type(right) == pydict_t) {
+                if (list_find(((pydict *)right)->keys, left) >= 0)
+                    retptr = B;
+                else
+                    retptr = A;
+            }
+            else if (type(right) == pyrange_t) {
+                pyrange *range = (pyrange *)right;
+                if (is_true(pyint__ge__(left, range->stop)) || is_true(pyint__lt__(left, range->start)))
+                    retptr = A;
+                else if (!is_true(__bool__(pyint__mod__(pyint__sub__(left, range->start), range->step))))
+                    retptr = B;
+                else
+                    retptr = A;
+            }
+        }
+
+        list *value_list = list_node();
+        list_append_content(value_list, retptr);
+        if (!is_true(bool_init(pyargument_init2(value_list))))
+            return retptr;
     }
-    return PYBOOL(1);
+
+    return retptr;
 }
 
 void comparison_del(void *vptr) {

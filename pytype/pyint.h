@@ -59,4 +59,6 @@ pycomplex *pyint__complex__(void *);
 pystr *pyint__str__(void *);
 pyint *pyint__abs__(void *);
 
+int pyint_iszero(pyint *);
+
 #endif /* PYTYPE_PYINT_H */

@@ -20,7 +20,20 @@ pybool *pybool__bool__(void *ptr) {
     return PYBOOL(boolptr->value);
 }
 
+void *pybool__gt__(void *lvoid, void *rvoid) {
+    pybool *left = (pybool *)lvoid;
+    if (type(rvoid) == pyint_t) {
+        return pyint__gt__(int_to_pyint(left->value), rvoid);
+    }
+    else if (type(rvoid) == pybool_t) {
+        return PYBOOL(left->value > ((pybool *)rvoid)->value);
+    }
+}
+
+void *pybool__lt__(void *lvoid, void *rvoid) {}
+
+void *pybool__eq__(void *lvoid, void *rvoid) {}
 
 int is_true(pybool *boolval) {
-    int retval = boolval->value;
+    return boolval->value;
 }

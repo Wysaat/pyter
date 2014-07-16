@@ -23,6 +23,9 @@ pymodule __builtins__module;
 /* int.c */
 pyint *int_init(pyargument *argument);
 
+/* bool.c */
+pybool *bool_init(pyargument *argument);
+
 /* float.c */
 pyfloat *float_init(pyargument *argument);
 
@@ -42,6 +45,7 @@ void *_print(pyargument *argument);
 void *__mod__(pyargument *argument);
 void *__gt__(pyargument *argument);
 void *__lt__(pyargument *argument);
+void *__eq__(pyargument *argument);
 
 /* classes */
 void def_int(environment *env);

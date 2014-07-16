@@ -99,6 +99,8 @@ void *__gt__(pyargument *argument) {
     void *right = argument->value_list->next->content;
     if (type(left) == pyint_t)
         return pyint__gt__(left, right);
+    else if (type(left) == pybool_t)
+        return pybool__gt__(left, right);
     else if (type(left) == pyfloat_t)
         return pyfloat__gt__(left, right);
     else if (type(left) == pystr_t)
@@ -116,6 +118,8 @@ void *__lt__(pyargument *argument) {
     void *right = argument->value_list->next->content;
     if (type(left) == pyint_t)
         return pyint__lt__(left, right);
+    else if (type(left) == pybool_t)
+        return pybool__lt__(left, right);
     else if (type(left) == pyfloat_t)
         return pyfloat__lt__(left, right);
     else if (type(left) == pystr_t)
@@ -126,4 +130,13 @@ void *__lt__(pyargument *argument) {
         void *func = env_find(((instance *)left)->class->env, "__lt__");
         return __call__(func, argument);
     }
+}
+
+void *__eq__(pyargument *argument) {
+    void *left = argument->value_list->content;
+    void *right = argument->value_list->next->content;
+    if (type(left) == pyint_t)
+        return pyint__eq__(left, right);
+    else if (type(left) == pybool_t)
+        return pybool__eq__(left, right);
 }

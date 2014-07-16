@@ -376,3 +376,8 @@ pyint *pyint__abs__(void *vptr) {
     ptr->value->sign = '+';
     return ptr;
 }
+
+int pyint_iszero(pyint *ptr) {
+    integer *integerp = ptr->value;
+    return (!integerp->higher && !integerp->lower && integerp->value == 0);
+}

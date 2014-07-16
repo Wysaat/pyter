@@ -44,8 +44,10 @@ void *pyclass__getattribute__(void *first, void *instance, char *attr) {
 
 void *pyclass__call__(void *left, void *right) {
     if (left == &int_class) {
-        void *retptr = int_init(right);
-        return retptr;
+        return int_init(right);
+    }
+    else if (left == &bool_class) {
+        return bool_init(right);
     }
     else if (left == &float_class) {
         return float_init(right);

@@ -197,3 +197,14 @@ pyargument *pyargument_init2(list *value_list) {
     retptr->value_list = value_list;
     return retptr;
 }
+
+pyargument *pyargument_init3(void *left, void *right) {
+    pyargument *retptr = (pyargument *)malloc(sizeof(pyargument));
+    retptr->type = __pyargument_t;
+    retptr->assign_target_list = 0;
+    retptr->assign_value_list = 0;
+    retptr->value_list = list_node();
+    list_append_content(retptr->value_list, left);
+    list_append_content(retptr->value_list, right);
+    return retptr;
+}
