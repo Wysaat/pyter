@@ -26,4 +26,6 @@ pyfloat *pycomplex__abs__(void *);
 pycomplex *pycomplex__complex__(void *);
 pystr *pycomplex__str__(void *);
 
+pybool *pycomplex__eq__(void *, void *);
+
 #endif /* PYTYPE_PYCOMPLEX_H */

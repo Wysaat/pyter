@@ -139,4 +139,8 @@ void *__eq__(pyargument *argument) {
         return pyint__eq__(left, right);
     else if (type(left) == pybool_t)
         return pybool__eq__(left, right);
+    else if (type(left) == pyfloat_t)
+        return pyfloat__eq__(left, right);
+    else if (type(left) == pycomplex_t)
+        return pycomplex__eq__(left, right);
 }

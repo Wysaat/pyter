@@ -152,3 +152,12 @@ pystr *pycomplex__str__(void *vptr) {
     sprintf(value, "(%f+%fj)", ptr->real->value, ptr->imag->value);
     return pystr_init2(value);
 }
+
+pybool *pycomplex__eq__(void *lvoid, void *rvoid) {
+    pycomplex *left = lvoid;
+    if (type(rvoid) == pycomplex_t) {
+        pycomplex *right = rvoid;
+        return PYBOOL(left->real->value==right->real->value && left->imag->value==right->imag->value);
+    }
+    return PYBOOL(0);
+}

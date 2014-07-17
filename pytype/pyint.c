@@ -206,27 +206,6 @@ pyint *pyint__rshift__(pyint *left, pyint *right) {
     return retptr;
 }
 
-pybool *pyint__lt__(void *lvoid, void *rvoid) {
-    pyint *left = (pyint *)lvoid;
-    if (type(rvoid) == pyint_t)
-        return PYBOOL(integer__lt__(left->value, ((pyint *)rvoid)->value));
-    else if (type(rvoid) == pyfloat_t)
-        return pyfloat__lt__(pyint__float__(lvoid), rvoid);
-}
-
-pybool *pyint__gt__(void *lvoid, void *rvoid) {
-    pyint *left = (pyint *)lvoid;
-    if (type(rvoid) == pyint_t)
-        return PYBOOL(integer__gt__(left->value, ((pyint *)rvoid)->value));
-    else if (type(rvoid) == pyfloat_t)
-        return pyfloat__gt__(pyint__float__(lvoid), rvoid);
-}
-
-int pyint__cmp__(pyint *left, pyint *right) {
-    return integer__cmp__(left->value, right->value);
-}
-
-
 void pyint__print__(pyint *val) {
     char *string = integer__str__(val->value);
     printf("%s", string);
@@ -249,22 +228,6 @@ void pyint__inc__(pyint *val) {
     integer *new_value = integer__inc__(val->value);
     integer__del__(val->value);
     val->value = new_value;
-}
-
-pybool *pyint__eq__(void *lvoid, void *rvoid) {
-    pyint *left = (pyint *)lvoid;
-    pyint *right = (pyint *)rvoid;
-    if (integer__eq__(left->value, right->value))
-        return PYBOOL(1);
-    return PYBOOL(0);
-}
-
-pybool *pyint__ge__(void *lvoid, void *rvoid) {
-    pyint *left = (pyint *)lvoid;
-    pyint *right = (pyint *)rvoid;
-    if (integer__ge__(left->value, right->value))
-        return PYBOOL(1);
-    return PYBOOL(0);
 }
 
 pyint *int_to_pyint(int number) {
@@ -380,4 +343,54 @@ pyint *pyint__abs__(void *vptr) {
 int pyint_iszero(pyint *ptr) {
     integer *integerp = ptr->value;
     return (!integerp->higher && !integerp->lower && integerp->value == 0);
+}
+
+pybool *pyint__lt__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    if (type(rvoid) == pyint_t)
+        return PYBOOL(integer__lt__(left->value, ((pyint *)rvoid)->value));
+    else if (type(rvoid) == pyfloat_t)
+        return pyfloat__lt__(pyint__float__(lvoid), rvoid);
+    else if (type(rvoid) == pybool_t) {
+        pybool *right = rvoid;
+        return pyint__lt__(left, int_to_pyint(right->value));
+    }
+}
+
+pybool *pyint__gt__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    if (type(rvoid) == pyint_t)
+        return PYBOOL(integer__gt__(left->value, ((pyint *)rvoid)->value));
+    else if (type(rvoid) == pyfloat_t)
+        return pyfloat__gt__(pyint__float__(lvoid), rvoid);
+    else if (type(rvoid) == pybool_t) {
+        pybool *right = rvoid;
+        return pyint__gt__(left, int_to_pyint(right->value));
+    }
+}
+
+pybool *pyint__eq__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    if (type(rvoid) == pyint_t) {
+        return PYBOOL(integer__eq__(left->value, ((pyint *)rvoid)->value));
+    }
+    else if (type(rvoid) == pyfloat_t) {
+        return pyfloat__eq__(pyint__float__(left), rvoid);
+    }
+    else if (type(rvoid) == pybool_t) {
+        pybool *right = rvoid;
+        return pyint__eq__(left, int_to_pyint(right->value));
+    }
+}
+
+pybool *pyint__ge__(void *lvoid, void *rvoid) {
+    pyint *left = (pyint *)lvoid;
+    pyint *right = (pyint *)rvoid;
+    if (integer__ge__(left->value, right->value))
+        return PYBOOL(1);
+    return PYBOOL(0);
+}
+
+int pyint__cmp__(pyint *left, pyint *right) {
+    return integer__cmp__(left->value, right->value);
 }

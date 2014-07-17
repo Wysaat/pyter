@@ -33,5 +33,6 @@ pyfloat *pyfloat__abs__(void *);
 pyfloat *pyfloat__mod__(void *, void *);
 pybool *pyfloat__gt__(void *lvoid, void *rvoid);
 pybool *pyfloat__lt__(void *lvoid, void *rvoid);
+pybool *pyfloat__eq__(void *lvoid, void *rvoid);
 
 #endif /* PYTYPE_PYFLOAT_H */

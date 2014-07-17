@@ -220,6 +220,10 @@ pybool *pyfloat__gt__(void *lvoid, void *rvoid) {
         pyfloat *right = pyint__float__(rvoid);
         return pyfloat__gt__(lvoid, right);
     }
+    else if (type(rvoid) == pybool_t) {
+        pybool *right = rvoid;
+        return pyfloat__gt__(lvoid, int_to_pyint(right->value));
+    }
 }
 
 pybool *pyfloat__lt__(void *lvoid, void *rvoid) {
@@ -232,5 +236,27 @@ pybool *pyfloat__lt__(void *lvoid, void *rvoid) {
     else if (type(rvoid) == pyint_t) {
         pyfloat *right = pyint__float__(rvoid);
         return pyfloat__lt__(lvoid, right);
+    }
+    else if (type(rvoid) == pybool_t) {
+        pybool *right = rvoid;
+        return pyfloat__lt__(lvoid, int_to_pyint(right->value));
+    }
+}
+
+
+pybool *pyfloat__eq__(void *lvoid, void *rvoid) {
+    pyfloat *left = (pyfloat *)lvoid;
+    if (type(rvoid) == pyfloat_t) {
+        if (left->value == ((pyfloat *)rvoid)->value)
+            return PYBOOL(1);
+        return PYBOOL(0);
+    }
+    else if (type(rvoid) == pyint_t) {
+        pyfloat *right = pyint__float__(rvoid);
+        return pyfloat__eq__(lvoid, right);
+    }
+    else if (type(rvoid) == pybool_t) {
+        pybool *right = rvoid;
+        return pyfloat__eq__(lvoid, int_to_pyint(right->value));
     }
 }
