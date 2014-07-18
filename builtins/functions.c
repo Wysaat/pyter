@@ -2,6 +2,7 @@
 #include "../pytype/pyint.h"
 #include "../pytype/pybool.h"
 #include "../pytype/pyfloat.h"
+#include "../pytype/pytuple.h"
 #include "../pytype/pycomplex.h"
 #include "../pytype/pyclass.h"
 #include "../pytype/pygenerator.h"
@@ -107,6 +108,8 @@ void *__gt__(pyargument *argument) {
         return pystr__gt__(left, right);
     else if (type(left) == pylist_t)
         return pylist__gt__(left, right);
+    else if (type(left) == pytuple_t)
+        return pytuple__gt__(left, right);
     else if (type(left) == instance_t) {
         void *func = env_find(((instance *)left)->class->env, "__gt__");
         return __call__(func, argument);
@@ -126,6 +129,8 @@ void *__lt__(pyargument *argument) {
         return pystr__lt__(left, right);
     else if (type(left) == pylist_t)
         return pylist__lt__(left, right);
+    else if (type(left) == pytuple_t)
+        return pytuple__lt__(left, right);
     else if (type(left) == instance_t) {
         void *func = env_find(((instance *)left)->class->env, "__lt__");
         return __call__(func, argument);
@@ -135,6 +140,18 @@ void *__lt__(pyargument *argument) {
 void *__eq__(pyargument *argument) {
     void *left = argument->value_list->content;
     void *right = argument->value_list->next->content;
+    if (type(left) == instance_t) {
+        void *func;
+        if (func = env_find(((instance *)left)->class->env, "__eq__"))
+            return __call__(func, argument);
+    }
+    if (type(right) == instance_t) {
+        void *func;
+        if (func = env_find(((instance *)right)->class->env, "__eq__"))
+            return __call__(func, argument);
+    }
+    if (type(left) == instance_t)
+        return PYBOOL(0);
     if (type(left) == pyint_t)
         return pyint__eq__(left, right);
     else if (type(left) == pybool_t)
@@ -143,4 +160,10 @@ void *__eq__(pyargument *argument) {
         return pyfloat__eq__(left, right);
     else if (type(left) == pycomplex_t)
         return pycomplex__eq__(left, right);
+    else if (type(left) == pystr_t)
+        return pystr__eq__(left, right);
+    else if (type(left) == pylist_t)
+        return pylist__eq__(left, right);
+    else if (type(left) == pytuple_t)
+        return pytuple__eq__(left, right);
 }

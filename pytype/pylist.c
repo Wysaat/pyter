@@ -84,12 +84,6 @@ pylist *pylist__mul__(void *lvoid, void *rvoid) {
     }
 }
 
-pybool *pylist__eq__(void *lvoid, void *rvoid) {
-    pylist *left = (pylist *)lvoid;
-    pylist *right = (pylist *)rvoid;
-    return PYBOOL(list_eq(left->values, right->values));
-}
-
 void *pylist__getitem__(void *lvoid, void *rvoid) {
     pylist *primary = (pylist *)lvoid;
     if (type(rvoid) == pyint_t) {
@@ -276,6 +270,8 @@ pybool *pylist__gt__(void *lvoid, void *rvoid) {
     pylist *left = (pylist *)lvoid;
     if (type(rvoid) == pylist_t) {
         pylist *right = (pylist *)rvoid;
+        if (list_is_empty(left->values) || list_is_empty(right->values))
+            return PYBOOL(!list_is_empty(left->values));
         list *ptr1, *ptr2;
         for (ptr1 = left->values, ptr2 = right->values; ptr1 && ptr2;
                   ptr1 = ptr1->next, ptr2 = ptr2->next) {
@@ -297,6 +293,8 @@ pybool *pylist__lt__(void *lvoid, void *rvoid) {
     pylist *left = (pylist *)lvoid;
     if (type(rvoid) == pylist_t) {
         pylist *right = (pylist *)rvoid;
+        if (list_is_empty(left->values) || list_is_empty(right->values))
+            return PYBOOL(!list_is_empty(right->values));
         list *ptr1, *ptr2;
         for (ptr1 = left->values, ptr2 = right->values; ptr1 && ptr2;
                   ptr1 = ptr1->next, ptr2 = ptr2->next) {
@@ -308,8 +306,30 @@ pybool *pylist__lt__(void *lvoid, void *rvoid) {
             else if (is_true(__gt__(pyargument_init2(value_list))))
                 return PYBOOL(0);
         }
-        if (ptr1)
+        if (ptr2)
             return PYBOOL(1);
         return PYBOOL(0);
     }
+}
+
+pybool *pylist__eq__(void *lvoid, void *rvoid) {
+    pylist *left = (pylist *)lvoid;
+    if (type(rvoid) == pylist_t) {
+        pylist *right = (pylist *)rvoid;
+        if (list_is_empty(left->values) || list_is_empty(right->values))
+            return PYBOOL(list_is_empty(left->values) && list_is_empty(right->values));
+        list *ptr1, *ptr2;
+        for (ptr1 = left->values, ptr2 = right->values; ptr1 && ptr2;
+                  ptr1 = ptr1->next, ptr2 = ptr2->next) {
+            list *value_list = list_node();
+            list_append_content(value_list, ptr1->content);
+            list_append_content(value_list, ptr2->content);
+            if (!is_true(__eq__(pyargument_init2(value_list))))
+                return PYBOOL(0);
+        }
+        if (ptr1 || ptr2)
+            return PYBOOL(0);
+        return PYBOOL(1);
+    }
+    return PYBOOL(0);
 }

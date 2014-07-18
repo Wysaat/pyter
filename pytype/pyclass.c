@@ -65,9 +65,12 @@ void *pyclass__call__(void *left, void *right) {
         void *retptr = pyrange_init(right);
         return retptr;
     }
-    instance *retptr = instance_init((pyclass *)left);
 
+    instance *retptr = instance_init((pyclass *)left);
     list *ptr;
+    // CAUTION! val_dict can be empty
+    if (list_is_empty(retptr->class->env->val_dict))
+        return retptr;
     for (ptr = retptr->class->env->val_dict; ptr; ptr = ptr->next) {
         val_dict_entry *entry = (val_dict_entry *)ptr->content;
         if (entry->id && !strcmp(entry->id, "__init__")) {
@@ -75,7 +78,6 @@ void *pyclass__call__(void *left, void *right) {
             __call__(entry->value, right);  // __init__ should return None
         }
     }
-
     return retptr;
 }
 

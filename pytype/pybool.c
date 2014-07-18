@@ -57,6 +57,7 @@ void *pybool__eq__(void *lvoid, void *rvoid) {
     else if (type(rvoid) == pyfloat_t) {
         return pyint__eq__(int_to_pyint(left->value), rvoid);
     }
+    return PYBOOL(0);
 }
 
 int is_true(pybool *boolval) {

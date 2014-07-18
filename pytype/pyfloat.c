@@ -259,4 +259,5 @@ pybool *pyfloat__eq__(void *lvoid, void *rvoid) {
         pybool *right = rvoid;
         return pyfloat__eq__(lvoid, int_to_pyint(right->value));
     }
+    return PYBOOL(0);
 }

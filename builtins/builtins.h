@@ -35,6 +35,11 @@ pystr *str_init(pyargument *argument);
 /* list.c */
 pylist *list_init(pyargument *argument);
 
+/* tuple.c */
+pybool *tuple__gt__(pyargument *argument);
+pybool *tuple__lt__(pyargument *argument);
+pybool *tuple__eq__(pyargument *argument);
+
 /* functions.c */
 void *_abs(pyargument *argument);
 void *_len(pyargument *argument);

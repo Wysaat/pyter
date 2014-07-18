@@ -20,5 +20,8 @@ pybool *pytuple__eq__(void *, void *);
 void *pytuple__getitem__(void *, void *);
 pyint *pytuple__len__(void *);
 pystr *pytuple_str(void *);
+pybool *pytuple__gt__(void *, void *);
+pybool *pytuple__lt__(void *, void *);
+pybool *pytuple__eq__(void *, void *);
 
 #endif /* PYTYPE_PYTUPLE_H */

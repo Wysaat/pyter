@@ -131,11 +131,15 @@ void store_id(environment *env, char *id, void *value) {
 
 void *env_find(environment *env, char *name) {
     list *ptr;
+    // CAUTION! val_dict can be empty
+    if (list_is_empty(env->val_dict))
+        return 0;
     for (ptr = env->val_dict; ptr; ptr = ptr->next) {
         val_dict_entry *entry = (val_dict_entry *)ptr->content;
         if (entry->id && !strcmp(entry->id, name))
             return entry->value;
     }
+    return 0;
 }
 
 void del(void *vptr) {

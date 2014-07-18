@@ -842,7 +842,7 @@ void *comparisonEvaluate(comparison *structure, environment *env) {
         else if (!strcmp(expr->op, "is")) {
             if (type(left) != type(right))
                 return PYBOOL(0);
-            else if (type(left) == pyint_t || type(left) == pystr_t)
+            else if (type(left) == pyint_t || type(left) == pybool_t || type(left) == pystr_t)
                 return __eq__(pyargument_init3(left, right));
             else
                 return PYBOOL(left == right);

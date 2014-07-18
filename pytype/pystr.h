@@ -17,7 +17,6 @@ pystr *pystr_init2(char *value); // value is strduped
 pystr *pystr_init3(char *value);
 pystr *pystr__mul__(void *, void *);
 pystr *pystr__add__(void *, void *);
-pybool *pystr__eq__(void *, void *);
 pybool *pystr__bool__(void *);
 
 void pystr__print__(pystr *);
@@ -40,5 +39,6 @@ pybool *pystr_endswith(pystr *ptr, pystr *suffix, pyint *start, pyint *end);
 
 pybool *pystr__gt__(void *lvoid, void *rvoid);
 pybool *pystr__lt__(void *lvoid, void *rvoid);
+pybool *pystr__eq__(void *lvoid, void *rvoid);
 
 #endif /* PYTYPE_PYSTR_H */

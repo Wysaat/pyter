@@ -28,6 +28,7 @@ void def___builtins__(environment *env) {
     def_float(__builtins__module.env);
     def_str(__builtins__module.env);
     def_list(__builtins__module.env);
+    store_id(__builtins__module.env, "tuple", &tuple_class);
     def_range(__builtins__module.env);
     def_type(__builtins__module.env);
 }
@@ -42,6 +43,7 @@ void def_builtins(environment *env) {
     def_float(env);
     def_str(env);
     def_list(env);
+    def_tuple(env);
     def_range(env);
     def_type(env);
     def___builtins__(env);

@@ -42,13 +42,6 @@ pytuple *pytuple__mul__(pytuple *left, void *right) {
     return retptr;
 }
 
-pybool *pytuple__eq__(void *lvoid, void *rvoid) {
-    pytuple *left, *right;
-    left = (pytuple *)lvoid;
-    right = (pytuple *)rvoid;
-    return PYBOOL(list_eq(left->values, right->values));
-}
-
 void *pytuple__getitem__(void *lvoid, void *rvoid) {
     pytuple *left = (pytuple *)lvoid;
     pyint *right = (pyint *)rvoid;
@@ -78,4 +71,72 @@ pystr *pytuple_str(void *vptr) {
     buff2_add(buff, str(ptr->content)->value);
     buff2_add(buff, strdup(")"));
     return pystr_init3(buff2_puts2(buff));
+}
+
+pybool *pytuple__gt__(void *lvoid, void *rvoid) {
+    pytuple *left = lvoid;
+    if (type(rvoid) == pytuple_t) {
+        pytuple *right = rvoid;
+        if (list_is_empty(left->values) || list_is_empty(right->values))
+            return PYBOOL(!list_is_empty(left->values));
+        list *ptr1, *ptr2;
+        for (ptr1 = left->values, ptr2 = right->values; ptr1 && ptr2;
+                  ptr1 = ptr1->next, ptr2 = ptr2->next) {
+            list *value_list = list_node();
+            list_append_content(value_list, ptr1->content);
+            list_append_content(value_list, ptr2->content);
+            if (is_true(__gt__(pyargument_init2(value_list))))
+                return PYBOOL(1);
+            else if (is_true(__lt__(pyargument_init2(value_list))))
+                return PYBOOL(0);
+        }
+        if (ptr1)
+            return PYBOOL(1);
+        return PYBOOL(0);
+    }
+}
+
+pybool *pytuple__lt__(void *lvoid, void *rvoid) {
+    pytuple *left = lvoid;
+    if (type(rvoid) == pytuple_t) {
+        pytuple *right = rvoid;
+        if (list_is_empty(left->values) || list_is_empty(right->values))
+            return PYBOOL(!list_is_empty(right->values));
+        list *ptr1, *ptr2;
+        for (ptr1 = left->values, ptr2 = right->values; ptr1 && ptr2;
+                  ptr1 = ptr1->next, ptr2 = ptr2->next) {
+            list *value_list = list_node();
+            list_append_content(value_list, ptr1->content);
+            list_append_content(value_list, ptr2->content);
+            if (is_true(__lt__(pyargument_init2(value_list))))
+                return PYBOOL(1);
+            else if (is_true(__gt__(pyargument_init2(value_list))))
+                return PYBOOL(0);
+        }
+        if (ptr2)
+            return PYBOOL(1);
+        return PYBOOL(0);
+    }
+}
+
+pybool *pytuple__eq__(void *lvoid, void *rvoid) {
+    pytuple *left = lvoid;
+    if (type(rvoid) == pytuple_t) {
+        pytuple *right = rvoid;
+        if (list_is_empty(left->values) || list_is_empty(right->values))
+            return PYBOOL(list_is_empty(left->values) && list_is_empty(right->values));
+        list *ptr1, *ptr2;
+        for (ptr1 = left->values, ptr2 = right->values; ptr1 && ptr2;
+                  ptr1 = ptr1->next, ptr2 = ptr2->next) {
+            list *value_list = list_node();
+            list_append_content(value_list, ptr1->content);
+            list_append_content(value_list, ptr2->content);
+            if (!is_true(__eq__(pyargument_init2(value_list))))
+                return PYBOOL(0);
+        }
+        if (ptr1 || ptr2)
+            return PYBOOL(0);
+        return PYBOOL(1);
+    }
+    return PYBOOL(0);
 }

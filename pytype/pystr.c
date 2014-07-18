@@ -55,14 +55,6 @@ pystr *pystr__add__(void *left, void *right) {
     return retptr;
 }
 
-pybool *pystr__eq__(void *lvoid, void *rvoid) {
-    pystr *left = (pystr *)lvoid;
-    pystr *right = (pystr *)rvoid;
-    if (!strcmp(left->value, right->value))
-        return PYBOOL(1);
-    return PYBOOL(0);
-}
-
 pybool *pystr__bool__(void *ptr) {
     pystr *strptr = (pystr *)ptr;
     return PYBOOL(strlen(strptr->value));
@@ -298,4 +290,15 @@ pybool *pystr__lt__(void *lvoid, void *rvoid) {
             return PYBOOL(1);
         return PYBOOL(0);
     }
+}
+
+pybool *pystr__eq__(void *lvoid, void *rvoid) {
+    pystr *left = (pystr *)lvoid;
+    if (type(rvoid) == pystr_t) {
+        pystr *right = (pystr *)rvoid;
+        if (strcmp(left->value, right->value) == 0)
+            return PYBOOL(1);
+        return PYBOOL(0);
+    }
+    return PYBOOL(0);
 }

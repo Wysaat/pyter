@@ -11,6 +11,7 @@
 #include "pystr.h"
 #include "pylist.h"
 #include "pytuple.h"
+#include "methods.h"
 #include "../builtins/builtins.h"
 
 pyint *pyint__init__() {
@@ -381,6 +382,7 @@ pybool *pyint__eq__(void *lvoid, void *rvoid) {
         pybool *right = rvoid;
         return pyint__eq__(left, int_to_pyint(right->value));
     }
+    return PYBOOL(0);
 }
 
 pybool *pyint__ge__(void *lvoid, void *rvoid) {
