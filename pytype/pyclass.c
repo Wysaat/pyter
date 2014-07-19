@@ -25,21 +25,21 @@ pyclass *pyclass__init__(char *id) {
 
 void *pyclass__getattribute__(void *first, void *instance, char *attr) {
     pyclass *class = (pyclass *)first;
-    list *ptr;
-    if (!list_is_empty(class->env->val_dict)) {
-        for (ptr = class->env->val_dict; ptr; ptr = ptr->next) {
-            val_dict_entry *entry = (val_dict_entry *)ptr->content;
-            if (!strcmp(entry->id, attr)) {
-                if (type(entry->value) == pyfunction_t) {
-                    ((pyfunction *)entry->value)->bound = instance;
-                }
-                else if (type(entry->value) == pybuiltin_function_t) {
-                    ((pybuiltin_function *)entry->value)->bound = instance;
-                }
-                return entry->value;
-            }
-        }
+    void *retptr;
+    list *ptr, *ptr2, *ptr3;
+    if (retptr = env_find(class->env, attr)) {
+        if (type(retptr) == pyfunction_t)
+            ((pyfunction *)retptr)->bound = instance;
+        else if (type(retptr) == pybuiltin_function_t)
+            ((pybuiltin_function *)retptr)->bound = instance;
+        return retptr;
     }
+    for (ptr2 = class->inheritance; ptr2; ptr2 = ptr2->next) {
+        pyclass *_class = ptr2->content;
+        if (retptr = pyclass__getattribute__(_class, instance, attr))
+            return retptr;
+    }
+    return 0;
 }
 
 void *pyclass__call__(void *left, void *right) {

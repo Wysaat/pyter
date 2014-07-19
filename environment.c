@@ -142,6 +142,21 @@ void *env_find(environment *env, char *name) {
     return 0;
 }
 
+void *env_find2(environment *env, char *name) {
+    environment *env_ptr;
+    list *ptr;
+    for (env_ptr = env; env_ptr; env_ptr = env_ptr->outer) {
+        if (!list_is_empty(env->val_dict)) {
+            for (ptr = env->val_dict; ptr; ptr = ptr->next) {
+                val_dict_entry *entry = ptr->content;
+                if (entry->id && !strcmp(entry->id, name))
+                    return entry->value;
+            }
+        }
+    }
+    return 0;
+}
+
 void del(void *vptr) {
     if (!vptr)
         return;

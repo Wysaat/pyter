@@ -473,56 +473,51 @@ void dict_expr_del(void *vptr) {
     free(ptr);
 }
 
-void *attributerefEvaluate(attributeref *structure, environment *env) {
-    void *primary_val = evaluate(structure->primary, env);
-    list *ptr, *val_dict;
-    pyclass *class = get_class(primary_val);
+static void *get_attribute(void *first, char *name) {
+    void *retptr;
+    if (type(first) == pyclass_t || type(first) == instance_t ||
+            type(first) == pymodule_t) {
+        environment *env;
+        if (type(first) == pyclass_t)
+            env = ((pyclass *)first)->env;
+        else if (type(first) == instance_t)
+            env = ((instance *)first)->env;
+        else if (type(first) == pymodule_t)
+            env = ((pymodule *)first)->env;
 
-    if (type(primary_val) == pyclass_t)
-        val_dict = ((pyclass *)primary_val)->env->val_dict;
-    else if (type(primary_val) == instance_t)
-        val_dict = ((instance *)primary_val)->env->val_dict;
-    else if (type(primary_val) == pymodule_t)
-        val_dict = ((pymodule *)primary_val)->env->val_dict;
-    else
-        val_dict = list_node();
+        if (retptr = env_find(env, name)) {
+            if (type(retptr) == pyfunction_t)
+                ((pyfunction *)retptr)->bound = 0;
+            else if (type(retptr) == pybuiltin_function_t)
+                ((pybuiltin_function *)retptr)->bound = 0;
+            return retptr;
+        }
+    }
 
-    if (!list_is_empty(val_dict)) {
-        for (ptr = val_dict; ptr; ptr = ptr->next) {
-            val_dict_entry *entry = (val_dict_entry *)ptr->content;
-            if (!strcmp(entry->id, structure->id->value)) {
-                if (type(entry->value) == pyfunction_t)
-                    ((pyfunction *)entry->value)->bound = 0;
-                else if (type(entry->value) == pybuiltin_function_t)
-                    ((pybuiltin_function *)entry->value)->bound = 0;
-                void *retptr = entry->value;
+    if (type(first) == pyclass_t && ((pyclass *)first)->inheritance) {
+        pyclass *class = first;
+        list *ptr;
+        for (ptr = class->inheritance; ptr; ptr = ptr->next) {
+            if (retptr = get_attribute(ptr->content, name)) {
+                if (type(retptr) == pyfunction_t)
+                    ((pyfunction *)retptr)->bound = 0;
+                else if (type(retptr) == pybuiltin_function_t)
+                    ((pybuiltin_function *)retptr)->bound = 0;
                 return retptr;
             }
         }
     }
 
-    if (type(primary_val) == pyclass_t && ((pyclass *)primary_val)->inheritance) {
-        list *ptr2, *ptr3;
-        for (ptr2 = ((pyclass *)primary_val)->inheritance; ptr2; ptr2 = ptr2->next) {
-            pyclass *_class = (pyclass *)ptr2->content;
-            if (!list_is_empty(_class->env->val_dict)) {
-                for (ptr3 = _class->env->val_dict; ptr3; ptr3 = ptr3->next) {
-                    val_dict_entry *entry = (val_dict_entry *)ptr3->content;
-                    if (!strcmp(entry->id, structure->id->value)) {
-                        if (type(entry->value) == pyfunction_t)
-                            ((pyfunction *)entry->value)->bound = 0;
-                        else if (type(entry->value) == pybuiltin_function_t)
-                            ((pybuiltin_function *)entry->value)->bound = 0;
-                        void *retptr = entry->value;
-                        return retptr;
-                    }
-                }
-            }
-        }
-    }
-    void *attr = structure->id->value;
-    void *retptr = __getattribute__(class, primary_val, attr);
-    return retptr;
+    if (retptr = __getattribute__(get_class(first), first, name))
+        return retptr;
+
+    return 0;
+}
+
+void *attributerefEvaluate(attributeref *structure, environment *env) {
+    void *primary_val = evaluate(structure->primary, env);
+    char *name = structure->id->value;
+    return get_attribute(primary_val, name);
 }
 
 void attributeref_del(void *vptr) {

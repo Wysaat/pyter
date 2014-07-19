@@ -31,5 +31,6 @@ void del(void *vptr);
 void ref(void *vptr);
 void store_id(environment *env, char *id, void *value); // short-hand function for storing identifiers
 void *env_find(environment *env, char *name);
+void *env_find2(environment *env, char *name);
 
 #endif /* ENVIRONMENT_H */

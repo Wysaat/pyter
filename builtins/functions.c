@@ -4,10 +4,12 @@
 #include "../pytype/pyfloat.h"
 #include "../pytype/pytuple.h"
 #include "../pytype/pycomplex.h"
+#include "../pytype/pyfunction.h"
 #include "../pytype/pyclass.h"
 #include "../pytype/pygenerator.h"
 #include "../pytype/others.h"
 #include "../pytype/methods.h"
+#include "../pytype/py__builtins__.h"
 #include "../types.h"
 #include "../evaluate.h"
 #include "builtins.h"
@@ -110,9 +112,20 @@ void *__gt__(pyargument *argument) {
         return pylist__gt__(left, right);
     else if (type(left) == pytuple_t)
         return pytuple__gt__(left, right);
+    // else if (type(left) == instance_t) {
+    //     void *func = env_find(((instance *)left)->class->env, "__gt__");
+    //     return __call__(func, argument);
+    // }
     else if (type(left) == instance_t) {
-        void *func = env_find(((instance *)left)->class->env, "__gt__");
-        return __call__(func, argument);
+        void *func;
+        pyclass *class = ((instance *)left)->class;
+        if (func = pyclass__getattribute__(class, left, "__gt__")) {
+            if (type(func) == pyfunction_t)
+                ((pyfunction *)func)->bound = 0;
+            else if (type(func) == pybuiltin_function_t)
+                ((pybuiltin_function *)func)->bound = 0;
+            return __call__(func, argument);
+        }
     }
 }
 
