@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <setjmp.h>
 
 #include "evaluate.h"
 #include "execute.h"
@@ -38,6 +39,8 @@
 #include "environment.h"
 
 #include "builtins/builtins.h"
+
+jmp_buf jbuf;
 
 int is_alph(char );
 int is_num(char );

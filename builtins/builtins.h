@@ -20,6 +20,12 @@ pyclass module_class;
 pyclass range_class;
 pymodule __builtins__module;
 
+
+pyclass BaseException;
+pyclass Exception;
+pyclass SyntaxError;
+pyclass NameError;
+
 /* int.c */
 pyint *int_init(pyargument *argument);
 

@@ -1,4 +1,5 @@
 #include "cpyter.h"
+#include <setjmp.h>
 
 void rollback(scanner *sc) {
     sc->rbf = 1;
@@ -403,12 +404,10 @@ void *parse_atom(scanner *sc) {
             if (!strcmp(token, ")")) {
                 return PARENTH_FORM(expr_head);
             }
-            rollback(sc);
-            list_append_list(expr_head, pa_exprs(sc, endings));
-            void *retptr = PARENTH_FORM(expr_head);
-            token = sc_read(sc);
-            if (!strcmp(token, ")")) {
-                return retptr;
+            else {
+                puts("SyntaxError: invalid syntax");
+                sc->eolf = 1;
+                longjmp(jbuf, 1);
             }
         }
         else if (!strcmp(token, "for")) {
@@ -420,6 +419,16 @@ void *parse_atom(scanner *sc) {
             if (!strcmp(token, ")")) {
                 return GENERATOR(SUITE(stmts));
             }
+            else {
+                puts("SyntaxError: invalid syntax");
+                sc->eolf = 1;
+                longjmp(jbuf, 1);
+            }
+        }
+        else {
+            puts("SyntaxError: invalid syntax");
+            sc->eolf = 1;
+            longjmp(jbuf, 1);
         }
     }
     else if (!strcmp(token, "[")) {
@@ -1578,6 +1587,7 @@ void interpret(FILE *stream, environment *env)
         return;
 
     while (1) {
+        int val = setjmp(jbuf);
         void *stmt = parse_stmt(sc);
         int pf = 0;
         if (stream == stdin)
